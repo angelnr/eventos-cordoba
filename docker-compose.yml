@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mi_app_db
+      POSTGRES_USER: mi_usuario
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"  # ⬅️ Ya lo tenías
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"  # ⬅️ AÑADIR para exponer al host
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"  # ⬅️ AÑADIR para exponer al host
+    volumes:
+      - ./frontend:/app
+    command: sh -c "cd /app && npm install && npx next dev -H 0.0.0.0"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
+    network_mode: "host"
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,34 @@
+# Node / TypeScript
+node_modules
+dist
+build
+*.log
+*.tsbuildinfo
+
+# Entornos
+.env
+.env.*
+!.env.example
+
+# Control de versiones
+.git
+.gitignore
+.gitattributes
+
+# Prisma
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/*.sqlite
+/prisma/migrations/**/README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+*.pid
+
+# IDE / Sistema
+.vscode
+.idea
+.DS_Store
+Thumbs.db

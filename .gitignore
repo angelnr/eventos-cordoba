@@ -1,0 +1,100 @@
+# ───────────────
+# Node / Next.js
+# ───────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-debug.log*
+
+# Output de compilación
+.next/
+out/
+dist/
+build/
+coverage/
+
+# Archivos de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+*.log.*
+*.csv
+
+# ───────────────
+# TypeScript
+# ───────────────
+*.tsbuildinfo
+
+# ───────────────
+# Prisma
+# ───────────────
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/*.sqlite
+/prisma/migrations/**/README.md # si son autogenerados
+# Si usas SQLite temporal, ignora archivos locales
+
+# ───────────────
+# Docker
+# ───────────────
+.docker/
+docker-compose.override.yml
+# (deja docker-compose.yml principal si lo usas para despliegue)
+*.pid
+*.seed
+
+# ───────────────
+# Nginx / Servidor
+# ───────────────
+nginx/logs/
+nginx/cache/
+nginx/temp/
+
+# ───────────────
+# Cloudflare (si usas Wrangler o Pages)
+# ───────────────
+.wrangler/
+.cloudflare/
+
+# ───────────────
+# Editor / Sistema
+# ───────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ───────────────
+# Otras herramientas
+# ───────────────
+.eslintcache
+.prettier-cache
+.stylelintcache
+.npm/
+.yarn/
+.pnp.*
+
+# ───────────────
+# Entornos de despliegue
+# ───────────────
+*.pem
+*.key
+*.crt
+*.csr
+
+# ───────────────
+# Testing
+# ───────────────
+coverage/
+.jest/
+playwright-report/
+test-results/
