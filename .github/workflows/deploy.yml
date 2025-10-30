@@ -1,0 +1,36 @@
+name: 🚀 Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔑 Setup SSH via Cloudflare Tunnel
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Usar TU DOMINIO en lugar de IP
+        ssh-keyscan -H eventoscordoba.xyz >> ~/.ssh/known_hosts
+        
+    - name: 🧪 Test SSH Connection
+      run: |
+        ssh -o ConnectTimeout=10 ${{ secrets.SSH_USERNAME }}@eventoscordoba.xyz "echo '✅ Conexión exitosa via Cloudflare'"
+        
+    - name: 🚀 Deploy
+      run: |
+        ssh ${{ secrets.SSH_USERNAME }}@eventoscordoba.xyz "
+          cd /home/deploy/mi-proyecto
+          git pull origin main
+          npm install
+          npm run build
+          echo '✅ Sitio actualizado via Cloudflare Tunnel'
+        "
