@@ -12,25 +12,36 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🔑 Setup SSH via Cloudflare Tunnel
+    - name: 🔑 Setup SSH
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         
-        # Usar TU DOMINIO en lugar de IP
-        ssh-keyscan -H eventoscordoba.xyz >> ~/.ssh/known_hosts
+        # Configurar known_hosts para SSH nativo
+        ssh-keyscan -H ssh.eventoscordoba.xyz >> ~/.ssh/known_hosts
         
     - name: 🧪 Test SSH Connection
       run: |
-        ssh -o ConnectTimeout=10 ${{ secrets.SSH_USERNAME }}@eventoscordoba.xyz "echo '✅ Conexión exitosa via Cloudflare'"
+        ssh -o ConnectTimeout=10 ${{ secrets.SSH_USERNAME }}@ssh.eventoscordoba.xyz "echo '✅ SSH Nativo funcionando'"
         
-    - name: 🚀 Deploy
+    - name: 🚀 Deploy Application
       run: |
-        ssh ${{ secrets.SSH_USERNAME }}@eventoscordoba.xyz "
-          cd /home/deploy/mi-proyecto
-          git pull origin main
-          npm install
-          npm run build
-          echo '✅ Sitio actualizado via Cloudflare Tunnel'
+        ssh ${{ secrets.SSH_USERNAME }}@ssh.eventoscordoba.xyz "
+          set -e
+          echo '📍 Actualizando aplicación...'
+          cd /home/deploy/eventoscordoba
+          
+          echo '📥 Pull del código...'
+          git fetch origin
+          git reset --hard origin/main
+          
+          echo '🐳 Reiniciando contenedores...'
+          cd /ruta/a/tu/docker-compose
+          docker-compose down
+          docker-compose up -d --build
+          
+          echo '✅ Despliegue completado!'
+          echo '📊 Estado de contenedores:'
+          docker ps
         "
