@@ -1,4 +1,4 @@
-name: 🚀 DEPLOY EMERGENCY - Public IP
+name: 🚀 DEPLOY FINAL - SOLO IP
 
 on:
   push:
@@ -7,47 +7,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🔑 Setup SSH Connection
+    - name: 🔑 Setup SSH with IP Only
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        # Usar IP pública directamente
-        ssh-keyscan -H 171.33.234.226 >> ~/.ssh/known_hosts 2>/dev/null
+        # SOLO IP - sin dominio
+        ssh-keyscan -H 171.33.234.226 >> ~/.ssh/known_hosts
         
     - name: 🧪 Test Basic Connection
       run: |
-        echo "🔌 Probando conexión SSH básica..."
-        ssh -o ConnectTimeout=10 -o BatchMode=yes deploy@171.33.234.226 "echo '✅ SSH funciona' && whoami && pwd"
+        ssh -o ConnectTimeout=10 deploy@171.33.234.226 "echo '✅ CONEXIÓN EXITOSA'"
         
-    - name: 🚀 Full Deploy
+    - name: 🚀 Deploy
       run: |
         ssh deploy@171.33.234.226 "
-          set -e
-          echo '🚀 INICIANDO DESPLIEGUE...'
-          
-          echo '1️⃣ Actualizando código...'
-          cd /home/deploy/eventoscordoba
-          git fetch origin
-          git reset --hard origin/main
-          
-          echo '2️⃣ Verificando servicios locales...'
-          sudo netstat -tlnp | grep -E ':(3000|3001|22)' || echo '⚠️ Algunos servicios no están escuchando'
-          
-          echo '3️⃣ Reiniciando contenedores...'
+          cd /home/deploy/eventos-cordoba
+          git pull origin main
           docker-compose down
           docker-compose up -d --build
-          
-          echo '4️⃣ Esperando que servicios inicien...'
-          sleep 10
-          
-          echo '5️⃣ Estado final:'
-          docker ps
-          echo '✅ DESPLIEGUE COMPLETADO - eventoscordoba.xyz actualizado'
+          echo '✅ eventoscordoba.xyz actualizado!'
         "
