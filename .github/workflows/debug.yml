@@ -1,0 +1,41 @@
+name: 🔧 TEST SSH Connection
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test-connection:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔑 Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        
+        # Verificar que la clave se creó
+        echo "🔍 Verificando clave SSH:"
+        ls -la ~/.ssh/
+        echo "📄 Primeras líneas de la clave:"
+        head -3 ~/.ssh/id_rsa
+        
+    - name: 🧪 Test DNS Resolution
+      run: |
+        echo "🔍 Resolviendo DNS..."
+        nslookup ssh.eventoscordoba.xyz
+        ping -c 2 ssh.eventoscordoba.xyz
+        
+    - name: 🔍 Debug SSH Connection
+      run: |
+        echo "🔍 Intentando conexión SSH con verbose..."
+        ssh -vvv -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@ssh.eventoscordoba.xyz "echo '✅ ÉXITO'" || echo "❌ FALLO"
+        
+    - name: 📋 Final Status
+      run: |
+        echo "🧪 Prueba de conexión completada"
+        echo "Revisa los pasos anteriores para ver dónde falla"
