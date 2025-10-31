@@ -1,41 +1,59 @@
-name: 🔧 TEST SSH Connection
+name: 🔍 COMPLETE DEBUG
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  test-connection:
+  debug:
     runs-on: ubuntu-latest
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🔑 Setup SSH
+    - name: 1️⃣ Verify Secrets Exist
       run: |
+        echo "🔍 Verificando secrets..."
+        echo "SSH_HOST: ${{ secrets.SSH_HOST }}"
+        echo "SSH_USERNAME: ${{ secrets.SSH_USERNAME }}"
+        if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+          echo "❌ SSH_PRIVATE_KEY está VACÍO"
+          exit 1
+        else
+          echo "✅ SSH_PRIVATE_KEY tiene contenido"
+          # Verificar formato de la clave
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -1 | grep -q "BEGIN OPENSSH PRIVATE KEY" && echo "✅ Formato correcto" || echo "❌ Formato incorrecto"
+        fi
+        
+    - name: 2️⃣ Create SSH Files
+      run: |
+        echo "🔧 Creando archivos SSH..."
         mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         
-        # Verificar que la clave se creó
-        echo "🔍 Verificando clave SSH:"
-        ls -la ~/.ssh/
-        echo "📄 Primeras líneas de la clave:"
+        echo "📄 Verificando archivo:"
+        ls -la ~/.ssh/id_rsa
+        echo "Primeras líneas:"
         head -3 ~/.ssh/id_rsa
         
-    - name: 🧪 Test DNS Resolution
+    - name: 3️⃣ Test Basic Connectivity
       run: |
-        echo "🔍 Resolviendo DNS..."
-        nslookup ssh.eventoscordoba.xyz
-        ping -c 2 ssh.eventoscordoba.xyz
+        echo "🌐 Probando conectividad básica..."
+        ping -c 2 -W 5 ${{ secrets.SSH_HOST }} || echo "⚠️ Ping falló"
+        nc -zv -w 5 ${{ secrets.SSH_HOST }} 22 || echo "❌ Puerto 22 cerrado"
         
-    - name: 🔍 Debug SSH Connection
+    - name: 4️⃣ Test SSH Connection
       run: |
-        echo "🔍 Intentando conexión SSH con verbose..."
-        ssh -vvv -o ConnectTimeout=10 -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@ssh.eventoscordoba.xyz "echo '✅ ÉXITO'" || echo "❌ FALLO"
-        
-    - name: 📋 Final Status
+        echo "🔌 Probando conexión SSH..."
+        ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o BatchMode=yes \
+          ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
+          "echo '✅ SSH EXITOSO'; whoami; pwd; ls -la" \
+          || echo "❌ SSH FALLÓ - Exit code: $?"
+          
+    - name: 5️⃣ Final Status
       run: |
-        echo "🧪 Prueba de conexión completada"
-        echo "Revisa los pasos anteriores para ver dónde falla"
+        echo "🏁 DEBUG COMPLETADO"
+        echo "Revisa los pasos anteriores para ver dónde falla exactamente"
