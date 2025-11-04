@@ -1,0 +1,35 @@
+name: 🚀 DEPLOY FINAL - SOLO IP
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔑 Setup SSH with IP Only
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        # SOLO IP - sin dominio
+        ssh-keyscan -H 171.33.234.226 >> ~/.ssh/known_hosts
+        
+    - name: 🧪 Test Basic Connection
+      run: |
+        ssh -o ConnectTimeout=10 deploy@171.33.234.226 "echo '✅ CONEXIÓN EXITOSA'"
+        
+    - name: 🚀 Deploy
+      run: |
+        ssh deploy@171.33.234.226 "
+          cd /home/deploy/eventos-cordoba
+          git pull origin main
+          docker-compose down
+          docker-compose up -d --build
+          echo '✅ eventoscordoba.xyz actualizado!'
+        "

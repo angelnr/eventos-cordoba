@@ -1,0 +1,57 @@
+name: 🔍 DEBUG SSH SETUP
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  debug-ssh:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 1️⃣ Check Private Key Format
+      run: |
+        echo "🔍 Analizando formato de la clave privada..."
+        mkdir -p ~/.ssh
+        
+        # Verificar el contenido REAL del secret
+        echo "=== CONTENIDO COMPLETO DE SSH_PRIVATE_KEY ==="
+        echo "${{ secrets.SSH_PRIVATE_KEY }}"
+        echo "=== FIN DEL CONTENIDO ==="
+        
+        # Contar líneas
+        LINE_COUNT=$(echo "${{ secrets.SSH_PRIVATE_KEY }}" | wc -l)
+        echo "📊 Líneas en la clave: $LINE_COUNT"
+        
+        # Verificar que comience y termine correctamente
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -1 | grep -q "BEGIN OPENSSH PRIVATE KEY" && echo "✅ Inicio correcto" || echo "❌ Inicio incorrecto"
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | tail -1 | grep -q "END OPENSSH PRIVATE KEY" && echo "✅ Fin correcto" || echo "❌ Fin incorrecto"
+        
+    - name: 2️⃣ Create SSH Key File
+      run: |
+        echo "🔧 Creando archivo de clave..."
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        
+        echo "📄 Verificando archivo creado:"
+        ls -la ~/.ssh/id_rsa
+        echo "=== PRIMERAS 5 LÍNEAS ==="
+        head -5 ~/.ssh/id_rsa
+        echo "=== ÚLTIMAS 5 LÍNEAS ==="  
+        tail -5 ~/.ssh/id_rsa
+        
+    - name: 3️⃣ Set Permissions
+      run: |
+        echo "🔐 Aplicando permisos..."
+        chmod 700 ~/.ssh
+        chmod 600 ~/.ssh/id_rsa
+        
+        echo "✅ Permisos aplicados:"
+        ls -la ~/.ssh/
+        
+    - name: 4️⃣ Test Key Format
+      run: |
+        echo "🔑 Probando formato de clave..."
+        ssh-keygen -l -f ~/.ssh/id_rsa && echo "✅ Formato de clave válido" || echo "❌ Formato de clave inválido"
