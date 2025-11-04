@@ -30,7 +30,6 @@ export default function Home() {
   return (
     <div style={{ padding: '50px', fontFamily: 'Arial' }}>
     <h1>🚀 ¡Mi App en Internet!</h1>
-    <p>Hola mama, ya tengo mi app corriendo en internet!!!!</p>
     <p>Frontend servido desde Cloudflare + Docker</p>
 
     <div style={{ marginTop: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '5px' }}>
