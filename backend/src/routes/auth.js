@@ -177,4 +177,33 @@ router.post('/verify', async (req, res) => {
   }
 });
 
+// POST /api/auth/db-test - Probar conexión a base de datos
+router.post('/db-test', async (req, res) => {
+  try {
+    // Probar conexión básica a la base de datos
+    await prisma.$connect();
+
+    // Probar una consulta simple
+    const userCount = await prisma.user.count();
+
+    res.json({
+      success: true,
+      message: 'Conexión a base de datos exitosa',
+      data: {
+        userCount,
+        database: 'connected'
+      }
+    });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error de conexión a base de datos',
+      details: error.message
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 module.exports = router;
