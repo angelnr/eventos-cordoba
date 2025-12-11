@@ -69,7 +69,7 @@ export default function DashboardPage() {
       }
 
       if (data.success) {
-        alert(`${data.message}\nUsuarios generados: ${data.data.map((u: User) => u.name).join(', ')}`);
+        alert(`${data.message}\nUsuarios generados: ${data.data.map((u: UserListItem) => u.name).join(', ')}`);
         fetchUsers(); // Refresh the list
       }
     } catch (error) {

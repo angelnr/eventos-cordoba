@@ -10,24 +10,47 @@ export default function Home() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Determinar la URL del API
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // Determinar la URL del API con fallback
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
     console.log('Conectando a:', apiUrl);
+    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 
-    fetch(`${apiUrl}/api/test`)
+    // Agregar timeout para evitar que el fetch se quede colgado
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
+    fetch(`${apiUrl}/api/test`, {
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
       .then(response => {
-        if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+        clearTimeout(timeoutId);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         return response.json();
       })
       .then(data => {
-        setBackendMessage(data.message);
+        console.log('Respuesta del backend:', data);
+        setBackendMessage(data.message || 'Conexión exitosa');
         setLoading(false);
       })
       .catch(error => {
-        setBackendMessage('Error conectando con el backend: ' + error.message);
+        clearTimeout(timeoutId);
+        console.error('Error conectando con backend:', error);
+        if (error.name === 'AbortError') {
+          setBackendMessage('Error conectando con el backend: Timeout (10s)');
+        } else {
+          setBackendMessage('Error conectando con el backend: ' + error.message);
+        }
         setLoading(false);
       });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   return (
