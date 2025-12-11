@@ -20,6 +20,12 @@ app.use(cors({
   credentials: true
 }));
 
+// Middleware de logging global
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path} - Headers:`, req.headers.authorization ? 'Token presente' : 'Sin token');
+  next();
+});
+
 app.use(express.json());
 
 // Rutas API
@@ -27,6 +33,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/categories', categoriesRoutes);
+
+console.log('🔗 Rutas configuradas:');
+console.log('  - /api/auth/*');
+console.log('  - /api/users/*');
+console.log('  - /api/events/*');
+console.log('  - /api/categories/*');
 
 // Rutas existentes
 app.get('/api/test', (req, res) => {

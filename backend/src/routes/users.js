@@ -15,11 +15,15 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Token requerido' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).json({ error: 'Token inválido' });
     }
-    req.user = user;
+
+    // Por ahora usamos la info del token. En una implementación completa,
+    // podríamos consultar la DB aquí, pero para evitar complejidad,
+    // asumimos que el token contiene la info correcta del usuario.
+    req.user = decoded;
     next();
   });
 };

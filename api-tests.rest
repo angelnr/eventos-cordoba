@@ -2,7 +2,7 @@
 # Usar con extensión REST Client en VS Code
 
 @baseUrl = http://localhost:3001
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlhdCI6MTc2NTQ3NjAwNiwiZXhwIjoxNzY1NDc2OTA2fQ.SMHYiMtM2FPqEGapfJGzSf7rKvircGHvoRwss3WqyVg
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlhdCI6MTc2NTQ3ODU2NSwiZXhwIjoxNzY1NDc5NDY1fQ.aMq90qn0tLjshvmf4hvFylScGcAE7OMIh3sML6svE80
 @token_user2 = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiaWF0IjoxNzY1NDUyNDQ2LCJleHAiOjE3NjU0NTMzNDZ9.znqbUDJL1V-axz3V5ENHzwatBYwHPqHzBCt8eQJ0G8w
 ### ============================================================================
 ### 🔐 AUTENTICACIÓN

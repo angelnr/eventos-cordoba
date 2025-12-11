@@ -18,29 +18,6 @@ export default function DashboardPage() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Solo admin puede acceder
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🚫</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-            <p className="text-gray-600 mb-6">
-              Solo los administradores pueden acceder al dashboard.
-            </p>
-            <a
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Volver al Inicio
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
     // Solo ejecutar en el cliente
@@ -174,6 +151,30 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchUsers();
   }, [token]);
+
+  // Verificar permisos después de ejecutar todos los hooks
+  const isAdmin = user?.role === 'admin';
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🚫</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
+            <p className="text-gray-600 mb-6">
+              Solo los administradores pueden acceder al dashboard.
+            </p>
+            <a
+              href="/"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Volver al Inicio
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AuthGuard>
