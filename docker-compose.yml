@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: mi_usuario
       POSTGRES_PASSWORD: password123
     ports:
-      - "5432:5432"  # ⬅️ Ya lo tenías
+      - "5432:5432"
     networks:
       - app-network
     restart: unless-stopped
@@ -16,7 +16,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "3001:3001"  # ⬅️ AÑADIR para exponer al host
+      - "3001:3001"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -32,11 +32,10 @@ services:
     image: node:20-alpine
     working_dir: /app
     ports:
-      - "3000:3000"  # ⬅️ AÑADIR para exponer al host
+      - "3000:3000"
     volumes:
       - ./frontend:/app
     command: sh -c "cd /app && npm install && npx next dev -H 0.0.0.0"
-    # No establecer NEXT_PUBLIC_API_URL en desarrollo para que use localhost:3001 por defecto
     networks:
       - app-network
     restart: unless-stopped
