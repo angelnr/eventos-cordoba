@@ -168,8 +168,24 @@ server {
 The application automatically detects the environment:
 
 - **Development** (`localhost`): Uses `http://localhost:3001` or `NEXT_PUBLIC_API_URL`
-- **Production**: Uses `NEXT_PUBLIC_API_URL` or assumes same domain
+- **Production** (`eventoscordoba.xyz`): Uses `https://api.eventoscordoba.xyz`
 - **Fallback**: Empty string (same domain API routes)
+
+### Configuration for eventoscordoba.xyz
+
+If you're using the `eventoscordoba.xyz` domain with Cloudflare Tunnel:
+
+```bash
+# Production environment variables
+NEXT_PUBLIC_API_URL=https://api.eventoscordoba.xyz
+NEXT_PUBLIC_FRONTEND_URL=https://eventoscordoba.xyz
+DATABASE_URL=postgresql://your_user:your_pass@your_host:5432/your_db
+JWT_SECRET=your-secure-jwt-secret-here
+```
+
+Your DNS configuration should look like:
+- `eventoscordoba.xyz` → Frontend (Proxied)
+- `api.eventoscordoba.xyz` → Backend API (Proxied)
 
 ### Troubleshooting Production Issues
 
