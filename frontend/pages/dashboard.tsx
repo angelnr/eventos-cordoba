@@ -27,14 +27,21 @@ export default function DashboardPage() {
 
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isProduction = hostname === 'eventoscordoba.xyz';
 
     console.log('📊 Dashboard - Hostname detectado:', hostname);
     console.log('🏠 Dashboard - Es localhost:', isLocalhost);
+    console.log('🏭 Dashboard - Es producción:', isProduction);
 
     // En desarrollo (localhost)
     if (isLocalhost) {
       // Priorizar localhost:3001 para desarrollo
       return 'http://localhost:3001';
+    }
+
+    // En producción (eventoscordoba.xyz) - usar URL conocida
+    if (isProduction) {
+      return 'https://api.eventoscordoba.xyz';
     }
 
     // En producción - usar la URL configurada

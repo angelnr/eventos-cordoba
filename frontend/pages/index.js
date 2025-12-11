@@ -19,9 +19,11 @@ export default function Home() {
 
       const hostname = window.location.hostname;
       const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+      const isProduction = hostname === 'eventoscordoba.xyz';
 
       console.log('🌐 Hostname detectado:', hostname);
       console.log('🏠 Es localhost:', isLocalhost);
+      console.log('🏭 Es producción:', isProduction);
       console.log('🔧 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 
       // En desarrollo (localhost)
@@ -30,12 +32,17 @@ export default function Home() {
         return 'http://localhost:3001';
       }
 
+      // En producción (eventoscordoba.xyz) - usar URL conocida
+      if (isProduction) {
+        return 'https://api.eventoscordoba.xyz';
+      }
+
       // En producción - usar la URL configurada
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL;
       }
 
-      // Fallback: asumir que el backend está en el mismo dominio bajo /api
+      // Fallback: asumir que el backend está en el mismo dominio
       return '';
     };
 
