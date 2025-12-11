@@ -38,12 +38,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
-    // En desarrollo (localhost)
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Solo ejecutar en el cliente
+    if (typeof window === 'undefined') {
+      return 'http://localhost:3001'; // Fallback para SSR
     }
 
-    // En producción - usar la URL relativa o la configurada
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    console.log('🌐 Auth - Hostname detectado:', hostname);
+    console.log('🏠 Auth - Es localhost:', isLocalhost);
+
+    // En desarrollo (localhost)
+    if (isLocalhost) {
+      // Priorizar localhost:3001 para desarrollo
+      return 'http://localhost:3001';
+    }
+
+    // En producción - usar la URL configurada
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }

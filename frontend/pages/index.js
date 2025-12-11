@@ -12,25 +12,35 @@ export default function Home() {
   useEffect(() => {
     // Determinar la URL del API según el entorno
     const getApiUrl = () => {
-      // En desarrollo (localhost)
-      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      // Solo ejecutar en el cliente
+      if (typeof window === 'undefined') {
+        return 'http://localhost:3001'; // Fallback para SSR
       }
 
-      // En producción - usar la URL relativa o la configurada
+      const hostname = window.location.hostname;
+      const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+      console.log('🌐 Hostname detectado:', hostname);
+      console.log('🏠 Es localhost:', isLocalhost);
+      console.log('🔧 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+
+      // En desarrollo (localhost)
+      if (isLocalhost) {
+        // Priorizar localhost:3001 para desarrollo
+        return 'http://localhost:3001';
+      }
+
+      // En producción - usar la URL configurada
       if (process.env.NEXT_PUBLIC_API_URL) {
         return process.env.NEXT_PUBLIC_API_URL;
       }
 
       // Fallback: asumir que el backend está en el mismo dominio bajo /api
-      // Esto es común en despliegues donde frontend y backend comparten dominio
       return '';
     };
 
     const apiUrl = getApiUrl();
-    console.log('Entorno:', typeof window !== 'undefined' ? window.location.hostname : 'server');
-    console.log('Conectando a:', apiUrl || 'mismo dominio (/api)');
-    console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+    console.log('🔗 URL final del API:', apiUrl);
 
     // Agregar timeout para evitar que el fetch se quede colgado
     const controller = new AbortController();
