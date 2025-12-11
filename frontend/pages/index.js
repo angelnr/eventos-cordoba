@@ -10,10 +10,26 @@ export default function Home() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Determinar la URL del API con fallback
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Determinar la URL del API según el entorno
+    const getApiUrl = () => {
+      // En desarrollo (localhost)
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      }
 
-    console.log('Conectando a:', apiUrl);
+      // En producción - usar la URL relativa o la configurada
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+      }
+
+      // Fallback: asumir que el backend está en el mismo dominio bajo /api
+      // Esto es común en despliegues donde frontend y backend comparten dominio
+      return '';
+    };
+
+    const apiUrl = getApiUrl();
+    console.log('Entorno:', typeof window !== 'undefined' ? window.location.hostname : 'server');
+    console.log('Conectando a:', apiUrl || 'mismo dominio (/api)');
     console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 
     // Agregar timeout para evitar que el fetch se quede colgado

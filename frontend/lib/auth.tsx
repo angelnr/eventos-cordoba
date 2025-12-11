@@ -36,6 +36,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Determinar la URL del API según el entorno
+  const getApiUrl = () => {
+    // En desarrollo (localhost)
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    }
+
+    // En producción - usar la URL relativa o la configurada
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    // Fallback: asumir que el backend está en el mismo dominio
+    return '';
+  };
+
   // Verificar token al cargar la aplicación
   useEffect(() => {
     const savedToken = localStorage.getItem('auth_token');
@@ -46,7 +62,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = async (tokenToVerify: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +127,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -18,6 +18,22 @@ export default function DashboardPage() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Determinar la URL del API según el entorno
+  const getApiUrl = () => {
+    // En desarrollo (localhost)
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    }
+
+    // En producción - usar la URL relativa o la configurada
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    // Fallback: asumir que el backend está en el mismo dominio
+    return '';
+  };
+
   // Fetch users list
   const fetchUsers = async () => {
     if (!token) return;
@@ -26,7 +42,8 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -54,7 +71,8 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/generate`, {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/users/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +130,7 @@ export default function DashboardPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700">Fecha de Registro</label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {user ? new Date(user.createdAt).toLocaleDateString('es-ES') : ''}
+                  Usuario autenticado
                 </p>
               </div>
             </div>

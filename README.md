@@ -83,4 +83,108 @@ The application will be available at:
 
 ## Deployment
 
-Build and run with Docker Compose for production deployment.
+### Local Development
+```bash
+# Start all services
+docker-compose up
+
+# Or start in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Production Deployment
+
+#### 1. Configure Environment Variables
+Create a `.env` file in production with:
+```bash
+# Database
+DATABASE_URL="postgresql://username:password@host:5432/database_name"
+
+# JWT
+JWT_SECRET="your-production-jwt-secret-here"
+JWT_EXPIRES_IN="15m"
+
+# API URL for Frontend (IMPORTANT!)
+NEXT_PUBLIC_API_URL="https://your-backend-domain.com"
+```
+
+#### 2. Deploy Backend
+```bash
+# Build and run backend
+cd backend
+docker build -t eventos-backend .
+docker run -d -p 3001:3001 --env-file .env eventos-backend
+```
+
+#### 3. Deploy Frontend
+```bash
+# Build for production
+cd frontend
+npm run build
+
+# Serve with Next.js production server
+npm start
+
+# Or use Docker
+docker build -t eventos-frontend .
+docker run -d -p 3000:3000 eventos-frontend
+```
+
+#### 4. Nginx Configuration (Optional)
+```nginx
+# /etc/nginx/sites-available/eventos-cordoba
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /api {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### Environment-Specific API URLs
+
+The application automatically detects the environment:
+
+- **Development** (`localhost`): Uses `http://localhost:3001` or `NEXT_PUBLIC_API_URL`
+- **Production**: Uses `NEXT_PUBLIC_API_URL` or assumes same domain
+- **Fallback**: Empty string (same domain API routes)
+
+### Troubleshooting Production Issues
+
+#### "Failed to fetch" Error
+1. Check `NEXT_PUBLIC_API_URL` is set correctly in production
+2. Verify backend is accessible from frontend domain
+3. Check CORS configuration in backend
+4. Ensure HTTPS is configured if using custom domains
+
+#### Database Connection
+1. Verify `DATABASE_URL` is correct for production database
+2. Run `npm run prisma:push` to sync schema
+3. Check database credentials and network access
+
+#### JWT Authentication
+1. Set strong `JWT_SECRET` in production
+2. Configure appropriate `JWT_EXPIRES_IN` (15m recommended)
+3. Ensure tokens are stored securely in localStorage
