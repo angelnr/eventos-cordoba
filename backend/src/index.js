@@ -4,6 +4,7 @@ const cors = require('cors');
 // Importar rutas
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
+const eventsRoutes = require('./routes/events');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,6 +24,7 @@ app.use(express.json());
 // Rutas API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/events', eventsRoutes);
 
 // Rutas existentes
 app.get('/api/test', (req, res) => {

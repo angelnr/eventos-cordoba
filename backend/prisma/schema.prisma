@@ -15,8 +15,69 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  role      String   @default("user") // user, organizer, admin
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relations
+  organizedEvents Event[]
+  bookings        Booking[]
+
+  @@map("users")
 }
 
-// Add more models as needed
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  color       String   @default("#3B82F6") // Default blue color
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  events Event[]
+
+  @@map("categories")
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  location    String
+  capacity    Int      @default(100)
+  price       Float    @default(0) // Price in euros, 0 for free events
+  status      String   @default("active") // active, cancelled, completed
+  imageUrl    String?
+
+  // Foreign keys
+  organizerId Int
+  categoryId  Int
+
+  // Relations
+  organizer   User     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("events")
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  quantity   Int      @default(1)
+  totalPrice Float    @default(0)
+  status     String   @default("confirmed")
+  bookedAt   DateTime @default(now())
+
+  eventId    Int
+  userId     Int
+
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
