@@ -1,0 +1,178 @@
+# API Testing para eventos-cordoba
+# Usar con extensión REST Client en VS Code
+
+@baseUrl = http://localhost:3001
+
+### ============================================================================
+### 🔐 AUTENTICACIÓN
+### ============================================================================
+
+### Login con usuario admin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+### Login con usuario regular
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "user123"
+}
+
+### Registro de nuevo usuario
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "nuevo@example.com",
+  "password": "password123",
+  "name": "Usuario Nuevo"
+}
+
+### Verificar token JWT
+POST {{baseUrl}}/api/auth/verify
+Content-Type: application/json
+
+{
+  "token": "{{token}}"
+}
+
+### ============================================================================
+### 👥 USUARIOS CRUD
+### ============================================================================
+
+### Obtener perfil propio (requiere token)
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token}}
+
+### Listar todos los usuarios (requiere token)
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+
+### Obtener usuario específico por ID (requiere token)
+GET {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+
+### Crear nuevo usuario (sin autenticación)
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test123",
+  "name": "Usuario de Test"
+}
+
+### Actualizar usuario (requiere token del propietario)
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Usuario Admin Actualizado",
+  "email": "admin@example.com"
+}
+
+### Eliminar usuario (requiere token del propietario)
+DELETE {{baseUrl}}/api/users/1
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 🤖 GENERACIÓN DE USUARIOS DE PRUEBA
+### ============================================================================
+
+### Generar 3 usuarios de prueba
+POST {{baseUrl}}/api/users/generate
+Content-Type: application/json
+
+{
+  "count": 3
+}
+
+### Generar 10 usuarios de prueba
+POST {{baseUrl}}/api/users/generate
+Content-Type: application/json
+
+{
+  "count": 10
+}
+
+### ============================================================================
+### 📊 ENDPOINTS PÚBLICOS
+### ============================================================================
+
+### Health Check
+GET {{baseUrl}}/health
+
+### Test endpoint
+GET {{baseUrl}}/api/test
+
+### ============================================================================
+### ❌ PRUEBAS DE ERRORES
+### ============================================================================
+
+### Login con credenciales incorrectas
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "wrongpassword"
+}
+
+### Acceso sin token (debe fallar)
+GET {{baseUrl}}/api/users
+Authorization: Bearer invalid_token
+
+### Usuario no encontrado
+GET {{baseUrl}}/api/users/99999
+Authorization: Bearer {{token}}
+
+### Crear usuario con email duplicado
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+### Actualizar usuario sin permisos (usuario 2 intentando actualizar usuario 1)
+PUT {{baseUrl}}/api/users/1
+Authorization: Bearer {{token_user2}}
+Content-Type: application/json
+
+{
+  "name": "Intento de hack"
+}
+
+### Generar más usuarios de los permitidos
+POST {{baseUrl}}/api/users/generate
+Content-Type: application/json
+
+{
+  "count": 100
+}
+
+### ============================================================================
+### 💡 INSTRUCCIONES DE USO
+### ============================================================================
+#
+# 1. Instalar extensión "REST Client" en VS Code
+# 2. Abrir este archivo (.rest)
+# 3. Hacer click en "Send Request" sobre cualquier petición
+# 4. Para usar variables como {{token}}, definirlas en la respuesta de login
+# 5. Las respuestas se mostrarán en una nueva pestaña
+#
+# Variables disponibles:
+# - {{baseUrl}}: URL base del servidor
+# - {{token}}: Token JWT obtenido del login
+# - {{token_user2}}: Token del segundo usuario (si es necesario)
+#
+# ============================================================================
