@@ -35,6 +35,9 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
     command: sh -c "cd /app && npm install && npx next dev -H 0.0.0.0"
     networks:
       - app-network
