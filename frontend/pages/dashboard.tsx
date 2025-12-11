@@ -18,6 +18,29 @@ export default function DashboardPage() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Solo admin puede acceder
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+          <div className="text-center">
+            <div className="text-6xl mb-4">🚫</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
+            <p className="text-gray-600 mb-6">
+              Solo los administradores pueden acceder al dashboard.
+            </p>
+            <a
+              href="/"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Volver al Inicio
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
     // Solo ejecutar en el cliente
@@ -107,6 +130,39 @@ export default function DashboardPage() {
 
       if (data.success) {
         alert(`${data.message}\nUsuarios generados: ${data.data.map((u: UserListItem) => u.name).join(', ')}`);
+        fetchUsers(); // Refresh the list
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setError(errorMessage);
+    }
+  };
+
+  // Delete user
+  const deleteUser = async (userId: number, userName: string) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar al usuario "${userName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al eliminar usuario');
+      }
+
+      if (data.success) {
+        alert('Usuario eliminado exitosamente');
         fetchUsers(); // Refresh the list
       }
     } catch (error) {
@@ -210,6 +266,9 @@ export default function DashboardPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Fecha de Registro
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -226,6 +285,18 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(userItem.createdAt).toLocaleDateString('es-ES')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => deleteUser(userItem.id, userItem.name || userItem.email)}
+                          className="text-red-600 hover:text-red-900 inline-flex items-center px-3 py-1 border border-red-300 rounded-md text-sm font-medium bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          disabled={userItem.id === user?.id} // No permitir eliminar al propio admin
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Eliminar
+                        </button>
                       </td>
                     </tr>
                   ))}

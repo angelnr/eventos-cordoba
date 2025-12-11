@@ -162,6 +162,83 @@ Content-Type: application/json
 }
 
 ### ============================================================================
+### 🎭 EVENTOS CRUD
+### ============================================================================
+
+### Listar todos los eventos (público)
+GET {{baseUrl}}/api/events
+
+### Listar eventos con filtros
+GET {{baseUrl}}/api/events?category=1&status=active&limit=5
+
+### Buscar eventos
+GET {{baseUrl}}/api/events?search=música
+
+### Eventos por página
+GET {{baseUrl}}/api/events?page=1&limit=2
+
+### Obtener evento específico
+GET {{baseUrl}}/api/events/1
+
+### Crear evento (requiere token organizer/admin)
+POST {{baseUrl}}/api/events
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Concierto de Rock Córdoba",
+  "description": "Gran concierto de rock con bandas locales",
+  "date": "2025-08-15T20:00:00Z",
+  "location": "Estadio Kempes, Córdoba",
+  "capacity": 10000,
+  "price": 75.00,
+  "categoryId": 1
+}
+
+### Actualizar evento (solo organizador del evento)
+PUT {{baseUrl}}/api/events/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Concierto de Rock Córdoba - Actualizado",
+  "price": 85.00
+}
+
+### Eliminar evento (solo organizador del evento)
+DELETE {{baseUrl}}/api/events/1
+Authorization: Bearer {{token}}
+
+### Eventos organizados por el usuario actual
+GET {{baseUrl}}/api/events/my-events/organized
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 👥 GESTIÓN DE USUARIOS (ADMIN)
+### ============================================================================
+
+### Eliminar usuario (solo admin)
+DELETE {{baseUrl}}/api/users/3
+Authorization: Bearer {{token}}
+
+### ============================================================================
+### 🎯 CATEGORÍAS
+### ============================================================================
+
+### Listar categorías (público)
+GET {{baseUrl}}/api/categories
+
+### ============================================================================
+### 📊 DIAGNÓSTICO DE BASE DE DATOS
+### ============================================================================
+
+### Probar conexión a base de datos
+POST {{baseUrl}}/api/auth/db-test
+Content-Type: application/json
+
+{}
+
+### ============================================================================
 ### 💡 INSTRUCCIONES DE USO
 ### ============================================================================
 #
@@ -173,7 +250,7 @@ Content-Type: application/json
 #
 # Variables disponibles:
 # - {{baseUrl}}: URL base del servidor
-# - {{token}}: Token JWT obtenido del login
+# - {{token}}: Token JWT obtenido del login (admin@example.com / admin123)
 # - {{token_user2}}: Token del segundo usuario (si es necesario)
 #
 # ============================================================================

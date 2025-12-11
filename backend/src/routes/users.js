@@ -215,18 +215,33 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/users/:id - Eliminar usuario
+// DELETE /api/users/:id - Eliminar usuario (propietario o admin)
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = parseInt(id);
 
-    // Solo el propietario puede eliminar su cuenta
-    if (req.user.id !== parseInt(id)) {
-      return res.status(403).json({ error: 'No tienes permisos para eliminar este usuario' });
+    // Verificar permisos: solo el propietario o admin puede eliminar
+    const isOwner = req.user.id === userId;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes permisos para eliminar este usuario'
+      });
+    }
+
+    // Evitar que el admin se elimine a sí mismo
+    if (isAdmin && req.user.id === userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'No puedes eliminar tu propia cuenta de admin'
+      });
     }
 
     await prisma.user.delete({
-      where: { id: parseInt(id) }
+      where: { id: userId }
     });
 
     res.json({
@@ -237,10 +252,16 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     console.error('Error deleting user:', error);
 
     if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado'
+      });
     }
 
-    res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
   }
 });
 
