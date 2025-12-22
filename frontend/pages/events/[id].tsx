@@ -153,6 +153,45 @@ export default function EventDetail() {
     }
   };
 
+  const handleCancelBooking = async () => {
+    if (!user || !token || !event) return;
+
+    setBookingLoading(true);
+    try {
+      // Find user's booking for this event
+      const userBooking = event.bookings.find(
+        booking => booking.user.id === user.id && booking.status === 'confirmed'
+      );
+
+      if (!userBooking) {
+        alert('No se encontró tu reserva para este evento');
+        return;
+      }
+
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/bookings/${userBooking.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('¡Reserva cancelada con éxito!');
+        // Refresh event data
+        router.reload();
+      } else {
+        const errorData = await response.json();
+        alert(`Error al cancelar la reserva: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error canceling booking:', error);
+      alert('Error al cancelar la reserva. Inténtalo de nuevo.');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -177,7 +216,8 @@ export default function EventDetail() {
   }
 
   const isOrganizer = user?.id === event.organizer.id;
-  const canBook = user && !isOrganizer && event.availableSpots > 0 && event.status === 'active';
+  const hasBooked = user && event.bookings.some(booking => booking.user.id === user.id && booking.status === 'confirmed');
+  const canBook = user && !isOrganizer && !hasBooked && event.availableSpots > 0 && event.status === 'active';
   const isPastEvent = new Date(event.date) < new Date();
 
   return (
@@ -324,7 +364,17 @@ export default function EventDetail() {
                   </Link>
                 </div>
               ) : user ? (
-                canBook && !isPastEvent ? (
+                hasBooked ? (
+                  <Button
+                    fullWidth
+                    variant="danger"
+                    onClick={handleCancelBooking}
+                    isLoading={bookingLoading}
+                    disabled={bookingLoading}
+                  >
+                    Cancelar Reserva
+                  </Button>
+                ) : canBook && !isPastEvent ? (
                   <Button
                     fullWidth
                     onClick={handleBooking}

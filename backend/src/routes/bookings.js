@@ -61,6 +61,18 @@ router.post('/', requireAuth, async (req, res) => {
       });
     }
 
+    // Verificar que no tenga ya una reserva confirmada
+    const existingBooking = event.bookings.find(booking =>
+      booking.userId === req.user.id && booking.status === 'confirmed'
+    );
+
+    if (existingBooking) {
+      return res.status(400).json({
+        success: false,
+        error: 'Ya tienes una reserva confirmada para este evento'
+      });
+    }
+
     // Calcular plazas disponibles
     const totalBooked = event.bookings.reduce((sum, booking) =>
       booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
