@@ -1,11 +1,11 @@
-# Fullstack App with Next.js, Prisma, Tailwind, TypeScript, JWT, SQLite, Cloudflare, and Nginx
+# Fullstack App with Next.js, Prisma, Tailwind, TypeScript, JWT, PostgreSQL, Cloudflare, and Nginx
 
-This is a fullstack application built with Next.js for the frontend, Express.js with Prisma for the backend, using SQLite as the database, JWT for authentication, Tailwind CSS for styling, and containerized with Docker. Nginx acts as a reverse proxy, and Cloudflare Tunnel provides secure tunneling.
+This is a fullstack application built with Next.js for the frontend, Express.js with Prisma for the backend, using PostgreSQL as the database, JWT for authentication, Tailwind CSS for styling, and containerized with Docker. Nginx acts as a reverse proxy, and Cloudflare Tunnel provides secure tunneling.
 
 ## Tech Stack
 
 - **Frontend**: Next.js 13, React 18, TypeScript, Tailwind CSS
-- **Backend**: Express.js, Prisma ORM, SQLite, JWT Authentication
+- **Backend**: Express.js, Prisma ORM, PostgreSQL, JWT Authentication
 - **Infrastructure**: Docker, Nginx, Cloudflare Tunnel
 
 ## Getting Started
@@ -47,7 +47,7 @@ This is a fullstack application built with Next.js for the frontend, Express.js 
 
 The application will be available at:
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:4000
+- Backend API: http://localhost:3001
 - Nginx Proxy: http://localhost:80
 
 ## Project Structure
