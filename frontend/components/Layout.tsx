@@ -23,6 +23,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <Link href="/events">
+                <Button variant="secondary" size="sm">
+                  Eventos
+                </Button>
+              </Link>
               {user ? (
                 <>
                   <span className="text-sm text-gray-700">
