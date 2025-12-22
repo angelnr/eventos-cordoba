@@ -11,13 +11,18 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("user") // user, organizer, admin
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  name          String?
+  avatar        String?  // Foto de perfil
+  bio           String?  // Biografía corta
+  location      String?  // Ciudad/ubicación
+  interests     String[] // Array de intereses (JSON)
+  role          String   @default("user") // user, organizer, admin
+  isVerified    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   organizedEvents Event[]
@@ -46,10 +51,13 @@ model Event {
   description String?
   date        DateTime
   location    String
+  latitude    Float?   // Para mapas
+  longitude   Float?   // Para mapas
   capacity    Int      @default(100)
   price       Float    @default(0) // Price in euros, 0 for free events
   status      String   @default("active") // active, cancelled, completed
   imageUrl    String?
+  tags        String[] // Tags adicionales
 
   // Foreign keys
   organizerId Int
