@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../lib/auth';
 import { Button } from './ui/Button';
 
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout, isLoading } = useAuth();
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -41,7 +43,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={logout}
+                    onClick={() => {
+                      logout();
+                      router.push('/');
+                    }}
                     disabled={isLoading}
                   >
                     Cerrar Sesión

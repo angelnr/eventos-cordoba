@@ -14,6 +14,7 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  isInitializing: boolean;  // 🆕 Nuevo estado para indicar inicialización
   error: string | null;
 }
 
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);  // 🆕 Estado de inicialización
   const [error, setError] = useState<string | null>(null);
 
   // Determinar la URL del API según el entorno
@@ -75,14 +77,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Verificar token al cargar la aplicación
   useEffect(() => {
     const savedToken = localStorage.getItem('auth_token');
+    console.log('🔍 DEBUG Auth - Verificando token al cargar app');
+    console.log('🔍 DEBUG Auth - Token en localStorage:', savedToken ? `${savedToken.substring(0, 20)}...` : 'null');
+
     if (savedToken) {
+      console.log('🔍 DEBUG Auth - Token encontrado, verificando con backend...');
       verifyToken(savedToken);
+    } else {
+      console.log('🔍 DEBUG Auth - No hay token guardado, inicialización completa');
+      setIsInitializing(false);  // 🆕 Si no hay token, inicialización completa
     }
   }, []);
 
   const verifyToken = async (tokenToVerify: string) => {
     try {
       const apiUrl = getApiUrl();
+      console.log('🔍 DEBUG Auth - Verificando token con backend...');
       const response = await fetch(`${apiUrl}/api/auth/verify`, {
         method: 'POST',
         headers: {
@@ -92,16 +102,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       const data = await response.json();
+      console.log('🔍 DEBUG Auth - Respuesta de verificación:', data);
 
       if (data.success) {
+        console.log('🔍 DEBUG Auth - Token válido, restaurando sesión');
         setToken(tokenToVerify);
         setUser(data.data.user);
       } else {
+        console.log('🔍 DEBUG Auth - Token inválido, limpiando estado');
         localStorage.removeItem('auth_token');
+        setToken(null);  // 🆕 LIMPIAR ESTADO DEL CONTEXTO
+        setUser(null);   // 🆕 LIMPIAR ESTADO DEL CONTEXTO
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
+      console.error('🔍 DEBUG Auth - Error verificando token:', error);
+      console.log('🔍 DEBUG Auth - Token inválido por error, limpiando estado');
       localStorage.removeItem('auth_token');
+      setToken(null);  // 🆕 LIMPIAR ESTADO DEL CONTEXTO
+      setUser(null);   // 🆕 LIMPIAR ESTADO DEL CONTEXTO
+    } finally {
+      setIsInitializing(false);  // 🆕 INICIALIZACIÓN COMPLETA
+      console.log('🔍 DEBUG Auth - Inicialización de auth completada');
     }
   };
 
@@ -111,6 +132,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const apiUrl = getApiUrl();
+      console.log('🔍 DEBUG Auth - Intentando login para:', email);
+      console.log('🔍 DEBUG Auth - API URL:', apiUrl);
+
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -120,21 +144,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       const data = await response.json();
+      console.log('🔍 DEBUG Auth - Respuesta del login:', data);
 
       if (!response.ok) {
+        console.log('🔍 DEBUG Auth - Login fallido, status:', response.status);
         throw new Error(data.error || 'Error al iniciar sesión');
       }
 
       if (data.success) {
         const { token: newToken, user: userData } = data.data;
+        console.log('🔍 DEBUG Auth - Login exitoso, guardando token:', newToken ? `${newToken.substring(0, 20)}...` : 'null');
+        console.log('🔍 DEBUG Auth - Usuario autenticado:', userData);
+
         setToken(newToken);
         setUser(userData);
         localStorage.setItem('auth_token', newToken);
+        console.log('🔍 DEBUG Auth - Token guardado en localStorage');
       } else {
+        console.log('🔍 DEBUG Auth - Respuesta sin success');
         throw new Error(data.error || 'Error al iniciar sesión');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      console.log('🔍 DEBUG Auth - Error en login:', errorMessage);
       setError(errorMessage);
       throw error;
     } finally {
@@ -193,6 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     isLoading,
+    isInitializing,
     error,
   };
 

@@ -33,10 +33,11 @@ interface UserEvents {
 export default function UserProfile() {
   const router = useRouter();
   const { id } = router.query;
-  const { user: authUser } = useAuth();
+  const { user: authUser, token, isInitializing } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [events, setEvents] = useState<UserEvents[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
@@ -64,21 +65,57 @@ export default function UserProfile() {
   };
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || isInitializing) return;
 
     const fetchUserProfile = async () => {
       setLoading(true);
       try {
         const apiUrl = getApiUrl();
 
-        // Fetch user profile
-        const userResponse = await fetch(`${apiUrl}/api/users/${id}`);
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUser(userData.data);
+        // DEBUG: Log del estado de autenticación
+        console.log('🔍 DEBUG Profile - ID del usuario solicitado:', id);
+        console.log('🔍 DEBUG Profile - Token disponible:', !!token);
+        console.log('🔍 DEBUG Profile - Token completo:', token ? `${token.substring(0, 20)}...` : 'null');
+        console.log('🔍 DEBUG Profile - Usuario autenticado:', authUser);
+
+        // Headers con token de autenticación si está disponible
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('🔍 DEBUG Profile - Header Authorization agregado:', `Bearer ${token.substring(0, 20)}...`);
+        } else {
+          console.log('🔍 DEBUG Profile - No hay token, enviando sin Authorization header');
         }
 
-        // Fetch user's events (organized events)
+        const requestUrl = `${apiUrl}/api/users/${id}`;
+        console.log('🔍 DEBUG Profile - URL de la petición:', requestUrl);
+        console.log('🔍 DEBUG Profile - Headers enviados:', headers);
+
+        // Fetch user profile
+        const userResponse = await fetch(requestUrl, { headers });
+
+        console.log('🔍 DEBUG Profile - Status de respuesta:', userResponse.status);
+        console.log('🔍 DEBUG Profile - Headers de respuesta:', Object.fromEntries(userResponse.headers.entries()));
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          console.log('🔍 DEBUG Profile - Datos recibidos:', userData);
+          setUser(userData.data);
+        } else if (userResponse.status === 401) {
+          console.log('🔍 DEBUG Profile - Error 401: Token requerido o inválido');
+          const errorText = await userResponse.text();
+          console.log('🔍 DEBUG Profile - Cuerpo del error 401:', errorText);
+          setAuthError(true);
+        } else {
+          console.log('🔍 DEBUG Profile - Error inesperado:', userResponse.status);
+          const errorText = await userResponse.text();
+          console.log('🔍 DEBUG Profile - Cuerpo del error:', errorText);
+        }
+
+        // Fetch user's events (organized events) - no requiere auth
         const eventsResponse = await fetch(`${apiUrl}/api/events?organizerId=${id}&limit=10`);
         if (eventsResponse.ok) {
           const eventsData = await eventsResponse.json();
@@ -93,13 +130,32 @@ export default function UserProfile() {
     };
 
     fetchUserProfile();
-  }, [id]);
+  }, [id, isInitializing]);
 
   if (loading) {
     return (
       <Layout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (authError) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <div className="text-gray-500 text-lg mb-2">Acceso restringido</div>
+          <div className="text-gray-400 text-sm mb-4">
+            Debes iniciar sesión para ver perfiles de usuario
+          </div>
+          <Link href="/login">
+            <Button className="mr-2">Iniciar sesión</Button>
+          </Link>
+          <Link href="/register">
+            <Button variant="secondary">Registrarse</Button>
+          </Link>
         </div>
       </Layout>
     );

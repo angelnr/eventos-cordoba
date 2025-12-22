@@ -12,13 +12,14 @@ export default function LoginPage() {
 
   const { login, isLoading, error, user } = useAuth();
   const router = useRouter();
+  const { redirect } = router.query;
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      router.push((redirect as string) || '/dashboard');
     }
-  }, [user, router]);
+  }, [user, router, redirect]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -48,7 +49,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      router.push((redirect as string) || '/dashboard');
     } catch (error) {
       // Error is handled by the auth context
     }

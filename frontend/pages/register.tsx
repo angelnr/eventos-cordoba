@@ -21,13 +21,14 @@ export default function RegisterPage() {
 
   const { register, isLoading, error, user } = useAuth();
   const router = useRouter();
+  const { redirect } = router.query;
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      router.push('/dashboard');
+      router.push((redirect as string) || '/dashboard');
     }
-  }, [user, router]);
+  }, [user, router, redirect]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -82,7 +83,7 @@ export default function RegisterPage() {
 
     try {
       await register(formData.email, formData.password, formData.name);
-      router.push('/dashboard');
+      router.push((redirect as string) || '/dashboard');
     } catch (error) {
       // Error is handled by the auth context
     }
