@@ -45,7 +45,7 @@ interface Event {
 export default function EventDetail() {
   const router = useRouter();
   const { id } = router.query;
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -119,12 +119,11 @@ export default function EventDetail() {
   };
 
   const handleBooking = async () => {
-    if (!user || !event) return;
+    if (!user || !token || !event) return;
 
     setBookingLoading(true);
     try {
       const apiUrl = getApiUrl();
-      const token = localStorage.getItem('token');
 
       const response = await fetch(`${apiUrl}/api/bookings`, {
         method: 'POST',
