@@ -245,7 +245,7 @@ async function main() {
       create: {
         title: 'Taller de Fotografía Urbana',
         description: 'Aprende técnicas de fotografía callejera con un fotógrafo profesional',
-        date: new Date('2025-03-15T14:00:00Z'),
+        date: new Date('2026-03-15T14:00:00Z'),
         location: 'Centro Histórico, Córdoba',
         latitude: -31.4135,
         longitude: -64.1811,
@@ -263,7 +263,7 @@ async function main() {
       create: {
         title: 'Meetup React Córdoba',
         description: 'Encuentro mensual de desarrolladores React. Networking y charlas técnicas.',
-        date: new Date('2025-04-10T18:30:00Z'),
+        date: new Date('2026-04-10T18:30:00Z'),
         location: 'Coworking Córdoba, Córdoba',
         latitude: -31.4194,
         longitude: -64.1889,

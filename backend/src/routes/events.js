@@ -51,7 +51,8 @@ router.get('/', async (req, res) => {
       dateTo,
       status = 'active',
       sortBy = 'date',
-      sortOrder = 'asc'
+      sortOrder = 'asc',
+      organizerId
     } = req.query;
 
     const skip = (page - 1) * limit;
@@ -64,6 +65,10 @@ router.get('/', async (req, res) => {
 
     if (category) {
       where.categoryId = parseInt(category);
+    }
+
+    if (organizerId) {
+      where.organizerId = parseInt(organizerId);
     }
 
     if (search) {

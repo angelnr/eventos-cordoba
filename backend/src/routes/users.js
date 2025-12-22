@@ -98,6 +98,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
         id: true,
         email: true,
         name: true,
+        avatar: true,
+        bio: true,
+        location: true,
+        interests: true,
+        role: true,
+        isVerified: true,
         createdAt: true,
         updatedAt: true
       }

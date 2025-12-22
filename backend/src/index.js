@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const eventsRoutes = require('./routes/events');
 const categoriesRoutes = require('./routes/categories');
+const bookingsRoutes = require('./routes/bookings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/bookings', bookingsRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
