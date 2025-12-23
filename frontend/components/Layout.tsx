@@ -1,16 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { useAuth } from '../lib/auth';
 import { Button } from './ui/Button';
+import { UserMenu } from './UserMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout, isLoading } = useAuth();
-  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,42 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Eventos
                 </Button>
               </Link>
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-700">
-                    Hola, {user.name}
-                  </span>
-                  <Link href="/dashboard">
-                    <Button variant="secondary" size="sm">
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      logout();
-                      router.push('/');
-                    }}
-                    disabled={isLoading}
-                  >
-                    Cerrar Sesión
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login">
-                    <Button variant="secondary" size="sm">
-                      Iniciar Sesión
-                    </Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button variant="primary" size="sm">
-                      Registrarse
-                    </Button>
-                  </Link>
-                </>
-              )}
+              <UserMenu />
             </div>
           </div>
         </div>
