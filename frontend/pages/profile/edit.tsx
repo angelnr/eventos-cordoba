@@ -23,7 +23,7 @@ const INTERESTS_OPTIONS = [
 
 export default function EditProfile() {
   const router = useRouter();
-  const { user: authUser } = useAuth();
+  const { user: authUser, token: authToken, isInitializing } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +60,12 @@ export default function EditProfile() {
   };
 
   useEffect(() => {
+    // Esperar a que termine la inicialización antes de verificar el usuario
+    if (isInitializing) {
+      return;
+    }
+
+    // Si después de inicializar no hay usuario, redirigir a login
     if (!authUser) {
       router.push('/login');
       return;
@@ -69,11 +75,10 @@ export default function EditProfile() {
       setLoading(true);
       try {
         const apiUrl = getApiUrl();
-        const token = localStorage.getItem('token');
 
         const response = await fetch(`${apiUrl}/api/users/${authUser.id}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${authToken}`,
           },
         });
 
@@ -96,7 +101,7 @@ export default function EditProfile() {
     };
 
     fetchUserProfile();
-  }, [authUser, router]);
+  }, [authUser, authToken, router, isInitializing]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,13 +110,12 @@ export default function EditProfile() {
     setSaving(true);
     try {
       const apiUrl = getApiUrl();
-      const token = localStorage.getItem('token');
 
       const response = await fetch(`${apiUrl}/api/users/${user.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(formData),
       });

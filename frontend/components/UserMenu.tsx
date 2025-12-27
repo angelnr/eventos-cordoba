@@ -42,6 +42,17 @@ export const UserMenu: React.FC = () => {
   };
 
   const getAvatarContent = () => {
+    // Si el usuario tiene avatar, mostrarlo
+    if (user?.avatar) {
+      return (
+        <img 
+          src={user.avatar} 
+          alt={user.name || 'Usuario'}
+          className="w-8 h-8 rounded-full object-cover"
+        />
+      );
+    }
+    // Si no tiene avatar pero tiene nombre, mostrar iniciales con gradiente
     if (user?.name) {
       return (
         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
@@ -49,6 +60,7 @@ export const UserMenu: React.FC = () => {
         </div>
       );
     }
+    // Si no tiene ni avatar ni nombre, mostrar icono por defecto
     return (
       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
         <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">

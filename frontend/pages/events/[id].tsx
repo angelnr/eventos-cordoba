@@ -316,19 +316,21 @@ export default function EventDetail() {
               {/* Organizer Info */}
               <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">👤 Organizador</h3>
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 font-medium">
-                        {event.organizer.name.charAt(0).toUpperCase()}
-                      </span>
+                <Link href={`/profile/${event.organizer.id}`}>
+                  <div className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium">
+                          {event.organizer.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-gray-900 font-medium hover:text-blue-600">{event.organizer.name}</p>
+                      <p className="text-gray-500 text-sm">{event.organizer.email}</p>
                     </div>
                   </div>
-                  <div className="ml-4">
-                    <p className="text-gray-900 font-medium">{event.organizer.name}</p>
-                    <p className="text-gray-500 text-sm">{event.organizer.email}</p>
-                  </div>
-                </div>
+                </Link>
               </div>
             </div>
           </div>

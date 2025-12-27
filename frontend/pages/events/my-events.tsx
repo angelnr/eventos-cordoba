@@ -266,9 +266,11 @@ export default function MyEventsPage() {
                           Ver Evento
                         </Button>
                       </Link>
-                      <Button variant="secondary" size="sm">
-                        Editar
-                      </Button>
+                      <Link href={`/events/edit/${event.id}`}>
+                        <Button variant="secondary" size="sm">
+                          Editar
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>

@@ -141,6 +141,55 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/events/my-events - Eventos organizados por el usuario actual (DEBE IR ANTES de /:id)
+router.get('/my-events', requireAuth, requireOrganizer, async (req, res) => {
+  try {
+    const events = await prisma.event.findMany({
+      where: { organizerId: req.user.id },
+      include: {
+        organizer: {
+          select: { id: true, name: true, email: true }
+        },
+        category: {
+          select: { id: true, name: true, color: true, description: true }
+        },
+        bookings: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Calcular estadísticas para cada evento
+    const eventsWithStats = events.map(event => {
+      const totalBookings = event.bookings.reduce((sum, booking) =>
+        booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
+      );
+
+      return {
+        ...event,
+        totalBookings,
+        availableSpots: event.capacity - totalBookings
+      };
+    });
+
+    res.json({
+      success: true,
+      data: eventsWithStats
+    });
+  } catch (error) {
+    console.error('Get my events error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener tus eventos'
+    });
+  }
+});
+
 // GET /api/events/:id - Obtener evento específico
 router.get('/:id', async (req, res) => {
   try {
@@ -372,102 +421,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error al eliminar evento'
-    });
-  }
-});
-
-// GET /api/events/my-events - Eventos organizados por el usuario actual
-router.get('/my-events', requireAuth, async (req, res) => {
-  try {
-    const events = await prisma.event.findMany({
-      where: { organizerId: req.user.id },
-      include: {
-        organizer: {
-          select: { id: true, name: true, email: true }
-        },
-        category: {
-          select: { id: true, name: true, color: true, description: true }
-        },
-        bookings: {
-          include: {
-            user: {
-              select: { id: true, name: true, email: true }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Calcular estadísticas para cada evento
-    const eventsWithStats = events.map(event => {
-      const totalBookings = event.bookings.reduce((sum, booking) =>
-        booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
-      );
-
-      return {
-        ...event,
-        totalBookings,
-        availableSpots: event.capacity - totalBookings
-      };
-    });
-
-    res.json({
-      success: true,
-      data: eventsWithStats
-    });
-  } catch (error) {
-    console.error('Get my events error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error al obtener tus eventos'
-    });
-  }
-});
-
-// GET /api/events/my-events/organized - Alias para compatibilidad
-router.get('/my-events/organized', requireAuth, async (req, res) => {
-  try {
-    const events = await prisma.event.findMany({
-      where: { organizerId: req.user.id },
-      include: {
-        category: {
-          select: { id: true, name: true, color: true }
-        },
-        bookings: {
-          select: { id: true, quantity: true, status: true, totalPrice: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    // Calcular estadísticas para cada evento
-    const eventsWithStats = events.map(event => {
-      const totalBookings = event.bookings.reduce((sum, booking) =>
-        booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
-      );
-
-      const totalRevenue = event.bookings.reduce((sum, booking) =>
-        booking.status === 'confirmed' ? sum + booking.totalPrice : sum, 0
-      );
-
-      return {
-        ...event,
-        totalBookings,
-        totalRevenue,
-        availableSpots: event.capacity - totalBookings
-      };
-    });
-
-    res.json({
-      success: true,
-      data: eventsWithStats
-    });
-  } catch (error) {
-    console.error('Get my events error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error al obtener tus eventos'
     });
   }
 });

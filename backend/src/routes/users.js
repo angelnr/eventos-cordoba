@@ -12,14 +12,17 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
+    console.log('❌ Token no proporcionado');
     return res.status(401).json({ error: 'Token requerido' });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(403).json({ error: 'Token inválido' });
+      console.log('❌ Token inválido o expirado:', err.message);
+      return res.status(403).json({ error: 'Token inválido o expirado. Por favor, inicia sesión nuevamente.' });
     }
 
+    console.log('✅ Token válido. Usuario:', decoded.id, 'Role:', decoded.role);
     // Por ahora usamos la info del token. En una implementación completa,
     // podríamos consultar la DB aquí, pero para evitar complejidad,
     // asumimos que el token contiene la info correcta del usuario.
@@ -187,7 +190,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, name } = req.body;
+    const { email, name, bio, location, interests, avatar } = req.body;
 
     // Solo el propietario o admin puede actualizar
     if (req.user.id !== parseInt(id)) {
@@ -197,6 +200,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const updateData = {};
     if (email) updateData.email = email;
     if (name !== undefined) updateData.name = name;
+    if (bio !== undefined) updateData.bio = bio;
+    if (location !== undefined) updateData.location = location;
+    if (interests !== undefined) updateData.interests = interests;
+    if (avatar !== undefined) updateData.avatar = avatar;
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
@@ -205,6 +212,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
         id: true,
         email: true,
         name: true,
+        avatar: true,
+        bio: true,
+        location: true,
+        interests: true,
         updatedAt: true
       }
     });
