@@ -26,7 +26,7 @@ export default function RegisterPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      router.push((redirect as string) || '/dashboard');
+      router.push((redirect as string) || '/');
     }
   }, [user, router, redirect]);
 
@@ -83,7 +83,7 @@ export default function RegisterPage() {
 
     try {
       await register(formData.email, formData.password, formData.name);
-      router.push((redirect as string) || '/dashboard');
+      router.push((redirect as string) || '/');
     } catch (error) {
       // Error is handled by the auth context
     }
