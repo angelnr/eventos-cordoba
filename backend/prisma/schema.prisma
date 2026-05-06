@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,82 +7,288 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  password      String
-  name          String?
-  avatar        String?  // Foto de perfil
-  bio           String?  // Biografía corta
-  location      String?  // Ciudad/ubicación
-  interests     String[] // Array de intereses (JSON)
-  role          String   @default("user") // user, organizer, admin
-  isVerified    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+//////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////
 
-  // Relations
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  name       String?
+  avatar     String?
+  bio        String?
+  location   String?
+  role       String   @default("user")
+  isVerified Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
   organizedEvents Event[]
   bookings        Booking[]
+  favorites       Favorite[]
+  notifications   Notification[]
+  comments        Comment[]
+  reviews         Review[]
+  groupsOwned     Group[]
+  userGroups      UserGroup[]
+  messagesSent    Message[]
+  conversations   ConversationParticipant[]
 
   @@map("users")
 }
+
+//////////////////////////////////////////////////
+// CATEGORY
+//////////////////////////////////////////////////
 
 model Category {
   id          Int      @id @default(autoincrement())
   name        String   @unique
   description String?
-  color       String   @default("#3B82F6") // Default blue color
+  color       String   @default("#3B82F6")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
   events Event[]
 
   @@map("categories")
 }
 
+//////////////////////////////////////////////////
+// EVENT
+//////////////////////////////////////////////////
+
 model Event {
   id          Int      @id @default(autoincrement())
+  slug        String   @unique
   title       String
   description String?
   date        DateTime
   location    String
-  latitude    Float?   // Para mapas
-  longitude   Float?   // Para mapas
-  capacity    Int      @default(100)
-  price       Float    @default(0) // Price in euros, 0 for free events
-  status      String   @default("active") // active, cancelled, completed
+  latitude    Float?
+  longitude   Float?
+  capacity    Int
+  status      String   @default("active")
   imageUrl    String?
-  tags        String[] // Tags adicionales
 
-  // Foreign keys
   organizerId Int
   categoryId  Int
 
-  // Relations
-  organizer   User     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  organizer   User     @relation(fields: [organizerId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  ticketTypes TicketType[]
   bookings    Booking[]
+  favorites   Favorite[]
+  comments    Comment[]
+  reviews     Review[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([date])
+  @@index([status])
   @@map("events")
 }
 
+//////////////////////////////////////////////////
+// TICKETS
+//////////////////////////////////////////////////
+
+model TicketType {
+  id       Int    @id @default(autoincrement())
+  name     String
+  price    Float
+  quantity Int
+
+  eventId  Int
+  event    Event @relation(fields: [eventId], references: [id])
+
+  bookings Booking[]
+
+  @@unique([eventId, name])
+  @@map("ticket_types")
+}
+
+//////////////////////////////////////////////////
+// BOOKING & PAYMENT
+//////////////////////////////////////////////////
+
 model Booking {
-  id         Int      @id @default(autoincrement())
-  quantity   Int      @default(1)
-  totalPrice Float    @default(0)
-  status     String   @default("confirmed")
-  bookedAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  quantity     Int
+  totalPrice   Float
+  status       String   @default("pending")
+  bookedAt     DateTime @default(now())
 
-  eventId    Int
-  userId     Int
+  userId       Int
+  ticketTypeId Int
+  paymentId    Int?
 
-  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  payment    Payment?
 
+  @@index([userId])
   @@map("bookings")
+}
+
+model Payment {
+  id              Int      @id @default(autoincrement())
+  stripePaymentId String   @unique
+  amount          Float
+  currency        String   @default("EUR")
+  status          String
+
+  createdAt       DateTime @default(now())
+
+  booking Booking?
+
+  @@map("payments")
+}
+
+//////////////////////////////////////////////////
+// SOCIAL
+//////////////////////////////////////////////////
+
+model Favorite {
+  userId  Int
+  eventId Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@id([userId, eventId])
+  @@map("favorites")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId    Int
+  eventId   Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@map("comments")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId    Int
+  eventId   Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("reviews")
+}
+
+//////////////////////////////////////////////////
+// NOTIFICATIONS
+//////////////////////////////////////////////////
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  type       String
+  message    String
+  link       String?
+  entityType String?
+  entityId   Int?
+  read       Boolean  @default(false)
+
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+//////////////////////////////////////////////////
+// GROUPS
+//////////////////////////////////////////////////
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  name        String
+  description String?
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id])
+
+  members UserGroup[]
+
+  createdAt DateTime @default(now())
+
+  @@map("groups")
+}
+
+model UserGroup {
+  userId  Int
+  groupId Int
+  role    String @default("member")
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  joinedAt DateTime @default(now())
+
+  @@id([userId, groupId])
+  @@map("user_groups")
+}
+
+//////////////////////////////////////////////////
+// MESSAGING
+//////////////////////////////////////////////////
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId Int
+  userId         Int
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  content        String
+  createdAt      DateTime @default(now())
+  read           Boolean  @default(false)
+
+  conversationId Int
+  senderId       Int
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
