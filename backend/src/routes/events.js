@@ -40,8 +40,22 @@ const requireOrganizer = (req, res, next) => {
   next();
 };
 
+// Middleware de autenticación opcional — no falla si no hay token
+const optionalAuth = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    try {
+      const jwt = require('jsonwebtoken');
+      req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      // Token inválido — continuar sin usuario
+    }
+  }
+  next();
+};
+
 // GET /api/events - Listar eventos con filtros
-router.get('/', async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
     const {
       page = 1,
@@ -121,11 +135,45 @@ router.get('/', async (req, res) => {
       };
     });
 
+    // Añadir información de favoritos si el usuario está autenticado
+    let eventsWithFavorites = eventsWithStats;
+
+    if (req.user) {
+      const eventIds = eventsWithStats.map(e => e.id);
+      if (eventIds.length > 0) {
+        const userFavorites = await prisma.favorite.findMany({
+          where: { userId: req.user.id, eventId: { in: eventIds } },
+          select: { eventId: true }
+        });
+        const favoriteSet = new Set(userFavorites.map(f => f.eventId));
+        eventsWithFavorites = eventsWithStats.map(e => ({
+          ...e,
+          isFavorited: favoriteSet.has(e.id)
+        }));
+      }
+    }
+
+    // Añadir conteo de favoritos para todos los eventos
+    if (eventsWithFavorites.length > 0) {
+      const eventIds = eventsWithFavorites.map(e => e.id);
+      const favoriteCounts = await prisma.favorite.groupBy({
+        by: ['eventId'],
+        where: { eventId: { in: eventIds } },
+        _count: { eventId: true }
+      });
+      const countMap = {};
+      favoriteCounts.forEach(fc => { countMap[fc.eventId] = fc._count.eventId; });
+      eventsWithFavorites = eventsWithFavorites.map(e => ({
+        ...e,
+        favoriteCount: countMap[e.id] || 0
+      }));
+    }
+
     const total = await prisma.event.count({ where });
 
     res.json({
       success: true,
-      data: eventsWithStats,
+      data: eventsWithFavorites,
       pagination: {
         page: parseInt(page),
         limit: take,
@@ -192,7 +240,7 @@ router.get('/my-events', requireAuth, requireOrganizer, async (req, res) => {
 });
 
 // GET /api/events/:id - Obtener evento específico
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -233,9 +281,23 @@ router.get('/:id', async (req, res) => {
       totalBookings
     };
 
+    // Añadir información de favoritos
+    let result = { ...eventWithStats };
+
+    if (req.user) {
+      const favorite = await prisma.favorite.findUnique({
+        where: { userId_eventId: { userId: req.user.id, eventId: parseInt(id) } }
+      });
+      result.isFavorited = !!favorite;
+    }
+
+    result.favoriteCount = await prisma.favorite.count({
+      where: { eventId: parseInt(id) }
+    });
+
     res.json({
       success: true,
-      data: eventWithStats
+      data: result
     });
   } catch (error) {
     console.error('Get event error:', error);
@@ -456,6 +518,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
         error: 'No tienes permisos para eliminar este evento'
       });
     }
+
+    // Eliminar favoritos del evento para evitar error de FK RESTRICT
+    await prisma.favorite.deleteMany({
+      where: { eventId: parseInt(id) }
+    });
 
     await prisma.event.delete({
       where: { id: parseInt(id) }

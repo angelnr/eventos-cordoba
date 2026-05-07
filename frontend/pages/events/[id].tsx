@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { FavoriteButton } from '../../components/FavoriteButton';
 
 interface Event {
   id: number;
@@ -45,6 +46,8 @@ interface Event {
 
   availableSpots: number;
   totalBookings: number;
+  isFavorited?: boolean;
+  favoriteCount?: number;
 }
 
 export default function EventDetail() {
@@ -100,9 +103,14 @@ export default function EventDetail() {
 
       try {
         const apiUrl = getApiUrl();
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
 
         const response = await fetch(
-          `${apiUrl}/api/events/${eventId}`
+          `${apiUrl}/api/events/${eventId}`,
+          { headers }
         );
 
         if (response.ok) {
@@ -123,7 +131,7 @@ export default function EventDetail() {
     };
 
     fetchEvent();
-  }, [eventId, router]);
+  }, [eventId, router, token]);
 
   const formatDate = (
     dateString?: string | null
@@ -571,6 +579,29 @@ export default function EventDetail() {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+              {/* Favorite Button */}
+              <div className="mb-6 flex items-center gap-3">
+                <FavoriteButton
+                  eventId={event.id}
+                  initialFavorited={event.isFavorited || false}
+                  size="lg"
+                  showLabel
+                  onToggle={(eventId, nowFavorited) => {
+                    const currentCount = event.favoriteCount ?? 0;
+                    setEvent({
+                      ...event,
+                      isFavorited: nowFavorited,
+                      favoriteCount: nowFavorited
+                        ? currentCount + 1
+                        : Math.max(0, currentCount - 1)
+                    });
+                  }}
+                />
+                <span className="text-sm text-gray-500">
+                  {event.favoriteCount || 0} {event.favoriteCount === 1 ? 'persona' : 'personas'} lo tienen en favoritos
+                </span>
+              </div>
+              <hr className="mb-6" />
               {/* Booking Status */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">

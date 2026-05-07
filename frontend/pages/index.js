@@ -82,7 +82,7 @@ export default function Home() {
 
     return () => {
       clearTimeout(timeoutId);
-      controller.abort();
+      controller?.abort();
     };
   }, []);
 

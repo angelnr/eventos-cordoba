@@ -27,6 +27,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Eventos
                 </Button>
               </Link>
+              <Link href="/favorites">
+                <Button variant="secondary" size="sm">
+                  Favoritos
+                </Button>
+              </Link>
               <UserMenu />
             </div>
           </div>

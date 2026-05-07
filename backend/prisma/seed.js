@@ -48,6 +48,22 @@ async function main() {
     },
   });
 
+  const regularUser = await prisma.user.upsert({
+    where: { email: 'user@example.com' },
+    update: {},
+    create: {
+      email: 'user@example.com',
+      password: await bcrypt.hash('user123', 10),
+      name: 'Carlos López',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+      bio: 'Amante de los eventos y la cultura.',
+      location: 'Córdoba, España',
+      interests: ['Música', 'Deportes'],
+      role: 'user',
+      isVerified: true,
+    },
+  });
+
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { name: 'Música' },
@@ -125,6 +141,22 @@ async function main() {
 
     events.push(event);
   }
+
+  // Crear favoritos de prueba
+  const favoritePairs = [
+    { userId: regularUser.id, eventId: events[0].id },
+    { userId: regularUser.id, eventId: events[1].id },
+  ];
+
+  for (const pair of favoritePairs) {
+    await prisma.favorite.upsert({
+      where: { userId_eventId: { userId: pair.userId, eventId: pair.eventId } },
+      update: {},
+      create: { userId: pair.userId, eventId: pair.eventId },
+    });
+  }
+
+  console.log('✅ Favoritos de prueba creados');
 
   console.log('✅ Seed completed');
 }

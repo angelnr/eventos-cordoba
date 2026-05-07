@@ -239,6 +239,86 @@ Content-Type: application/json
 {}
 
 ### ============================================================================
+### ❤️ FAVORITOS
+### ============================================================================
+
+### Añadir evento a favoritos
+POST {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "eventId": 3
+}
+
+### Añadir favorito duplicado (debe devolver 200)
+POST {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "eventId": 3
+}
+
+### Añadir favorito sin eventId (debe fallar 400)
+POST {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Añadir favorito sin token (debe fallar 401)
+POST {{baseUrl}}/api/favorites
+Content-Type: application/json
+
+{
+  "eventId": 1
+}
+
+### Añadir favorito con eventId inexistente (debe fallar 404)
+POST {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "eventId": 99999
+}
+
+### Listar favoritos del usuario
+GET {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+
+### Listar favoritos sin token (debe fallar 401)
+GET {{baseUrl}}/api/favorites
+
+### Batch check de favoritos
+GET {{baseUrl}}/api/favorites/check?eventIds=1,2,3
+Authorization: Bearer {{token}}
+
+### Batch check sin IDs (debe fallar 400)
+GET {{baseUrl}}/api/favorites/check
+Authorization: Bearer {{token}}
+
+### Eliminar favorito
+DELETE {{baseUrl}}/api/favorites/3
+Authorization: Bearer {{token}}
+
+### Eliminar favorito inexistente (debe devolver 200 por idempotencia)
+DELETE {{baseUrl}}/api/favorites/999
+Authorization: Bearer {{token}}
+
+### Eliminar favorito sin token (debe fallar 401)
+DELETE {{baseUrl}}/api/favorites/1
+
+### Verificar que eventos devuelven isFavorited con auth
+GET {{baseUrl}}/api/events/1
+Authorization: Bearer {{token}}
+
+### Verificar favoriteCount en listado de eventos
+GET {{baseUrl}}/api/events
+Authorization: Bearer {{token}}
+
+### ============================================================================
 ### 💡 INSTRUCCIONES DE USO
 ### ============================================================================
 #

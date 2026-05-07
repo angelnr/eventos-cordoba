@@ -167,6 +167,7 @@ model Favorite {
   event Event @relation(fields: [eventId], references: [id])
 
   @@id([userId, eventId])
+  @@index([eventId])
   @@map("favorites")
 }
 

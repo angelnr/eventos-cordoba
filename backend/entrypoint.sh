@@ -16,4 +16,9 @@ node prisma/seed.js
 echo "✅ Seed completado!"
 
 echo "🚀 Iniciando aplicación..."
-exec node src/index.js
+if [ "$NODE_ENV" = "development" ]; then
+  echo "📦 Modo desarrollo — usando nodemon para hot-reload"
+  exec npx nodemon src/index.js
+else
+  exec node src/index.js
+fi

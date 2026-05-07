@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../lib/auth';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 interface Category {
   id: number;
@@ -31,6 +33,8 @@ interface Event {
   } | null;
   availableSpots: number;
   totalBookings: number;
+  isFavorited?: boolean;
+  favoriteCount?: number;
 }
 
 export default function Events() {
@@ -38,6 +42,7 @@ export default function Events() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const { user, token } = useAuth();
 
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
@@ -94,8 +99,14 @@ export default function Events() {
           ? `&category=${selectedCategory}`
           : '';
 
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(
-          `${apiUrl}/api/events?page=1&limit=50&status=active${categoryParam}`
+          `${apiUrl}/api/events?page=1&limit=50&status=active${categoryParam}`,
+          { headers }
         );
 
         if (!response.ok) {
@@ -114,7 +125,7 @@ export default function Events() {
     };
 
     fetchEvents();
-  }, [selectedCategory]);
+  }, [selectedCategory, token]);
 
   const formatDate = (dateString?: string | null) => {
     if (!dateString) return 'Fecha no disponible';
@@ -225,12 +236,11 @@ export default function Events() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {events.map((event) => (
-                <Link
+                <div
                   key={event.id}
-                  href={`/events/${event.id}`}
-                  className="block"
+                  className="relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                  <Link href={`/events/${event.id}`}>
                     {/* Event Image */}
                     <div className="h-48 bg-gray-200 flex items-center justify-center">
                       {event.imageUrl ? (
@@ -331,8 +341,37 @@ export default function Events() {
                         </span>
                       </div>
                     </div>
+                  </Link>
+
+                  {/* Favorite Button - Outside Link to avoid nesting issues */}
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="flex items-center gap-1 bg-white/80 rounded-full px-1">
+                      {event.favoriteCount !== undefined && event.favoriteCount > 0 && (
+                        <span className="text-xs text-red-400 font-medium" title="Favoritos">
+                          {event.favoriteCount}
+                        </span>
+                      )}
+                      <FavoriteButton
+                        eventId={event.id}
+                        initialFavorited={event.isFavorited || false}
+                        size="sm"
+                        onToggle={(eventId, nowFavorited) => {
+                          setEvents(prev => prev.map(e => {
+                            if (e.id !== eventId) return e;
+                            const currentCount = e.favoriteCount ?? 0;
+                            return {
+                              ...e,
+                              isFavorited: nowFavorited,
+                              favoriteCount: nowFavorited
+                                ? currentCount + 1
+                                : Math.max(0, currentCount - 1)
+                            };
+                          }));
+                        }}
+                      />
+                    </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
