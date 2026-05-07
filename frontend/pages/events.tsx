@@ -14,21 +14,21 @@ interface Event {
   id: number;
   title: string;
   description?: string;
-  date: string;
+  date?: string | null;
   location: string;
   capacity: number;
-  price: number;
-  status: string;
+  price?: number | string | null;
+  status: 'active' | 'cancelled' | 'draft' | 'completed';
   imageUrl?: string;
-  organizer: {
+  organizer?: {
     id: number;
     name: string;
-  };
-  category: {
+  } | null;
+  category?: {
     id: number;
     name: string;
     color: string;
-  };
+  } | null;
   availableSpots: number;
   totalBookings: number;
 }
@@ -42,39 +42,41 @@ export default function Events() {
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
     if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     }
 
     const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
+
+    const isLocalhost =
+      hostname === 'localhost' || hostname === '127.0.0.1';
 
     if (isLocalhost) {
       return 'http://localhost:3001';
     }
 
-    if (isProduction) {
-      return 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return '';
+    return (
+      process.env.NEXT_PUBLIC_API_URL ||
+      'https://api.eventoscordoba.xyz'
+    );
   };
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const apiUrl = getApiUrl();
+
         const response = await fetch(`${apiUrl}/api/categories`);
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data.data || []);
+
+        if (!response.ok) {
+          throw new Error('Error fetching categories');
         }
+
+        const data = await response.json();
+
+        setCategories(Array.isArray(data.data) ? data.data : []);
       } catch (error) {
         console.error('Error fetching categories:', error);
+        setCategories([]);
       }
     };
 
@@ -84,17 +86,28 @@ export default function Events() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
+
       try {
         const apiUrl = getApiUrl();
-        const categoryParam = selectedCategory ? `&category=${selectedCategory}` : '';
-        const response = await fetch(`${apiUrl}/api/events?page=1&limit=50&status=active${categoryParam}`);
 
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data.data || []);
+        const categoryParam = selectedCategory
+          ? `&category=${selectedCategory}`
+          : '';
+
+        const response = await fetch(
+          `${apiUrl}/api/events?page=1&limit=50&status=active${categoryParam}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Error fetching events');
         }
+
+        const data = await response.json();
+
+        setEvents(Array.isArray(data.data) ? data.data : []);
       } catch (error) {
         console.error('Error fetching events:', error);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
@@ -103,8 +116,15 @@ export default function Events() {
     fetchEvents();
   }, [selectedCategory]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'Fecha no disponible';
+
     const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+      return 'Fecha inválida';
+    }
+
     return date.toLocaleDateString('es-ES', {
       weekday: 'long',
       year: 'numeric',
@@ -115,9 +135,18 @@ export default function Events() {
     });
   };
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return 'Gratis';
-    return `${price.toFixed(2)}€`;
+  const formatPrice = (price?: number | string | null) => {
+    const numericPrice = Number(price);
+
+    if (isNaN(numericPrice)) {
+      return 'Precio no disponible';
+    }
+
+    if (numericPrice === 0) {
+      return 'Gratis';
+    }
+
+    return `${numericPrice.toFixed(2)}€`;
   };
 
   return (
@@ -126,7 +155,10 @@ export default function Events() {
         {/* Header */}
         <div className="sm:flex sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Eventos</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Eventos
+            </h1>
+
             <p className="mt-2 text-sm text-gray-700">
               Descubre todos los eventos disponibles en Córdoba
             </p>
@@ -137,20 +169,32 @@ export default function Events() {
         <div className="mt-6">
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={selectedCategory === null ? 'primary' : 'secondary'}
+              variant={
+                selectedCategory === null
+                  ? 'primary'
+                  : 'secondary'
+              }
               size="sm"
               onClick={() => setSelectedCategory(null)}
             >
               Todos
             </Button>
+
             {categories.map((category) => (
               <Button
                 key={category.id}
-                variant={selectedCategory === category.id ? 'primary' : 'secondary'}
+                variant={
+                  selectedCategory === category.id
+                    ? 'primary'
+                    : 'secondary'
+                }
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
                 style={{
-                  backgroundColor: selectedCategory === category.id ? category.color : undefined,
+                  backgroundColor:
+                    selectedCategory === category.id
+                      ? category.color
+                      : undefined,
                   borderColor: category.color
                 }}
               >
@@ -168,15 +212,24 @@ export default function Events() {
             </div>
           ) : events.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-gray-500 text-lg">No hay eventos disponibles</div>
+              <div className="text-gray-500 text-lg">
+                No hay eventos disponibles
+              </div>
+
               <div className="text-gray-400 text-sm mt-2">
-                {selectedCategory ? 'Prueba con otra categoría' : 'Los eventos aparecerán aquí pronto'}
+                {selectedCategory
+                  ? 'Prueba con otra categoría'
+                  : 'Los eventos aparecerán aquí pronto'}
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {events.map((event) => (
-                <Link key={event.id} href={`/events/${event.id}`}>
+                <Link
+                  key={event.id}
+                  href={`/events/${event.id}`}
+                  className="block"
+                >
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                     {/* Event Image */}
                     <div className="h-48 bg-gray-200 flex items-center justify-center">
@@ -185,11 +238,23 @@ export default function Events() {
                           src={event.imageUrl}
                           alt={event.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              '/placeholder-event.jpg';
+                          }}
                         />
                       ) : (
                         <div className="text-gray-400 text-center">
-                          <div className="text-4xl mb-2">📅</div>
-                          <div className="text-sm">Sin imagen</div>
+                          <div
+                            className="text-4xl mb-2"
+                            aria-hidden="true"
+                          >
+                            📅
+                          </div>
+
+                          <div className="text-sm">
+                            Sin imagen
+                          </div>
                         </div>
                       )}
                     </div>
@@ -198,14 +263,28 @@ export default function Events() {
                     <div className="p-4">
                       {/* Category Badge */}
                       <div className="flex items-center justify-between mb-2">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                          style={{ backgroundColor: event.category.color }}
-                        >
-                          {event.category.name}
-                        </span>
+                        {event.category ? (
+                          <span
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
+                            style={{
+                              backgroundColor:
+                                event.category.color
+                            }}
+                          >
+                            {event.category.name}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            Sin categoría
+                          </span>
+                        )}
+
                         <span className="text-sm text-gray-500">
-                          {event.availableSpots} plazas libres
+                          {Math.max(
+                            0,
+                            event.availableSpots || 0
+                          )}{' '}
+                          plazas libres
                         </span>
                       </div>
 
@@ -217,11 +296,24 @@ export default function Events() {
                       {/* Date and Location */}
                       <div className="text-sm text-gray-600 mb-2">
                         <div className="flex items-center mb-1">
-                          <span className="mr-2">📅</span>
+                          <span
+                            className="mr-2"
+                            aria-hidden="true"
+                          >
+                            📅
+                          </span>
+
                           {formatDate(event.date)}
                         </div>
+
                         <div className="flex items-center">
-                          <span className="mr-2">📍</span>
+                          <span
+                            className="mr-2"
+                            aria-hidden="true"
+                          >
+                            📍
+                          </span>
+
                           {event.location}
                         </div>
                       </div>
@@ -229,8 +321,11 @@ export default function Events() {
                       {/* Organizer and Price */}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-gray-500">
-                          Por {event.organizer.name}
+                          Por{' '}
+                          {event.organizer?.name ||
+                            'Organizador desconocido'}
                         </span>
+
                         <span className="font-semibold text-green-600">
                           {formatPrice(event.price)}
                         </span>

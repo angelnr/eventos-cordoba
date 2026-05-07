@@ -12,18 +12,18 @@ datasource db {
 //////////////////////////////////////////////////
 
 model User {
-  id         Int      @id @default(autoincrement())
-  email      String   @unique
+  id         Int     @id @default(autoincrement())
+  email      String  @unique
   password   String
   name       String?
   avatar     String?
   bio        String?
   location   String?
-  role       String   @default("user")
-  isVerified Boolean  @default(false)
+  role       String  @default("user")
+  isVerified Boolean @default(false)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organizedEvents Event[]
   bookings        Booking[]
@@ -35,6 +35,7 @@ model User {
   userGroups      UserGroup[]
   messagesSent    Message[]
   conversations   ConversationParticipant[]
+  interests       String[]                  @default([])
 
   @@map("users")
 }
@@ -44,13 +45,13 @@ model User {
 //////////////////////////////////////////////////
 
 model Category {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   description String?
-  color       String   @default("#3B82F6")
+  color       String  @default("#3B82F6")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   events Event[]
 
@@ -63,7 +64,7 @@ model Category {
 
 model Event {
   id          Int      @id @default(autoincrement())
-  slug        String   @unique
+  slug        String?  @unique
   title       String
   description String?
   date        DateTime
@@ -73,12 +74,13 @@ model Event {
   capacity    Int
   status      String   @default("active")
   imageUrl    String?
+  price Float @default(0)
 
   organizerId Int
   categoryId  Int
 
-  organizer   User     @relation(fields: [organizerId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
+  organizer User     @relation(fields: [organizerId], references: [id])
+  category  Category @relation(fields: [categoryId], references: [id])
 
   ticketTypes TicketType[]
   bookings    Booking[]
@@ -86,8 +88,8 @@ model Event {
   comments    Comment[]
   reviews     Review[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([date])
   @@index([status])
@@ -104,10 +106,9 @@ model TicketType {
   price    Float
   quantity Int
 
-  eventId  Int
-  event    Event @relation(fields: [eventId], references: [id])
-
-  bookings Booking[]
+  eventId Int
+  event   Event     @relation(fields: [eventId], references: [id])
+  Booking Booking[]
 
   @@unique([eventId, name])
   @@map("ticket_types")
@@ -118,34 +119,37 @@ model TicketType {
 //////////////////////////////////////////////////
 
 model Booking {
-  id           Int      @id @default(autoincrement())
-  quantity     Int
-  totalPrice   Float
-  status       String   @default("pending")
-  bookedAt     DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  quantity   Int
+  totalPrice Float
+  status     String   @default("pending")
+  bookedAt   DateTime @default(now())
 
   userId       Int
   ticketTypeId Int
-  paymentId    Int?
 
   user       User       @relation(fields: [userId], references: [id])
   ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
-  payment    Payment?
+
+  payment Payment?
+  eventId Int
+  Event   Event?   @relation(fields: [eventId], references: [id])
 
   @@index([userId])
   @@map("bookings")
 }
 
 model Payment {
-  id              Int      @id @default(autoincrement())
-  stripePaymentId String   @unique
+  id              Int    @id @default(autoincrement())
+  stripePaymentId String @unique
   amount          Float
-  currency        String   @default("EUR")
+  currency        String @default("EUR")
   status          String
 
-  createdAt       DateTime @default(now())
+  bookingId Int     @unique
+  booking   Booking @relation(fields: [bookingId], references: [id])
 
-  booking Booking?
+  createdAt DateTime @default(now())
 
   @@map("payments")
 }
@@ -155,8 +159,8 @@ model Payment {
 //////////////////////////////////////////////////
 
 model Favorite {
-  userId  Int
-  eventId Int
+  userId    Int
+  eventId   Int
   createdAt DateTime @default(now())
 
   user  User  @relation(fields: [userId], references: [id])
@@ -171,8 +175,8 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
 
-  userId    Int
-  eventId   Int
+  userId  Int
+  eventId Int
 
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
@@ -186,8 +190,8 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
 
-  userId    Int
-  eventId   Int
+  userId  Int
+  eventId Int
 
   user  User  @relation(fields: [userId], references: [id])
   event Event @relation(fields: [eventId], references: [id])
@@ -201,18 +205,18 @@ model Review {
 //////////////////////////////////////////////////
 
 model Notification {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   type       String
   message    String
   link       String?
   entityType String?
   entityId   Int?
-  read       Boolean  @default(false)
+  read       Boolean @default(false)
 
-  userId     Int
-  user       User     @relation(fields: [userId], references: [id])
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId, read])
   @@map("notifications")
@@ -223,8 +227,8 @@ model Notification {
 //////////////////////////////////////////////////
 
 model Group {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique
+  id          Int     @id @default(autoincrement())
+  slug        String? @unique
   name        String
   description String?
 
@@ -278,10 +282,10 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             Int      @id @default(autoincrement())
-  content        String
-  createdAt      DateTime @default(now())
-  read           Boolean  @default(false)
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
 
   conversationId Int
   senderId       Int
