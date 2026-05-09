@@ -40,60 +40,85 @@ router.post('/', requireAuth, async (req, res) => {
       });
     }
 
-    // Verificar que el evento existe y está activo
-    const event = await prisma.event.findUnique({
-      where: { id: parseInt(eventId) },
-      include: { bookings: true }
-    });
+    const parsedEventId = parseInt(eventId);
+    const parsedQuantity = parseInt(quantity);
 
-    if (!event || event.status !== 'active') {
-      return res.status(404).json({
-        success: false,
-        error: 'Evento no encontrado o no disponible'
-      });
-    }
-
-    // Verificar que no sea el organizador
-    if (event.organizerId === req.user.id) {
+    if (isNaN(parsedEventId) || parsedEventId < 1) {
       return res.status(400).json({
         success: false,
-        error: 'No puedes reservar tu propio evento'
+        error: 'eventId inválido'
       });
     }
 
-    // Verificar que no tenga ya una reserva confirmada
-    const existingBooking = event.bookings.find(booking =>
-      booking.userId === req.user.id && booking.status === 'confirmed'
-    );
-
-    if (existingBooking) {
+    if (isNaN(parsedQuantity) || parsedQuantity < 1) {
       return res.status(400).json({
         success: false,
-        error: 'Ya tienes una reserva confirmada para este evento'
+        error: 'quantity debe ser un entero positivo'
       });
     }
 
-    // Calcular plazas disponibles
-    const totalBooked = event.bookings.reduce((sum, booking) =>
-      booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
-    );
-
-    if (totalBooked + quantity > event.capacity) {
-      return res.status(400).json({
-        success: false,
-        error: 'No hay suficientes plazas disponibles'
+    const booking = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({
+        where: { id: parsedEventId },
+        select: {
+          id: true,
+          price: true,
+          capacity: true,
+          currentBookings: true,
+          organizerId: true,
+          status: true
+        }
       });
-    }
 
-    // Crear reserva
-    const booking = await prisma.booking.create({
-      data: {
-        eventId: parseInt(eventId),
-        userId: req.user.id,
-        quantity: quantity,
-        totalPrice: event.price * quantity,
-        status: 'confirmed'
+      if (!event || event.status !== 'active') {
+        const err = new Error('Evento no encontrado o no disponible');
+        err.statusCode = 404;
+        throw err;
       }
+
+      if (event.organizerId === req.user.id) {
+        const err = new Error('No puedes reservar tu propio evento');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const existingBooking = await tx.booking.findFirst({
+        where: {
+          eventId: parsedEventId,
+          userId: req.user.id,
+          status: 'confirmed'
+        },
+        select: { id: true }
+      });
+
+      if (existingBooking) {
+        const err = new Error('Ya tienes una reserva confirmada para este evento');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (event.currentBookings + parsedQuantity > event.capacity) {
+        const err = new Error('No hay suficientes plazas disponibles');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const booking = await tx.booking.create({
+        data: {
+          eventId: parsedEventId,
+          userId: req.user.id,
+          quantity: parsedQuantity,
+          totalPrice: event.price * parsedQuantity,
+          status: 'confirmed'
+        }
+      });
+
+      await tx.event.update({
+        where: { id: parsedEventId },
+        data: { currentBookings: { increment: parsedQuantity } }
+      });
+
+      return booking;
     });
 
     res.status(201).json({
@@ -103,6 +128,12 @@ router.post('/', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message
+      });
+    }
     console.error('Create booking error:', error);
     res.status(500).json({
       success: false,
@@ -117,7 +148,7 @@ router.get('/', requireAuth, async (req, res) => {
     const bookings = await prisma.booking.findMany({
       where: { userId: req.user.id },
       include: {
-        event: {
+        Event: {
           include: {
             organizer: {
               select: { id: true, name: true, email: true }
@@ -149,10 +180,19 @@ router.get('/', requireAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const parsedId = parseInt(id);
 
-    // Buscar la reserva
+    if (isNaN(parsedId) || parsedId < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de reserva inválido'
+      });
+    }
+
+    // Buscar la reserva (solo campos necesarios para validación)
     const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(id) }
+      where: { id: parsedId },
+      select: { id: true, userId: true, quantity: true, eventId: true }
     });
 
     if (!booking) {
@@ -170,9 +210,38 @@ router.delete('/:id', requireAuth, async (req, res) => {
       });
     }
 
-    // Eliminar reserva
-    await prisma.booking.delete({
-      where: { id: parseInt(id) }
+    // Transacción atómica: eliminar reserva + decrementar contador
+    await prisma.$transaction(async (tx) => {
+      const event = await tx.event.findUnique({
+        where: { id: booking.eventId },
+        select: { id: true, currentBookings: true }
+      });
+
+      if (!event) {
+        const err = new Error('Evento no encontrado');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      if (event.currentBookings < booking.quantity) {
+        console.error('Inconsistencia en currentBookings:', {
+          eventId: event.id,
+          currentBookings: event.currentBookings,
+          attemptedDecrement: booking.quantity
+        });
+        const err = new Error('Error de consistencia en la base de datos');
+        err.statusCode = 500;
+        throw err;
+      }
+
+      await tx.booking.delete({
+        where: { id: parsedId }
+      });
+
+      await tx.event.update({
+        where: { id: booking.eventId },
+        data: { currentBookings: { decrement: booking.quantity } }
+      });
     });
 
     res.json({
@@ -181,6 +250,12 @@ router.delete('/:id', requireAuth, async (req, res) => {
     });
 
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message
+      });
+    }
     console.error('Delete booking error:', error);
     res.status(500).json({
       success: false,

@@ -47,35 +47,41 @@ model Category {
 }
 
 model Event {
-  id            Int          @id @default(autoincrement())
-  slug          String?      @unique
-  title         String
-  description   String?
-  date          DateTime
-  location      String
-  latitude      Float?
-  longitude     Float?
-  capacity      Int
-  status        String       @default("active")
-  imageUrl      String?
-  price         Float        @default(0)
-  organizerId   Int
-  categoryId    Int
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  averageRating Float        @default(0)
-  reviewCount   Int          @default(0)
-  bookings      Booking[]
-  comments      Comment[]
-  category      Category     @relation(fields: [categoryId], references: [id])
-  organizer     User         @relation(fields: [organizerId], references: [id])
-  favorites     Favorite[]
-  reviews       Review[]
-  ticketTypes   TicketType[]
+  id              Int          @id @default(autoincrement())
+  slug            String?      @unique
+  title           String
+  description     String?
+  date            DateTime
+  location        String
+  latitude        Float?
+  longitude       Float?
+  capacity        Int
+  status          String       @default("active")
+  imageUrl        String?
+  price           Float        @default(0)
+  organizerId     Int
+  categoryId      Int
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  averageRating   Float        @default(0)
+  reviewCount     Int          @default(0)
+  currentBookings Int          @default(0)
+  bookings        Booking[]
+  comments        Comment[]
+  category        Category     @relation(fields: [categoryId], references: [id])
+  organizer       User         @relation(fields: [organizerId], references: [id])
+  favorites       Favorite[]
+  reviews         Review[]
+  ticketTypes     TicketType[]
 
   @@index([date])
   @@index([status])
   @@index([reviewCount])
+  @@index([status, date])
+  @@index([status, price])
+  @@index([status, averageRating])
+  @@index([categoryId, status])
+  @@index([status, currentBookings, capacity])
   @@map("events")
 }
 

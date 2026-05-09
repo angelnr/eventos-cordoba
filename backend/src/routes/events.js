@@ -1,6 +1,12 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { saveFile } = require('../utils/fileUpload');
+const {
+  validateFilterParams,
+  buildFilterWhere,
+  getAvailabilityIds,
+  buildAppliedFiltersSummary
+} = require('../services/eventFilters');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -54,86 +60,80 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-// GET /api/events - Listar eventos con filtros
+// GET /api/events - Listar eventos con filtros avanzados
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      search,
-      dateFrom,
-      dateTo,
-      status = 'active',
-      sortBy = 'date',
-      sortOrder = 'asc',
-      organizerId
-    } = req.query;
+    const { cleaned, errors } = validateFilterParams(req.query);
 
-    const skip = (page - 1) * limit;
-    const take = parseInt(limit);
-
-    // Construir filtros
-    const where = {
-      status: status
-    };
-
-    if (category) {
-      where.categoryId = parseInt(category);
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parámetros de filtro inválidos',
+        details: errors
+      });
     }
 
-    if (organizerId) {
-      where.organizerId = parseInt(organizerId);
-    }
+    const where = buildFilterWhere(cleaned);
+    const skip = (cleaned.page - 1) * cleaned.limit;
+    const take = cleaned.limit;
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { location: { contains: search, mode: 'insensitive' } }
-      ];
-    }
+    // Si hay filtro de disponibilidad, obtener IDs primero
+    if (cleaned.available || cleaned.soldOut) {
+      const ids = await getAvailabilityIds(cleaned);
 
-    if (dateFrom || dateTo) {
-      where.date = {};
-      if (dateFrom) where.date.gte = new Date(dateFrom);
-      if (dateTo) where.date.lte = new Date(dateTo);
-    }
+      if (ids !== null && ids.length === 0) {
+        return res.json({
+          success: true,
+          data: [],
+          pagination: {
+            page: cleaned.page,
+            limit: take,
+            total: 0,
+            pages: 0,
+            hasNext: false,
+            hasPrev: false
+          },
+          filters: { applied: buildAppliedFiltersSummary(cleaned) }
+        });
+      }
 
-    // Construir ordenamiento
-    const orderBy = {};
-    orderBy[sortBy] = sortOrder;
-
-    const events = await prisma.event.findMany({
-      where,
-      include: {
-        organizer: {
-          select: { id: true, name: true, email: true }
-        },
-        category: {
-          select: { id: true, name: true, color: true }
-        },
-        bookings: {
-          select: { id: true, quantity: true, status: true }
+      if (ids !== null) {
+        if (where.AND) {
+          where.AND.push({ id: { in: ids } });
+        } else {
+          where.id = { in: ids };
         }
-      },
-      orderBy,
-      skip,
-      take
-    });
+      }
+    }
 
-    // Calcular estadísticas de reservas para cada evento
-    const eventsWithStats = events.map(event => {
-      const totalBookings = event.bookings.reduce((sum, booking) =>
-        booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
-      );
+    const orderBy = {};
+    orderBy[cleaned.sortBy] = cleaned.sortOrder;
 
-      return {
-        ...event,
-        availableSpots: event.capacity - totalBookings,
-        totalBookings
-      };
-    });
+    const [events, total] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        select: {
+          id: true, slug: true, title: true, description: true,
+          date: true, location: true, latitude: true, longitude: true,
+          capacity: true, status: true, imageUrl: true, price: true,
+          organizerId: true, categoryId: true, createdAt: true, updatedAt: true,
+          averageRating: true, reviewCount: true, currentBookings: true,
+          organizer: { select: { id: true, name: true, email: true } },
+          category: { select: { id: true, name: true, color: true } }
+        },
+        orderBy,
+        skip,
+        take
+      }),
+      prisma.event.count({ where })
+    ]);
+
+    // Calcular availableSpots desde currentBookings (columna denormalizada)
+    const eventsWithStats = events.map(event => ({
+      ...event,
+      availableSpots: Math.max(0, event.capacity - event.currentBookings),
+      totalBookings: event.currentBookings
+    }));
 
     // Añadir información de favoritos si el usuario está autenticado
     let eventsWithFavorites = eventsWithStats;
@@ -153,7 +153,7 @@ router.get('/', optionalAuth, async (req, res) => {
       }
     }
 
-    // Añadir conteo de favoritos para todos los eventos
+    // Añadir conteo de favoritos
     if (eventsWithFavorites.length > 0) {
       const eventIds = eventsWithFavorites.map(e => e.id);
       const favoriteCounts = await prisma.favorite.groupBy({
@@ -169,16 +169,21 @@ router.get('/', optionalAuth, async (req, res) => {
       }));
     }
 
-    const total = await prisma.event.count({ where });
+    const pages = Math.ceil(total / take);
 
     res.json({
       success: true,
       data: eventsWithFavorites,
       pagination: {
-        page: parseInt(page),
+        page: cleaned.page,
         limit: take,
         total,
-        pages: Math.ceil(total / take)
+        pages,
+        hasNext: cleaned.page < pages,
+        hasPrev: cleaned.page > 1
+      },
+      filters: {
+        applied: buildAppliedFiltersSummary(cleaned)
       }
     });
   } catch (error) {
@@ -235,6 +240,60 @@ router.get('/my-events', requireAuth, requireOrganizer, async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error al obtener tus eventos'
+    });
+  }
+});
+
+// GET /api/events/filters-meta - Metadatos para filtros (DEBE IR ANTES de /:id)
+router.get('/filters-meta', async (req, res) => {
+  try {
+    const [categories, priceRange, totalActive, totalFree, totalSoldOutRaw] = await Promise.all([
+      prisma.category.findMany({
+        include: { _count: { select: { events: { where: { status: 'active' } } } } },
+        orderBy: { name: 'asc' }
+      }),
+      prisma.event.aggregate({
+        where: { status: 'active' },
+        _min: { price: true },
+        _max: { price: true },
+        _avg: { averageRating: true }
+      }),
+      prisma.event.count({ where: { status: 'active' } }),
+      prisma.event.count({ where: { status: 'active', price: 0 } }),
+      prisma.$queryRaw`SELECT COUNT(*)::int as count FROM events WHERE status = 'active' AND "currentBookings" >= capacity`
+    ]);
+
+    const totalSoldOut = totalSoldOutRaw[0]?.count || 0;
+
+    res.json({
+      success: true,
+      data: {
+        categories: categories.map(c => ({
+          id: c.id,
+          name: c.name,
+          color: c.color,
+          eventCount: c._count.events
+        })),
+        priceRange: {
+          min: priceRange._min.price || 0,
+          max: priceRange._max.price || 0
+        },
+        ratingRange: {
+          min: 0,
+          max: 5,
+          average: Math.round((priceRange._avg.averageRating || 0) * 10) / 10
+        },
+        totalActiveEvents: totalActive,
+        totalFreeEvents: totalFree,
+        totalSoldOutEvents: totalSoldOut,
+        totalAvailableEvents: totalActive - totalSoldOut
+      }
+    });
+  } catch (error) {
+    console.error('Get filters meta error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener metadatos de filtros'
     });
   }
 });
