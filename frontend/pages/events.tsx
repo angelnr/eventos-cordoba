@@ -56,94 +56,100 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="mt-6">
-          <FilterBar
-            filters={filters}
-            categories={meta?.categories}
-            priceMin={meta?.priceRange.min ?? 0}
-            priceMax={meta?.priceRange.max ?? 0}
-            totalAvailableEvents={meta?.totalAvailableEvents}
-            totalSoldOutEvents={meta?.totalSoldOutEvents}
-            totalFreeEvents={meta?.totalFreeEvents}
-            onSetFilters={setFilters}
-            onRemoveFilter={removeFilter}
-            onResetFilters={resetFilters}
-            activeFilterCount={activeFilterCount}
-          />
-        </div>
+        {/* Desktop: two-column layout | Mobile: single column */}
+        <div className="mt-6 md:grid md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr] md:gap-6">
+          {/* Left sidebar — filters (desktop) */}
+          <aside className="md:sticky md:top-4 md:self-start">
+            <FilterBar
+              filters={filters}
+              categories={meta?.categories}
+              priceMin={meta?.priceRange.min ?? 0}
+              priceMax={meta?.priceRange.max ?? 0}
+              totalAvailableEvents={meta?.totalAvailableEvents}
+              totalSoldOutEvents={meta?.totalSoldOutEvents}
+              totalFreeEvents={meta?.totalFreeEvents}
+              onSetFilters={setFilters}
+              onRemoveFilter={removeFilter}
+              onResetFilters={resetFilters}
+              activeFilterCount={activeFilterCount}
+            />
+          </aside>
 
-        {/* Error state */}
-        {error && !isLoading && (
-          <div className="text-center py-12">
-            <div className="text-red-500 text-lg mb-2">
-              Error al cargar eventos
-            </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {(isLoading || isFetching) && !error && (
-          <SkeletonLoader count={filters.limit} />
-        )}
-
-        {/* Empty state */}
-        {!isLoading && !isFetching && !error && events.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg">
-              No se encontraron eventos con estos filtros
-            </div>
-            <div className="text-gray-400 text-sm mt-2">
-              {activeFilterCount > 0 ? (
+          {/* Right column — events */}
+          <div className="min-w-0">
+            {/* Error state */}
+            {error && !isLoading && (
+              <div className="text-center py-12">
+                <div className="text-red-500 text-lg mb-2">
+                  Error al cargar eventos
+                </div>
                 <button
-                  onClick={resetFilters}
-                  className="text-blue-600 hover:underline"
+                  onClick={() => window.location.reload()}
+                  className="text-blue-600 hover:underline text-sm"
                 >
-                  Limpiar filtros
+                  Reintentar
                 </button>
-              ) : (
-                'No hay eventos disponibles actualmente'
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Events grid */}
-        {!isLoading && !error && events.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {events.map(event => (
-                <EventCard
-                  key={event.id}
-                  event={getEventWithFavorites(event)}
-                  onFavoriteToggle={handleFavoriteToggle}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {pagination && (
-              <Pagination
-                page={pagination.page}
-                pages={pagination.pages}
-                total={pagination.total}
-                limit={pagination.limit}
-                hasNext={pagination.hasNext}
-                hasPrev={pagination.hasPrev}
-                onPageChange={page => {
-                  setFilters({ page });
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              />
+              </div>
             )}
-          </>
-        )}
+
+            {/* Loading state */}
+            {(isLoading || isFetching) && !error && (
+              <SkeletonLoader count={filters.limit} />
+            )}
+
+            {/* Empty state */}
+            {!isLoading && !isFetching && !error && events.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 text-lg">
+                  No se encontraron eventos con estos filtros
+                </div>
+                <div className="text-gray-400 text-sm mt-2">
+                  {activeFilterCount > 0 ? (
+                    <button
+                      onClick={resetFilters}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Limpiar filtros
+                    </button>
+                  ) : (
+                    'No hay eventos disponibles actualmente'
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Events grid */}
+            {!isLoading && !error && events.length > 0 && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {events.map(event => (
+                    <EventCard
+                      key={event.id}
+                      event={getEventWithFavorites(event)}
+                      onFavoriteToggle={handleFavoriteToggle}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {pagination && (
+                  <Pagination
+                    page={pagination.page}
+                    pages={pagination.pages}
+                    total={pagination.total}
+                    limit={pagination.limit}
+                    hasNext={pagination.hasNext}
+                    hasPrev={pagination.hasPrev}
+                    onPageChange={page => {
+                      setFilters({ page });
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </Layout>
   );
