@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { CommentSection } from '../../components/CommentSection';
+import { ReviewSection } from '../../components/ReviewSection';
 
 interface Event {
   id: number;
@@ -49,6 +50,8 @@ interface Event {
   totalBookings: number;
   isFavorited?: boolean;
   favoriteCount?: number;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export default function EventDetail() {
@@ -816,6 +819,15 @@ export default function EventDetail() {
                 )}
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-8">
+          <ReviewSection
+            eventId={event.id}
+            eventDate={event.date || ''}
+            organizerId={event.organizer?.id}
+          />
         </div>
 
         {/* Comments Section */}

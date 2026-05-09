@@ -7,164 +7,128 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//////////////////////////////////////////////////
-// USER
-//////////////////////////////////////////////////
-
 model User {
-  id         Int     @id @default(autoincrement())
-  email      String  @unique
-  password   String
-  name       String?
-  avatar     String?
-  bio        String?
-  location   String?
-  role       String  @default("user")
-  isVerified Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  organizedEvents Event[]
-  bookings        Booking[]
-  favorites       Favorite[]
-  notifications   Notification[]
-  comments        Comment[]
-  reviews         Review[]
-  groupsOwned     Group[]
-  userGroups      UserGroup[]
-  messagesSent    Message[]
-  conversations   ConversationParticipant[]
+  id              Int                       @id @default(autoincrement())
+  email           String                    @unique
+  password        String
+  name            String?
+  avatar          String?
+  bio             String?
+  location        String?
+  role            String                    @default("user")
+  isVerified      Boolean                   @default(false)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
   interests       String[]                  @default([])
+  bookings        Booking[]
+  comments        Comment[]
+  conversations   ConversationParticipant[]
+  organizedEvents Event[]
+  favorites       Favorite[]
+  groupsOwned     Group[]
+  messagesSent    Message[]
+  notifications   Notification[]
+  reviews         Review[]
+  userGroups      UserGroup[]
 
   @@map("users")
 }
 
-//////////////////////////////////////////////////
-// CATEGORY
-//////////////////////////////////////////////////
-
 model Category {
-  id          Int     @id @default(autoincrement())
-  name        String  @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String?
-  color       String  @default("#3B82F6")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  events Event[]
+  color       String   @default("#3B82F6")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
 
   @@map("categories")
 }
 
-//////////////////////////////////////////////////
-// EVENT
-//////////////////////////////////////////////////
-
 model Event {
-  id          Int      @id @default(autoincrement())
-  slug        String?  @unique
-  title       String
-  description String?
-  date        DateTime
-  location    String
-  latitude    Float?
-  longitude   Float?
-  capacity    Int
-  status      String   @default("active")
-  imageUrl    String?
-  price Float @default(0)
-
-  organizerId Int
-  categoryId  Int
-
-  organizer User     @relation(fields: [organizerId], references: [id])
-  category  Category @relation(fields: [categoryId], references: [id])
-
-  ticketTypes TicketType[]
-  bookings    Booking[]
-  favorites   Favorite[]
-  comments    Comment[]
-  reviews     Review[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int          @id @default(autoincrement())
+  slug          String?      @unique
+  title         String
+  description   String?
+  date          DateTime
+  location      String
+  latitude      Float?
+  longitude     Float?
+  capacity      Int
+  status        String       @default("active")
+  imageUrl      String?
+  price         Float        @default(0)
+  organizerId   Int
+  categoryId    Int
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  averageRating Float        @default(0)
+  reviewCount   Int          @default(0)
+  bookings      Booking[]
+  comments      Comment[]
+  category      Category     @relation(fields: [categoryId], references: [id])
+  organizer     User         @relation(fields: [organizerId], references: [id])
+  favorites     Favorite[]
+  reviews       Review[]
+  ticketTypes   TicketType[]
 
   @@index([date])
   @@index([status])
+  @@index([reviewCount])
   @@map("events")
 }
 
-//////////////////////////////////////////////////
-// TICKETS
-//////////////////////////////////////////////////
-
 model TicketType {
-  id       Int    @id @default(autoincrement())
+  id       Int       @id @default(autoincrement())
   name     String
   price    Float
   quantity Int
-
-  eventId Int
-  event   Event     @relation(fields: [eventId], references: [id])
-  Booking Booking[]
+  eventId  Int
+  Booking  Booking[]
+  event    Event     @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, name])
   @@map("ticket_types")
 }
 
-//////////////////////////////////////////////////
-// BOOKING & PAYMENT
-//////////////////////////////////////////////////
-
 model Booking {
-  id         Int      @id @default(autoincrement())
-  quantity   Int
-  totalPrice Float
-  status     String   @default("pending")
-  bookedAt   DateTime @default(now())
-
+  id           Int         @id @default(autoincrement())
+  quantity     Int
+  totalPrice   Float
+  status       String      @default("pending")
+  bookedAt     DateTime    @default(now())
   userId       Int
   ticketTypeId Int?
-
-  user       User       @relation(fields: [userId], references: [id])
-  ticketType TicketType? @relation(fields: [ticketTypeId], references: [id])
-
-  payment Payment?
-  eventId Int
-  Event   Event?   @relation(fields: [eventId], references: [id])
+  eventId      Int
+  Event        Event       @relation(fields: [eventId], references: [id])
+  ticketType   TicketType? @relation(fields: [ticketTypeId], references: [id])
+  user         User        @relation(fields: [userId], references: [id])
+  payment      Payment?
 
   @@index([userId])
   @@map("bookings")
 }
 
 model Payment {
-  id              Int    @id @default(autoincrement())
-  stripePaymentId String @unique
+  id              Int      @id @default(autoincrement())
+  stripePaymentId String   @unique
   amount          Float
-  currency        String @default("EUR")
+  currency        String   @default("EUR")
   status          String
-
-  bookingId Int     @unique
-  booking   Booking @relation(fields: [bookingId], references: [id])
-
-  createdAt DateTime @default(now())
+  bookingId       Int      @unique
+  createdAt       DateTime @default(now())
+  booking         Booking  @relation(fields: [bookingId], references: [id])
 
   @@map("payments")
 }
-
-//////////////////////////////////////////////////
-// SOCIAL
-//////////////////////////////////////////////////
 
 model Favorite {
   userId    Int
   eventId   Int
   createdAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@id([userId, eventId])
   @@index([eventId])
@@ -172,20 +136,18 @@ model Favorite {
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   content   String
-  status    String   @default("approved")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId   Int
-  eventId  Int
-  parentId Int?
-
-  user    User     @relation(fields: [userId], references: [id])
-  event   Event    @relation(fields: [eventId], references: [id])
-  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id])
-  replies Comment[] @relation("CommentReplies")
+  createdAt DateTime  @default(now())
+  userId    Int
+  eventId   Int
+  parentId  Int?
+  status    String    @default("approved")
+  updatedAt DateTime  @updatedAt
+  event     Event     @relation(fields: [eventId], references: [id])
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  user      User      @relation(fields: [userId], references: [id])
 
   @@index([eventId, status, createdAt])
   @@index([userId])
@@ -196,83 +158,63 @@ model Comment {
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
-  comment   String?
   createdAt DateTime @default(now())
-
-  userId  Int
-  eventId Int
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  userId    Int
+  eventId   Int
+  updatedAt DateTime @updatedAt
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
+  @@index([eventId])
+  @@index([userId])
   @@map("reviews")
 }
 
-//////////////////////////////////////////////////
-// NOTIFICATIONS
-//////////////////////////////////////////////////
-
 model Notification {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   type       String
   message    String
   link       String?
   entityType String?
   entityId   Int?
-  read       Boolean @default(false)
-
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
+  read       Boolean  @default(false)
+  userId     Int
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId, read])
   @@map("notifications")
 }
 
-//////////////////////////////////////////////////
-// GROUPS
-//////////////////////////////////////////////////
-
 model Group {
-  id          Int     @id @default(autoincrement())
-  slug        String? @unique
+  id          Int         @id @default(autoincrement())
+  slug        String?     @unique
   name        String
   description String?
-
-  ownerId Int
-  owner   User @relation(fields: [ownerId], references: [id])
-
-  members UserGroup[]
-
-  createdAt DateTime @default(now())
+  ownerId     Int
+  createdAt   DateTime    @default(now())
+  owner       User        @relation(fields: [ownerId], references: [id])
+  members     UserGroup[]
 
   @@map("groups")
 }
 
 model UserGroup {
-  userId  Int
-  groupId Int
-  role    String @default("member")
-
-  user  User  @relation(fields: [userId], references: [id])
-  group Group @relation(fields: [groupId], references: [id])
-
+  userId   Int
+  groupId  Int
+  role     String   @default("member")
   joinedAt DateTime @default(now())
+  group    Group    @relation(fields: [groupId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
   @@id([userId, groupId])
   @@map("user_groups")
 }
 
-//////////////////////////////////////////////////
-// MESSAGING
-//////////////////////////////////////////////////
-
 model Conversation {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-
+  id           Int                       @id @default(autoincrement())
+  createdAt    DateTime                  @default(now())
   participants ConversationParticipant[]
   messages     Message[]
 
@@ -282,25 +224,22 @@ model Conversation {
 model ConversationParticipant {
   conversationId Int
   userId         Int
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
 
   @@id([conversationId, userId])
   @@map("conversation_participants")
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
-  content   String
-  createdAt DateTime @default(now())
-  read      Boolean  @default(false)
-
+  id             Int          @id @default(autoincrement())
+  content        String
+  createdAt      DateTime     @default(now())
+  read           Boolean      @default(false)
   conversationId Int
   senderId       Int
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  sender       User         @relation(fields: [senderId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
 
   @@index([conversationId, createdAt])
   @@map("messages")
