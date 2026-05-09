@@ -6,6 +6,7 @@ import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { ImageUpload } from '../../components/ui/ImageUpload';
 import { useAuth } from '../../lib/auth';
+import { showSuccess } from '../../lib/notifications';
 
 interface Category {
   id: number;
@@ -127,7 +128,7 @@ export default function CreateEventPage() {
       }
 
       if (data.success) {
-        alert('¡Evento creado exitosamente!');
+        showSuccess('¡Evento creado exitosamente!');
         router.push('/events/my-events');
       }
     } catch (error) {

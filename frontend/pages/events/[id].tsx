@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { showSuccess, showError } from '../../lib/notifications';
 import { getImageUrl } from '../../lib/imageUtils';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { CommentSection } from '../../components/CommentSection';
@@ -230,12 +231,12 @@ export default function EventDetail() {
           const refreshData = await refreshResponse.json();
           setEvent(refreshData.data);
         }
-        alert('¡Reserva realizada con éxito!');
+        showSuccess('¡Reserva realizada con éxito!');
       } else {
         const errorData =
           await response.json();
 
-        alert(
+        showError(
           `Error al realizar la reserva: ${errorData.error}`
         );
       }
@@ -245,7 +246,7 @@ export default function EventDetail() {
         error
       );
 
-      alert(
+      showError(
         'Error al realizar la reserva. Inténtalo de nuevo.'
       );
     } finally {
@@ -272,7 +273,7 @@ export default function EventDetail() {
           );
 
         if (!userBooking) {
-          alert(
+          showError(
             'No se encontró tu reserva para este evento'
           );
 
@@ -306,12 +307,12 @@ export default function EventDetail() {
             const refreshData = await refreshResponse.json();
             setEvent(refreshData.data);
           }
-          alert('¡Reserva cancelada con éxito!');
+          showSuccess('¡Reserva cancelada con éxito!');
         } else {
           const errorData =
             await response.json();
 
-          alert(
+          showError(
             `Error al cancelar la reserva: ${errorData.error}`
           );
         }
@@ -321,7 +322,7 @@ export default function EventDetail() {
           error
         );
 
-        alert(
+        showError(
           'Error al cancelar la reserva. Inténtalo de nuevo.'
         );
       } finally {

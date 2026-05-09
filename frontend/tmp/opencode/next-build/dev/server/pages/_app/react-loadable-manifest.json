@@ -1,0 +1,9 @@
+{
+  "[project]/components/ui/ToastContainer.tsx [client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/components/ui/ToastContainer.tsx [client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/_0-ezwgi._.js",
+      "static/chunks/components_ui_ToastContainer_tsx_06~4.75._.js"
+    ]
+  }
+}

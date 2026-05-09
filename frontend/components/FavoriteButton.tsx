@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { useFavorites } from '../lib/useFavorites';
+import { showError } from '../lib/notifications';
 
 interface FavoriteButtonProps {
   eventId: number;
@@ -40,6 +41,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
     const success = await toggleFavorite(eventId, previousState);
     if (!success) {
       setIsFavorited(previousState);
+      showError('No se pudo actualizar favoritos. Inténtalo de nuevo.');
     } else if (onToggle) {
       onToggle(eventId, !previousState);
     }

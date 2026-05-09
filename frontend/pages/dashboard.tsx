@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthGuard } from '../components/AuthGuard';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../lib/auth';
+import { showSuccess, showError } from '../lib/notifications';
 import { Button } from '../components/ui/Button';
 
 interface UserListItem {
@@ -106,7 +107,7 @@ export default function DashboardPage() {
       }
 
       if (data.success) {
-        alert(`${data.message}\nUsuarios generados: ${data.data.map((u: UserListItem) => u.name).join(', ')}`);
+        showSuccess(`${data.message} — Usuarios generados: ${data.data.map((u: UserListItem) => u.name).join(', ')}`);
         fetchUsers(); // Refresh the list
       }
     } catch (error) {
@@ -139,7 +140,7 @@ export default function DashboardPage() {
       }
 
       if (data.success) {
-        alert('Usuario eliminado exitosamente');
+        showSuccess('Usuario eliminado exitosamente');
         fetchUsers(); // Refresh the list
       }
     } catch (error) {

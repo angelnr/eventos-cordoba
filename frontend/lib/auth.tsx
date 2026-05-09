@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { showSuccess } from './notifications';
 
 interface User {
   id: number;
@@ -161,6 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
         localStorage.setItem('auth_token', newToken);
         console.log('🔍 DEBUG Auth - Token guardado en localStorage');
+        showSuccess('¡Sesión iniciada correctamente!');
       } else {
         console.log('🔍 DEBUG Auth - Respuesta sin success');
         throw new Error(data.error || 'Error al iniciar sesión');
@@ -200,6 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(newToken);
         setUser(userData);
         localStorage.setItem('auth_token', newToken);
+        showSuccess('¡Cuenta creada correctamente!');
       } else {
         throw new Error(data.error || 'Error al registrarse');
       }

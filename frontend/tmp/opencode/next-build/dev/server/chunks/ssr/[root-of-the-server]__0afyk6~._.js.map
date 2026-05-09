@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///app/pages/_document.js"],"sourcesContent":["import { Html, Head, Main, NextScript } from 'next/document';\n\nexport default function Document() {\n  return (\n    <Html>\n      <Head />\n      <body>\n        <script\n          dangerouslySetInnerHTML={{\n            __html: `(function(){try{var t=localStorage.getItem('themePreference');if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches)||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();`,\n          }}\n        />\n        <Main />\n        <NextScript />\n      </body>\n    </Html>\n  );\n}"],"names":["Document","dangerouslySetInnerHTML","__html"],"mappings":";;;;;AAAA;;;AAEe,SAASA;IACtB,qBACE,qKAAC,iIAAI;;0BACH,qKAAC,iIAAI;;;;;0BACL,qKAAC;;kCACC,qKAAC;wBACCC,yBAAyB;4BACvBC,QAAQ,CAAC,sRAAsR,CAAC;wBAClS;;;;;;kCAEF,qKAAC,iIAAI;;;;;kCACL,qKAAC,uIAAU;;;;;;;;;;;;;;;;;AAInB"}}]
+}

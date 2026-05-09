@@ -6,6 +6,7 @@ import { Layout } from '../../../components/Layout';
 import { Button } from '../../../components/ui/Button';
 import { ImageUpload } from '../../../components/ui/ImageUpload';
 import { useAuth } from '../../../lib/auth';
+import { showSuccess, showError } from '../../../lib/notifications';
 
 interface Category {
   id: number;
@@ -120,7 +121,7 @@ export default function EditEventPage() {
           
           // Verificar que el usuario sea el organizador
           if (eventData.organizerId !== user?.id && user?.role !== 'admin') {
-            alert('No tienes permisos para editar este evento');
+            showError('No tienes permisos para editar este evento');
             router.push('/events/my-events');
             return;
           }
@@ -143,12 +144,12 @@ export default function EditEventPage() {
             status: eventData.status,
           });
         } else {
-          alert('Error al cargar el evento');
+          showError('Error al cargar el evento');
           router.push('/events/my-events');
         }
       } catch (error) {
         console.error('Error loading event:', error);
-        alert('Error al cargar el evento');
+        showError('Error al cargar el evento');
         router.push('/events/my-events');
       } finally {
         setLoading(false);
@@ -207,7 +208,7 @@ export default function EditEventPage() {
       }
 
       if (data.success) {
-        alert('¡Evento actualizado exitosamente!');
+        showSuccess('¡Evento actualizado exitosamente!');
         router.push(`/events/${id}`);
       }
     } catch (error) {

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { showSuccess, showError } from '../../lib/notifications';
 
 interface UserProfile {
   id: number;
@@ -121,15 +122,15 @@ export default function EditProfile() {
       });
 
       if (response.ok) {
-        alert('Perfil actualizado exitosamente');
+        showSuccess('Perfil actualizado exitosamente');
         router.push(`/profile/${user.id}`);
       } else {
         const errorData = await response.json();
-        alert(`Error al actualizar perfil: ${errorData.error}`);
+        showError(`Error al actualizar perfil: ${errorData.error}`);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Error al actualizar perfil. Inténtalo de nuevo.');
+      showError('Error al actualizar perfil. Inténtalo de nuevo.');
     } finally {
       setSaving(false);
     }
