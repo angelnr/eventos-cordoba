@@ -59,10 +59,17 @@ export default function Events() {
       return 'http://localhost:3001';
     }
 
-    return (
-      process.env.NEXT_PUBLIC_API_URL ||
-      'https://api.eventoscordoba.xyz'
-    );
+    const isProduction = hostname === 'eventoscordoba.xyz';
+
+    if (isProduction) {
+      return 'https://api.eventoscordoba.xyz';
+    }
+
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    return 'https://api.eventoscordoba.xyz';
   };
 
   useEffect(() => {

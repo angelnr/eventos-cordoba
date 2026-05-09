@@ -11,15 +11,21 @@ export function useFavorites() {
 
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isProduction = hostname === 'eventoscordoba.xyz';
 
     if (isLocalhost) {
       return 'http://localhost:3001';
     }
 
-    return (
-      process.env.NEXT_PUBLIC_API_URL ||
-      'https://api.eventoscordoba.xyz'
-    );
+    if (isProduction) {
+      return 'https://api.eventoscordoba.xyz';
+    }
+
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    return 'https://api.eventoscordoba.xyz';
   };
 
   const toggleFavorite = useCallback(async (eventId: number, wasFavorited: boolean): Promise<boolean> => {
