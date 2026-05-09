@@ -7,6 +7,9 @@ until nc -z postgres 5432; do
 done
 echo "✅ PostgreSQL está listo!"
 
+echo "📁 Asegurando directorio de uploads..."
+mkdir -p /app/uploads/events
+
 echo "🔄 Ejecutando migraciones de Prisma..."
 npx prisma db push --accept-data-loss
 echo "✅ Migraciones completadas!"

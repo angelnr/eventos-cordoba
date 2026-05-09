@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { getImageUrl } from '../../lib/imageUtils';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { CommentSection } from '../../components/CommentSection';
 import { ReviewSection } from '../../components/ReviewSection';
@@ -418,7 +419,7 @@ export default function EventDetail() {
               <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                 {event.imageUrl ? (
                   <img
-                    src={event.imageUrl}
+                    src={getImageUrl(event.imageUrl) || ''}
                     alt={event.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {

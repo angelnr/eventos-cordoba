@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 
 // Importar rutas
@@ -69,6 +70,16 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Servir archivos estáticos de uploads (fallback para desarrollo local)
+// En producción, Nginx sirve estos archivos directamente
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '30d',
+  immutable: true,
+  setHeaders: (res, filePath) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
 
 // Manejo de errores global
 app.use((err, req, res, next) => {

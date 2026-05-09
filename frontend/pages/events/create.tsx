@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AuthGuard } from '../../components/AuthGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
+import { ImageUpload } from '../../components/ui/ImageUpload';
 import { useAuth } from '../../lib/auth';
 
 interface Category {
@@ -26,7 +27,11 @@ export default function CreateEventPage() {
     capacity: '',
     price: '',
     categoryId: '',
-    imageUrl: '',
+  });
+  const [imageData, setImageData] = useState<{ file: File | null; externalUrl: string | null; removed: boolean }>({
+    file: null,
+    externalUrl: null,
+    removed: false,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -91,22 +96,28 @@ export default function CreateEventPage() {
 
     try {
       const apiUrl = getApiUrl();
+
+      const formDataBody = new FormData();
+      formDataBody.append('title', formData.title);
+      formDataBody.append('description', formData.description || '');
+      formDataBody.append('date', new Date(formData.date).toISOString());
+      formDataBody.append('location', formData.location);
+      formDataBody.append('capacity', formData.capacity);
+      formDataBody.append('price', formData.price || '0');
+      formDataBody.append('categoryId', formData.categoryId);
+
+      if (imageData.file) {
+        formDataBody.append('image', imageData.file);
+      } else if (imageData.externalUrl) {
+        formDataBody.append('imageUrl', imageData.externalUrl);
+      }
+
       const response = await fetch(`${apiUrl}/api/events`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description || null,
-          date: new Date(formData.date).toISOString(),
-          location: formData.location,
-          capacity: parseInt(formData.capacity),
-          price: parseFloat(formData.price) || 0,
-          categoryId: parseInt(formData.categoryId),
-          imageUrl: formData.imageUrl || null,
-        }),
+        body: formDataBody,
       });
 
       const data = await response.json();
@@ -262,37 +273,11 @@ export default function CreateEventPage() {
               </div>
 
               {/* Image URL */}
-              <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-                  URL de la Imagen
-                </label>
-                <input
-                  type="url"
-                  id="imageUrl"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Opcional. Añade una URL de imagen para hacer el evento más atractivo.
-                </p>
-                {formData.imageUrl && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
-                    <img
-                      src={formData.imageUrl}
-                      alt="Vista previa"
-                      className="w-full h-48 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.src = '';
-                        e.currentTarget.alt = 'Error al cargar la imagen';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUpload
+                mode="create"
+                onImageChange={setImageData}
+                onError={(err) => setError(err)}
+              />
 
               {/* Category */}
               <div>

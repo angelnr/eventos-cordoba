@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AuthGuard } from '../../../components/AuthGuard';
 import { Layout } from '../../../components/Layout';
 import { Button } from '../../../components/ui/Button';
+import { ImageUpload } from '../../../components/ui/ImageUpload';
 import { useAuth } from '../../../lib/auth';
 
 interface Category {
@@ -35,6 +36,7 @@ export default function EditEventPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [event, setEvent] = useState<Event | null>(null);
+  const [eventImageUrl, setEventImageUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -43,8 +45,12 @@ export default function EditEventPage() {
     capacity: '',
     price: '',
     categoryId: '',
-    imageUrl: '',
     status: 'active',
+  });
+  const [imageData, setImageData] = useState<{ file: File | null; externalUrl: string | null; removed: boolean }>({
+    file: null,
+    externalUrl: null,
+    removed: false,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -120,6 +126,7 @@ export default function EditEventPage() {
           }
 
           setEvent(eventData);
+          setEventImageUrl(eventData.imageUrl || null);
 
           // Formatear la fecha para datetime-local input
           const dateObj = new Date(eventData.date);
@@ -133,7 +140,6 @@ export default function EditEventPage() {
             capacity: eventData.capacity.toString(),
             price: eventData.price.toString(),
             categoryId: eventData.categoryId.toString(),
-            imageUrl: eventData.imageUrl || '',
             status: eventData.status,
           });
         } else {
@@ -167,23 +173,31 @@ export default function EditEventPage() {
 
     try {
       const apiUrl = getApiUrl();
+
+      const formDataBody = new FormData();
+      formDataBody.append('title', formData.title);
+      formDataBody.append('description', formData.description || '');
+      formDataBody.append('date', new Date(formData.date).toISOString());
+      formDataBody.append('location', formData.location);
+      formDataBody.append('capacity', formData.capacity);
+      formDataBody.append('price', formData.price || '0');
+      formDataBody.append('categoryId', formData.categoryId);
+      formDataBody.append('status', formData.status);
+
+      if (imageData.file) {
+        formDataBody.append('image', imageData.file);
+      } else if (imageData.removed) {
+        formDataBody.append('imageUrl', '');
+      } else if (imageData.externalUrl) {
+        formDataBody.append('imageUrl', imageData.externalUrl);
+      }
+
       const response = await fetch(`${apiUrl}/api/events/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description || null,
-          date: new Date(formData.date).toISOString(),
-          location: formData.location,
-          capacity: parseInt(formData.capacity),
-          price: parseFloat(formData.price) || 0,
-          categoryId: parseInt(formData.categoryId),
-          imageUrl: formData.imageUrl || null,
-          status: formData.status,
-        }),
+        body: formDataBody,
       });
 
       const data = await response.json();
@@ -364,38 +378,13 @@ export default function EditEventPage() {
                 </div>
               </div>
 
-              {/* Image URL */}
-              <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
-                  URL de la Imagen
-                </label>
-                <input
-                  type="url"
-                  id="imageUrl"
-                  name="imageUrl"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Opcional. Añade una URL de imagen para hacer el evento más atractivo.
-                </p>
-                {formData.imageUrl && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
-                    <img
-                      src={formData.imageUrl}
-                      alt="Vista previa"
-                      className="w-full h-48 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.src = '';
-                        e.currentTarget.alt = 'Error al cargar la imagen';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              {/* Image */}
+              <ImageUpload
+                mode="edit"
+                currentImageUrl={eventImageUrl}
+                onImageChange={setImageData}
+                onError={(err) => setError(err)}
+              />
 
               {/* Category */}
               <div>

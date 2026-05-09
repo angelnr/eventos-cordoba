@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { FavoriteButton } from './FavoriteButton';
+import { getImageUrl } from '../lib/imageUtils';
 import type { EventResponse } from '../lib/queries/useEvents';
 
 interface EventCardProps {
@@ -36,7 +37,7 @@ export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
         <div className="h-48 bg-gray-200 flex items-center justify-center">
           {event.imageUrl ? (
             <img
-              src={event.imageUrl}
+              src={getImageUrl(event.imageUrl) || ''}
               alt={event.title}
               className="w-full h-full object-cover"
               loading="lazy"

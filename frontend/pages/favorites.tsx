@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { AuthGuard } from '../components/AuthGuard';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { useAuth } from '../lib/auth';
+import { getImageUrl } from '../lib/imageUtils';
 
 interface FavoriteEvent {
   id: number;
@@ -161,7 +162,7 @@ export default function Favorites() {
                           <div className="h-48 bg-gray-200 flex items-center justify-center">
                             {event.imageUrl ? (
                               <img
-                                src={event.imageUrl}
+                                src={getImageUrl(event.imageUrl) || ''}
                                 alt={event.title}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {

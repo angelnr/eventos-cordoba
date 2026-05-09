@@ -1,6 +1,8 @@
 const express = require('express');
+const path = require('path');
 const { PrismaClient } = require('@prisma/client');
-const { saveFile } = require('../utils/fileUpload');
+const { upload } = require('../middleware/upload');
+const { saveImage, deleteImage, isLocalImage } = require('../services/storageService');
 const {
   validateFilterParams,
   buildFilterWhere,
@@ -58,6 +60,37 @@ const optionalAuth = (req, res, next) => {
     }
   }
   next();
+};
+
+// Middleware condicional: si es multipart/form-data, usar Multer.
+// Si no, pasar al handler (express.json() ya procesó el body).
+const conditionalUpload = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return next();
+  }
+
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          error: 'El archivo excede el tamaño máximo de 5MB.'
+        });
+      }
+      if (err.message === 'INVALID_EXTENSION' || err.message === 'INVALID_MIME_TYPE') {
+        return res.status(400).json({
+          success: false,
+          error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: 'Error al procesar el archivo.'
+      });
+    }
+    next();
+  });
 };
 
 // GET /api/events - Listar eventos con filtros avanzados
@@ -373,9 +406,9 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/events - Crear evento (requiere autenticación y rol organizador)
-router.post('/', requireAuth, requireOrganizer, async (req, res) => {
+router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req, res) => {
   try {
-    const { title, description, date, location, capacity, price, categoryId, imageUrl } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl } = req.body;
 
     // Validaciones
     if (!title || !date || !location || !categoryId) {
@@ -397,17 +430,34 @@ router.post('/', requireAuth, requireOrganizer, async (req, res) => {
       });
     }
 
+    // Determinar imageUrl: archivo subido tiene prioridad sobre URL externa
+    let finalImageUrl = externalImageUrl || null;
+
+    if (req.file) {
+      try {
+        finalImageUrl = await saveImage(req.file.buffer, path.extname(req.file.originalname));
+      } catch (saveError) {
+        if (saveError.message === 'FILE_TOO_LARGE') {
+          return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
+        }
+        if (saveError.message === 'INVALID_FILE_TYPE' || saveError.message === 'INVALID_MIME_TYPE' || saveError.message === 'INVALID_EXTENSION') {
+          return res.status(400).json({ success: false, error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.' });
+        }
+        throw saveError;
+      }
+    }
+
     const event = await prisma.event.create({
       data: {
         title,
-        description,
+        description: description || null,
         date: new Date(date),
         location,
-        capacity: capacity || 100,
-        price: price ?? 0,
+        capacity: capacity ? parseInt(capacity) : 100,
+        price: price ? parseFloat(price) : 0,
         categoryId: parseInt(categoryId),
         organizerId: req.user.id,
-        imageUrl
+        imageUrl: finalImageUrl
       },
       include: {
         organizer: {
@@ -434,10 +484,10 @@ router.post('/', requireAuth, requireOrganizer, async (req, res) => {
 });
 
 // PUT /api/events/:id - Actualizar evento (solo organizador del evento o admin)
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, date, location, capacity, price, categoryId, imageUrl, status } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status } = req.body;
 
     // Buscar el evento
     const event = await prisma.event.findUnique({
@@ -473,76 +523,66 @@ router.put('/:id', requireAuth, async (req, res) => {
       }
     }
 
-    const parsedPrice =
-  price !== undefined ? parseFloat(price) : undefined;
+    const parsedPrice = price !== undefined ? parseFloat(price) : undefined;
+    const parsedCapacity = capacity !== undefined ? parseInt(capacity) : undefined;
+    const parsedCategoryId = categoryId !== undefined ? parseInt(categoryId) : undefined;
 
-const parsedCapacity =
-  capacity !== undefined ? parseInt(capacity) : undefined;
+    // Construir objeto de actualización
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (date) updateData.date = new Date(date);
+    if (location) updateData.location = location;
+    if (parsedCapacity !== undefined && !Number.isNaN(parsedCapacity)) updateData.capacity = parsedCapacity;
+    if (parsedPrice !== undefined && !Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
+    if (parsedCategoryId !== undefined && !Number.isNaN(parsedCategoryId)) updateData.categoryId = parsedCategoryId;
+    if (status) updateData.status = status;
 
-const parsedCategoryId =
-  categoryId !== undefined ? parseInt(categoryId) : undefined;
-
-const updatedEvent = await prisma.event.update({
-  where: {
-    id: parseInt(id)
-  },
-  data: {
-    ...(title && { title }),
-
-    ...(description !== undefined && {
-      description
-    }),
-
-    ...(date && {
-      date: new Date(date)
-    }),
-
-    ...(location && {
-      location
-    }),
-
-    ...(parsedCapacity !== undefined &&
-      !Number.isNaN(parsedCapacity) && {
-        capacity: parsedCapacity
-      }),
-
-    ...(parsedPrice !== undefined &&
-      !Number.isNaN(parsedPrice) && {
-        price: parsedPrice
-      }),
-
-    ...(parsedCategoryId !== undefined &&
-      !Number.isNaN(parsedCategoryId) && {
-        categoryId: parsedCategoryId
-      }),
-
-    ...(imageUrl !== undefined && {
-      imageUrl
-    }),
-
-    ...(status && {
-      status
-    })
-  },
-
-  include: {
-    organizer: {
-      select: {
-        id: true,
-        name: true,
-        email: true
+    // Manejo de imagen
+    if (req.file) {
+      // Nueva imagen subida — guardar y reemplazar la anterior
+      try {
+        const oldImageUrl = event.imageUrl;
+        updateData.imageUrl = await saveImage(req.file.buffer, path.extname(req.file.originalname));
+        if (isLocalImage(oldImageUrl)) {
+          await deleteImage(oldImageUrl).catch(() => {});
+        }
+      } catch (saveError) {
+        if (saveError.message === 'FILE_TOO_LARGE') {
+          return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
+        }
+        if (saveError.message === 'INVALID_FILE_TYPE' || saveError.message === 'INVALID_MIME_TYPE' || saveError.message === 'INVALID_EXTENSION') {
+          return res.status(400).json({ success: false, error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.' });
+        }
+        throw saveError;
       }
-    },
-
-    category: {
-      select: {
-        id: true,
-        name: true,
-        color: true
+    } else if (externalImageUrl !== undefined) {
+      // Se envió imageUrl (vacío: eliminar imagen, URL: reemplazar)
+      if (externalImageUrl === '' || externalImageUrl === 'null') {
+        if (isLocalImage(event.imageUrl)) {
+          await deleteImage(event.imageUrl).catch(() => {});
+        }
+        updateData.imageUrl = null;
+      } else {
+        if (isLocalImage(event.imageUrl)) {
+          await deleteImage(event.imageUrl).catch(() => {});
+        }
+        updateData.imageUrl = externalImageUrl;
       }
     }
-  }
-});
+
+    const updatedEvent = await prisma.event.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      include: {
+        organizer: {
+          select: { id: true, name: true, email: true }
+        },
+        category: {
+          select: { id: true, name: true, color: true }
+        }
+      }
+    });
 
     res.json({
       success: true,
@@ -583,6 +623,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
       });
     }
 
+    // Eliminar imagen del filesystem si es local
+    if (isLocalImage(event.imageUrl)) {
+      await deleteImage(event.imageUrl).catch(() => {});
+    }
+
     // Eliminar favoritos del evento para evitar error de FK RESTRICT
     await prisma.favorite.deleteMany({
       where: { eventId: parseInt(id) }
@@ -605,10 +650,38 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/events/:id/image - Subir imagen para evento
-router.post('/:id/image', requireAuth, async (req, res) => {
+// POST /api/events/:id/image - Subir imagen para evento (requiere autenticación)
+router.post('/:id/image', requireAuth, (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Content-Type debe ser multipart/form-data'
+    });
+  }
+
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
+      }
+      if (err.message === 'INVALID_EXTENSION' || err.message === 'INVALID_MIME_TYPE') {
+        return res.status(400).json({ success: false, error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.' });
+      }
+      return res.status(400).json({ success: false, error: 'Error al procesar el archivo.' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campo "image" no encontrado en la solicitud'
+      });
+    }
 
     // Verificar que el evento existe
     const event = await prisma.event.findUnique({
@@ -630,106 +703,24 @@ router.post('/:id/image', requireAuth, async (req, res) => {
       });
     }
 
-    // Verificar que la solicitud es multipart/form-data
-    const contentType = req.headers['content-type'];
-    if (!contentType || !contentType.includes('multipart/form-data')) {
-      return res.status(400).json({
-        success: false,
-        error: 'Content-Type debe ser multipart/form-data'
-      });
-    }
-
-    // Obtener el límite de tamaño del body
-    const contentLength = parseInt(req.headers['content-length'] || '0');
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    
-    if (contentLength > maxSize) {
-      return res.status(400).json({
-        success: false,
-        error: 'El archivo excede el tamaño máximo de 5MB'
-      });
-    }
-
-    // Parsear multipart/form-data manualmente
-    const boundary = contentType.split('boundary=')[1];
-    if (!boundary) {
-      return res.status(400).json({
-        success: false,
-        error: 'Formato multipart/form-data inválido'
-      });
-    }
-
-    // Leer el body completo
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const bodyBuffer = Buffer.concat(chunks);
-
-    // Buscar el campo "file" en el body multipart
-    const boundaryBuffer = Buffer.from(`--${boundary}`);
-    const parts = splitBufferByBoundary(bodyBuffer, boundaryBuffer);
-    
-    let fileData = null;
-    let fileName = null;
-    let fileType = null;
-
-    for (const part of parts) {
-      if (part.length === 0) continue;
-      
-      const partStr = part.toString('utf8');
-      const headerEnd = partStr.indexOf('\r\n\r\n');
-      if (headerEnd === -1) continue;
-      
-      const headers = partStr.substring(0, headerEnd);
-      const content = part.slice(headerEnd + 4);
-      
-      // Buscar el campo "file"
-      if (headers.includes('name="file"')) {
-        // Extraer nombre de archivo y tipo
-        const filenameMatch = headers.match(/filename="([^"]+)"/);
-        const contentTypeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/);
-        
-        if (filenameMatch && contentTypeMatch) {
-          fileName = filenameMatch[1];
-          fileType = contentTypeMatch[1].trim();
-          fileData = content;
-          break;
-        }
+    // Guardar la nueva imagen
+    let imageUrl;
+    try {
+      imageUrl = await saveImage(req.file.buffer, path.extname(req.file.originalname));
+    } catch (saveError) {
+      if (saveError.message === 'FILE_TOO_LARGE') {
+        return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
       }
-    }
-
-    if (!fileData || !fileType) {
-      return res.status(400).json({
-        success: false,
-        error: 'Campo "file" no encontrado en la solicitud'
-      });
-    }
-
-    // Validar tipo de archivo
-    const allowedTypes = ['image/jpeg', 'image/png'];
-    if (!allowedTypes.includes(fileType)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Tipo de archivo no permitido. Solo se aceptan JPEG y PNG'
-      });
-    }
-
-    // Crear objeto de archivo para saveFile
-    const file = {
-      mimetype: fileType,
-      size: fileData.length,
-      stream: () => {
-        const { Readable } = require('stream');
-        const readable = new Readable();
-        readable.push(fileData);
-        readable.push(null);
-        return readable;
+      if (saveError.message === 'INVALID_FILE_TYPE' || saveError.message === 'INVALID_MIME_TYPE' || saveError.message === 'INVALID_EXTENSION') {
+        return res.status(400).json({ success: false, error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.' });
       }
-    };
+      throw saveError;
+    }
 
-    // Guardar el archivo
-    const imageUrl = await saveFile(file, parseInt(id));
+    // Eliminar imagen anterior si era local
+    if (isLocalImage(event.imageUrl)) {
+      await deleteImage(event.imageUrl).catch(() => {});
+    }
 
     // Actualizar el evento en la base de datos
     const updatedEvent = await prisma.event.update({
@@ -753,18 +744,8 @@ router.post('/:id/image', requireAuth, async (req, res) => {
         imageUrl
       }
     });
-
   } catch (error) {
     console.error('Upload image error:', error);
-    
-    if (error.message.includes('Tipo de archivo no permitido') || 
-        error.message.includes('excede el tamaño máximo')) {
-      return res.status(400).json({
-        success: false,
-        error: error.message
-      });
-    }
-
     res.status(500).json({
       success: false,
       error: 'Error al subir imagen'
@@ -772,39 +753,67 @@ router.post('/:id/image', requireAuth, async (req, res) => {
   }
 });
 
-// Función auxiliar para dividir buffer por boundary
-function splitBufferByBoundary(buffer, boundary) {
-  const parts = [];
-  let start = 0;
-  
-  while (start < buffer.length) {
-    // Encontrar el siguiente boundary
-    const boundaryIndex = buffer.indexOf(boundary, start);
-    if (boundaryIndex === -1) break;
-    
-    // Saltar el boundary y el CRLF
-    const partStart = start;
-    const partEnd = boundaryIndex;
-    
-    if (partEnd > partStart) {
-      parts.push(buffer.slice(partStart, partEnd));
+// DELETE /api/events/:id/image - Eliminar imagen de evento
+router.delete('/:id/image', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+      where: { id: parseInt(id) }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado'
+      });
     }
-    
-    // Mover el inicio después del boundary
-    start = boundaryIndex + boundary.length;
-    
-    // Si el siguiente byte es '--', es el boundary final
-    if (buffer[start] === 0x2D && buffer[start + 1] === 0x2D) {
-      break;
+
+    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes permisos para editar este evento'
+      });
     }
-    
-    // Saltar CRLF después del boundary
-    if (buffer[start] === 0x0D && buffer[start + 1] === 0x0A) {
-      start += 2;
+
+    if (!event.imageUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'El evento no tiene imagen'
+      });
     }
+
+    // Eliminar archivo del filesystem si es imagen local
+    if (isLocalImage(event.imageUrl)) {
+      await deleteImage(event.imageUrl);
+    }
+
+    // Actualizar BD
+    const updatedEvent = await prisma.event.update({
+      where: { id: parseInt(id) },
+      data: { imageUrl: null },
+      include: {
+        organizer: {
+          select: { id: true, name: true, email: true }
+        },
+        category: {
+          select: { id: true, name: true, color: true }
+        }
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'Imagen eliminada exitosamente',
+      data: updatedEvent
+    });
+  } catch (error) {
+    console.error('Delete image error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar imagen'
+    });
   }
-  
-  return parts;
-}
+});
 
 module.exports = router;

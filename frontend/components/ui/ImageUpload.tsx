@@ -1,84 +1,129 @@
-import React, { useState, useRef, ChangeEvent } from 'react';
-import { useUploadImage } from '../../lib/useUploadImage';
+import React, { useRef, useState, DragEvent, ChangeEvent } from 'react';
+import { useImageUpload } from '../../lib/useImageUpload';
+import { getImageUrl } from '../../lib/imageUtils';
+
+const ALLOWED_TYPES_LABEL = 'JPEG, PNG o WebP';
+const MAX_SIZE_LABEL = '5MB';
 
 interface ImageUploadProps {
-  eventId: string;
   currentImageUrl?: string | null;
-  onUploadSuccess?: (newImageUrl: string) => void;
+  mode: 'create' | 'edit';
+  onImageChange: (data: { file: File | null; externalUrl: string | null; removed: boolean }) => void;
+  onError?: (error: string) => void;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
-
 export const ImageUpload: React.FC<ImageUploadProps> = ({
-  eventId,
   currentImageUrl,
-  onUploadSuccess,
+  mode,
+  onImageChange,
+  onError,
 }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const { uploadImage, status, error } = useUploadImage({
-    eventId,
-    onSuccess: (url) => {
-      setPreviewUrl(url);
-      setSelectedFile(null);
-      if (onUploadSuccess) onUploadSuccess(url);
-    },
-  });
+  const {
+    imageSource,
+    uploadError,
+    selectFile,
+    removeImage,
+  } = useImageUpload({ onError });
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setValidationError(null);
-
-    if (!file) return;
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setValidationError('Solo se permiten imágenes JPG o PNG');
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      setValidationError('La imagen no debe superar los 5MB');
-      return;
-    }
-
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      uploadImage(selectedFile);
+  const handleFileSelect = (file: File | null) => {
+    selectFile(file);
+    if (file) {
+      onImageChange({ file, externalUrl: null, removed: false });
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+  const handleRemove = () => {
+    removeImage();
+    onImageChange({ file: null, externalUrl: null, removed: true });
   };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    handleFileSelect(file);
+    e.target.value = '';
+  };
+
+  // Determinar qué imagen mostrar en preview
+  const displayUrl = imageSource?.type === 'file'
+    ? imageSource.previewUrl
+    : imageSource?.type === 'external'
+      ? imageSource.url
+      : currentImageUrl
+        ? getImageUrl(currentImageUrl)
+        : null;
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4 border rounded-lg bg-gray-50">
-      <div className="relative w-full h-48 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center">
-        {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700">
+        Imagen del Evento
+      </label>
+
+      <div
+        className={`relative border-2 border-dashed rounded-lg transition-colors ${
+          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {displayUrl ? (
+          <div className="relative">
+            <img
+              src={displayUrl}
+              alt="Vista previa"
+              className="w-full h-48 object-cover rounded-lg"
+            />
+            <div className="absolute top-2 right-2 flex gap-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2 py-1 bg-white/90 text-gray-700 text-xs rounded hover:bg-white shadow"
+              >
+                Cambiar
+              </button>
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 shadow"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
         ) : (
-          <span className="text-gray-500">Sin imagen</span>
-        )}
-        
-        {status === 'uploading' && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white animate-pulse">Subiendo...</span>
+          <div
+            className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p className="text-sm text-gray-500">
+              Arrastra una imagen aquí o haz clic para seleccionar
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {ALLOWED_TYPES_LABEL} · Máximo {MAX_SIZE_LABEL}
+            </p>
           </div>
         )}
       </div>
@@ -86,40 +131,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <input
         type="file"
         ref={fileInputRef}
-        onChange={handleFileChange}
-        accept="image/jpeg,image/png"
+        onChange={handleInputChange}
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
+        aria-label="Seleccionar imagen del evento"
       />
 
-      <div className="flex gap-2">
-        <button
-          onClick={triggerFileInput}
-          disabled={status === 'uploading'}
-          className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:opacity-50"
-        >
-          {previewUrl ? 'Cambiar imagen' : 'Seleccionar imagen'}
-        </button>
-
-        {selectedFile && status !== 'uploading' && (
-          <button
-            onClick={handleUpload}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
-          >
-            Subir ahora
-          </button>
-        )}
-      </div>
-
-      {validationError && (
-        <p className="text-red-500 text-sm">{validationError}</p>
-      )}
-      
-      {status === 'error' && (
-        <p className="text-red-500 text-sm">{error || 'Error al subir la imagen'}</p>
-      )}
-      
-      {status === 'success' && (
-        <p className="text-green-500 text-sm">Imagen actualizada con éxito</p>
+      {uploadError && (
+        <p className="text-sm text-red-600">{uploadError}</p>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { AuthGuard } from '../../components/AuthGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { getImageUrl } from '../../lib/imageUtils';
 
 interface Event {
   id: number;
@@ -201,7 +202,7 @@ export default function MyEventsPage() {
                   <div className="h-48 bg-gray-200 flex items-center justify-center">
                     {event.imageUrl ? (
                       <img
-                        src={event.imageUrl}
+                        src={getImageUrl(event.imageUrl) || ''}
                         alt={event.title}
                         className="w-full h-full object-cover"
                       />
