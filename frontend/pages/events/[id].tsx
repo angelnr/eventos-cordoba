@@ -5,6 +5,7 @@ import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
 import { FavoriteButton } from '../../components/FavoriteButton';
+import { CommentSection } from '../../components/CommentSection';
 
 interface Event {
   id: number;
@@ -815,6 +816,14 @@ export default function EventDetail() {
                 )}
             </div>
           </div>
+        </div>
+
+        {/* Comments Section */}
+        <div className="mt-8">
+          <CommentSection
+            eventId={event.id}
+            isOrganizerOrAdmin={isOrganizer || user?.role === 'admin'}
+          />
         </div>
       </div>
     </Layout>

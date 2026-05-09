@@ -275,10 +275,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
       booking.status === 'confirmed' ? sum + booking.quantity : sum, 0
     );
 
+    const commentCount = await prisma.comment.count({
+      where: { eventId: parseInt(id), status: 'approved' }
+    });
+
     const eventWithStats = {
       ...event,
       availableSpots: event.capacity - totalBookings,
-      totalBookings
+      totalBookings,
+      commentCount
     };
 
     // Añadir información de favoritos

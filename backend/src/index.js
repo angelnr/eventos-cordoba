@@ -8,6 +8,7 @@ const eventsRoutes = require('./routes/events');
 const categoriesRoutes = require('./routes/categories');
 const bookingsRoutes = require('./routes/bookings');
 const favoritesRoutes = require('./routes/favorites');
+const commentsRoutes = require('./routes/comments');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,6 +38,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/comments', commentsRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
@@ -44,6 +46,7 @@ console.log('  - /api/users/*');
 console.log('  - /api/events/*');
 console.log('  - /api/categories/*');
 console.log('  - /api/favorites/*');
+console.log('  - /api/comments/*');
 
 // Rutas existentes
 app.get('/api/test', (req, res) => {

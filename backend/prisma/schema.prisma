@@ -174,14 +174,22 @@ model Favorite {
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String
+  status    String   @default("approved")
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId  Int
-  eventId Int
+  userId   Int
+  eventId  Int
+  parentId Int?
 
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  event   Event    @relation(fields: [eventId], references: [id])
+  parent  Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
 
+  @@index([eventId, status, createdAt])
+  @@index([userId])
+  @@index([parentId])
   @@map("comments")
 }
 
