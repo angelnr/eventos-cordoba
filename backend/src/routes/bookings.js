@@ -91,7 +91,8 @@ router.post('/', requireAuth, async (req, res) => {
         eventId: parseInt(eventId),
         userId: req.user.id,
         quantity: quantity,
-        totalPrice: event.price * quantity
+        totalPrice: event.price * quantity,
+        status: 'confirmed'
       }
     });
 

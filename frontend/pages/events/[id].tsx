@@ -212,11 +212,20 @@ export default function EventDetail() {
       );
 
       if (response.ok) {
-        alert(
-          '¡Reserva realizada con éxito!'
+        const apiUrl = getApiUrl();
+        const headers2: Record<string, string> = {};
+        if (token) {
+          headers2['Authorization'] = `Bearer ${token}`;
+        }
+        const refreshResponse = await fetch(
+          `${apiUrl}/api/events/${event.id}`,
+          { headers: headers2 }
         );
-
-        router.reload();
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          setEvent(refreshData.data);
+        }
+        alert('¡Reserva realizada con éxito!');
       } else {
         const errorData =
           await response.json();
@@ -279,11 +288,20 @@ export default function EventDetail() {
         );
 
         if (response.ok) {
-          alert(
-            '¡Reserva cancelada con éxito!'
+          const apiUrl = getApiUrl();
+          const headers2: Record<string, string> = {};
+          if (token) {
+            headers2['Authorization'] = `Bearer ${token}`;
+          }
+          const refreshResponse = await fetch(
+            `${apiUrl}/api/events/${event.id}`,
+            { headers: headers2 }
           );
-
-          router.reload();
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            setEvent(refreshData.data);
+          }
+          alert('¡Reserva cancelada con éxito!');
         } else {
           const errorData =
             await response.json();

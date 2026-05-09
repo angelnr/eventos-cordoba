@@ -126,10 +126,10 @@ model Booking {
   bookedAt   DateTime @default(now())
 
   userId       Int
-  ticketTypeId Int
+  ticketTypeId Int?
 
   user       User       @relation(fields: [userId], references: [id])
-  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  ticketType TicketType? @relation(fields: [ticketTypeId], references: [id])
 
   payment Payment?
   eventId Int
