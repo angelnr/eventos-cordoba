@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Button } from './ui/Button';
 import { UserMenu } from './UserMenu';
 import { ThemeToggle } from './ui/ThemeToggle';
+import { NotificationBell } from './notifications/NotificationBell';
 import { useAuth } from '../lib/auth';
 
 interface LayoutProps {
@@ -38,6 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               )}
               <ThemeToggle />
+              <NotificationBell />
               <UserMenu />
             </div>
           </div>

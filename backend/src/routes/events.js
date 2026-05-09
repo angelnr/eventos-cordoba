@@ -3,6 +3,7 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const { upload } = require('../middleware/upload');
 const { saveImage, deleteImage, isLocalImage } = require('../services/storageService');
+const { createEventNotifications } = require('../services/notificationService');
 const {
   validateFilterParams,
   buildFilterWhere,
@@ -584,6 +585,30 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
       }
     });
 
+    // Generar notificaciones si el evento fue cancelado
+    if (updateData.status === 'cancelled') {
+      createEventNotifications(parseInt(id), {
+        type: 'EVENT_CANCELLED',
+        title: 'Evento cancelado',
+        message: `El evento "${event.title}" ha sido cancelado por el organizador.`,
+        link: `/events/${id}`
+      }).catch(err => console.error('Error creating cancellation notifications:', err));
+    }
+
+    // Generar notificaciones si cambió la fecha
+    if (updateData.date && new Date(updateData.date).getTime() !== new Date(event.date).getTime()) {
+      const newDate = new Date(updateData.date);
+      const formattedDate = newDate.toLocaleDateString('es-ES', {
+        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      createEventNotifications(parseInt(id), {
+        type: 'EVENT_DATE_CHANGED',
+        title: 'Cambio de fecha',
+        message: `La fecha del evento "${event.title}" ha cambiado al ${formattedDate}.`,
+        link: `/events/${id}`
+      }).catch(err => console.error('Error creating date change notifications:', err));
+    }
+
     res.json({
       success: true,
       message: 'Evento actualizado exitosamente',
@@ -622,6 +647,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
         error: 'No tienes permisos para eliminar este evento'
       });
     }
+
+    // Notificar a los usuarios antes de eliminar el evento
+    createEventNotifications(parseInt(id), {
+      type: 'EVENT_CANCELLED',
+      title: 'Evento eliminado',
+      message: `El evento "${event.title}" ha sido eliminado.`,
+      link: null
+    }).catch(err => console.error('Error creating deletion notifications:', err));
 
     // Eliminar imagen del filesystem si es local
     if (isLocalImage(event.imageUrl)) {

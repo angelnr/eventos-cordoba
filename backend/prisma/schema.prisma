@@ -74,6 +74,7 @@ model Event {
   favorites       Favorite[]
   reviews         Review[]
   ticketTypes     TicketType[]
+  notifications   Notification[]
 
   @@index([date])
   @@index([status])
@@ -179,18 +180,22 @@ model Review {
 }
 
 model Notification {
-  id         Int      @id @default(autoincrement())
-  type       String
-  message    String
-  link       String?
-  entityType String?
-  entityId   Int?
-  read       Boolean  @default(false)
-  userId     Int
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String   @default("")
+  message   String
+  link      String?
+  eventId   Int?
+  isRead    Boolean  @default(false)
+  userId    Int
+  createdAt DateTime @default(now())
 
-  @@index([userId, read])
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([createdAt])
   @@map("notifications")
 }
 

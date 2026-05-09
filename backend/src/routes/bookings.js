@@ -1,5 +1,6 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const { createNotification } = require('../services/notificationService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -56,6 +57,12 @@ router.post('/', requireAuth, async (req, res) => {
         error: 'quantity debe ser un entero positivo'
       });
     }
+
+    // Obtener título del evento antes de la transacción
+    const eventInfo = await prisma.event.findUnique({
+      where: { id: parsedEventId },
+      select: { title: true }
+    });
 
     const booking = await prisma.$transaction(async (tx) => {
       const event = await tx.event.findUnique({
@@ -120,6 +127,15 @@ router.post('/', requireAuth, async (req, res) => {
 
       return booking;
     });
+
+    createNotification({
+      userId: req.user.id,
+      type: 'BOOKING_CONFIRMED',
+      title: 'Reserva confirmada',
+      message: `Tu reserva para "${eventInfo?.title || 'el evento'}" ha sido confirmada.`,
+      eventId: parsedEventId,
+      link: `/events/${parsedEventId}`
+    }).catch(err => console.error('Error creating booking notification:', err));
 
     res.status(201).json({
       success: true,
@@ -210,6 +226,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
       });
     }
 
+    const eventTitle = await prisma.event.findUnique({
+      where: { id: booking.eventId },
+      select: { title: true }
+    });
+
     // Transacción atómica: eliminar reserva + decrementar contador
     await prisma.$transaction(async (tx) => {
       const event = await tx.event.findUnique({
@@ -243,6 +264,15 @@ router.delete('/:id', requireAuth, async (req, res) => {
         data: { currentBookings: { decrement: booking.quantity } }
       });
     });
+
+    createNotification({
+      userId: req.user.id,
+      type: 'EVENT_CANCELLED',
+      title: 'Reserva cancelada',
+      message: `Tu reserva para "${eventTitle?.title || 'el evento'}" ha sido cancelada.`,
+      eventId: booking.eventId,
+      link: `/events/${booking.eventId}`
+    }).catch(err => console.error('Error creating cancellation notification:', err));
 
     res.json({
       success: true,

@@ -11,6 +11,9 @@ const bookingsRoutes = require('./routes/bookings');
 const favoritesRoutes = require('./routes/favorites');
 const commentsRoutes = require('./routes/comments');
 const reviewsRoutes = require('./routes/reviews');
+const notificationsRoutes = require('./routes/notifications');
+const { startReminderJob } = require('./jobs/reminderJob');
+const { startCleanupJob } = require('./jobs/cleanupJob');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,6 +45,7 @@ app.use('/api/bookings', bookingsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
@@ -51,6 +55,7 @@ console.log('  - /api/categories/*');
 console.log('  - /api/favorites/*');
 console.log('  - /api/comments/*');
 console.log('  - /api/reviews/*');
+console.log('  - /api/notifications/*');
 
 // Rutas existentes
 app.get('/api/test', (req, res) => {
@@ -93,6 +98,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('✅ Base de datos conectada con Prisma');
   console.log('✅ JWT configurado');
   console.log('✅ Rutas CRUD de usuarios implementadas');
+  startReminderJob();
+  startCleanupJob();
 });
 
 // Manejo de cierre graceful
