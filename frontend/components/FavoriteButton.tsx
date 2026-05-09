@@ -72,14 +72,14 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       tabIndex={0}
       aria-disabled={isLoading}
       className={`inline-flex items-center gap-1 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 rounded-full p-1 cursor-pointer ${
-        isFavorited ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
+        isFavorited ? 'text-red-500' : 'text-gray-400 dark:text-gray-500 hover:text-red-400'
       } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]} ${className}`}
       aria-label={isFavorited ? 'Quitar de favoritos' : 'Añadir a favoritos'}
       title={isFavorited ? 'Quitar de favoritos' : 'Añadir a favoritos'}
     >
       {isFavorited ? '❤️' : '🤍'}
       {showLabel && (
-        <span className={`text-sm ${isFavorited ? 'text-red-500' : 'text-gray-500'}`}>
+        <span className={`text-sm ${isFavorited ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
           {isFavorited ? 'En favoritos' : 'Añadir a favoritos'}
         </span>
       )}

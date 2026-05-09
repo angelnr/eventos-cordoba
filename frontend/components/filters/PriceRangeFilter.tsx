@@ -21,7 +21,7 @@ export default function PriceRangeFilter({
 }: PriceRangeFilterProps) {
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-gray-700">Precio</label>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Precio</label>
       <div className="flex items-center gap-2">
         <input
           type="number"
@@ -36,7 +36,7 @@ export default function PriceRangeFilter({
           max={priceMax}
           aria-label="Precio mínimo"
         />
-        <span className="text-gray-400">—</span>
+        <span className="text-gray-400 dark:text-gray-500">—</span>
         <input
           type="number"
           placeholder={String(priceMax)}
@@ -50,14 +50,14 @@ export default function PriceRangeFilter({
           max={priceMax}
           aria-label="Precio máximo"
         />
-        <span className="text-sm text-gray-500">€</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">€</span>
       </div>
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
         <input
           type="checkbox"
           checked={isFree || false}
           onChange={onFreeToggle}
-          className="rounded border-gray-300"
+          className="rounded border-gray-300 dark:border-gray-600"
         />
         Solo gratuitos
       </label>

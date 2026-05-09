@@ -85,6 +85,70 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/users/me/preferences - Obtener preferencias del usuario autenticado
+router.get('/me/preferences', authenticateToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { themePreference: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        themePreference: user.themePreference || 'system'
+      }
+    });
+  } catch (error) {
+    console.error('Get preferences error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener preferencias' });
+  }
+});
+
+// PUT /api/users/me/preferences - Actualizar themePreference
+router.put('/me/preferences', authenticateToken, async (req, res) => {
+  const VALID_THEMES = ['light', 'dark', 'system'];
+  const { themePreference } = req.body;
+
+  if (!themePreference || !VALID_THEMES.includes(themePreference)) {
+    return res.status(400).json({
+      success: false,
+      error: 'themePreference debe ser: light, dark o system'
+    });
+  }
+
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { themePreference: true }
+    });
+
+    if (currentUser && currentUser.themePreference === themePreference) {
+      return res.json({
+        success: true,
+        data: { themePreference }
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { themePreference }
+    });
+
+    res.json({
+      success: true,
+      data: { themePreference }
+    });
+  } catch (error) {
+    console.error('Update preferences error:', error);
+    res.status(500).json({ success: false, error: 'Error al actualizar preferencias' });
+  }
+});
+
 // GET /api/users/:id - Obtener usuario por ID
 router.get('/:id', authenticateToken, async (req, res) => {
   try {

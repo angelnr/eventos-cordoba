@@ -49,8 +49,8 @@ export default function Events() {
         {/* Header */}
         <div className="sm:flex sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Eventos</h1>
-            <p className="mt-2 text-sm text-gray-700">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Eventos</h1>
+            <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
               Descubre todos los eventos disponibles en Córdoba
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function Events() {
                 </div>
                 <button
                   onClick={() => window.location.reload()}
-                  className="text-blue-600 hover:underline text-sm"
+                  className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
                 >
                   Reintentar
                 </button>
@@ -100,14 +100,14 @@ export default function Events() {
             {/* Empty state */}
             {!isLoading && !isFetching && !error && events.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-gray-500 text-lg">
+                <div className="text-gray-500 dark:text-gray-400 text-lg">
                   No se encontraron eventos con estos filtros
                 </div>
-                <div className="text-gray-400 text-sm mt-2">
+                <div className="text-gray-400 dark:text-gray-500 text-sm mt-2">
                   {activeFilterCount > 0 ? (
                     <button
                       onClick={resetFilters}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Limpiar filtros
                     </button>

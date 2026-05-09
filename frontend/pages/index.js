@@ -90,7 +90,7 @@ export default function Home() {
     <Layout>
       <div className="text-center">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-8 mb-8">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 text-white rounded-lg p-8 mb-8">
           <h1 className="text-4xl font-bold mb-4">🚀 ¡Bienvenido a Eventos Córdoba!</h1>
           <p className="text-xl mb-6">Tu plataforma completa para gestionar eventos</p>
           <div className="flex justify-center gap-4">
@@ -112,26 +112,26 @@ export default function Home() {
         </div>
 
         {/* Backend Connection Status */}
-        <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">🔗 Estado del Sistema</h2>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🔗 Estado del Sistema</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Backend API</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Backend API</h3>
               {loading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400 mr-2"></div>
                   Verificando conexión...
                 </div>
               ) : (
-                <div className={`p-3 rounded-md ${backendMessage.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                <div className={`p-3 rounded-md ${backendMessage.includes('Error') ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'}`}>
                   {backendMessage.includes('Error') ? '❌' : '✅'} {backendMessage}
                 </div>
               )}
             </div>
 
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Base de Datos</h3>
-              <div className="p-3 bg-green-50 text-green-700 rounded-md">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Base de Datos</h3>
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md">
                 ✅ PostgreSQL conectado
               </div>
             </div>
@@ -140,44 +140,44 @@ export default function Home() {
 
         {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div className="text-3xl mb-4">🔐</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Autenticación Segura</h3>
-            <p className="text-gray-600">JWT tokens y encriptación de contraseñas</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Autenticación Segura</h3>
+            <p className="text-gray-600 dark:text-gray-400">JWT tokens y encriptación de contraseñas</p>
           </div>
 
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div className="text-3xl mb-4">⚡</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">API REST Completa</h3>
-            <p className="text-gray-600">CRUD operations con validación y manejo de errores</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">API REST Completa</h3>
+            <p className="text-gray-600 dark:text-gray-400">CRUD operations con validación y manejo de errores</p>
           </div>
 
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div className="text-3xl mb-4">🐳</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Docker + Cloudflare</h3>
-            <p className="text-gray-600">Despliegue moderno con contenedores y tunneling seguro</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Docker + Cloudflare</h3>
+            <p className="text-gray-600 dark:text-gray-400">Despliegue moderno con contenedores y tunneling seguro</p>
           </div>
         </div>
 
         {/* Services Status */}
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">🎯 Servicios Configurados</h3>
+        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">🎯 Servicios Configurados</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center">
               <span className="text-green-500 mr-2">●</span>
-              <span>Frontend: Next.js + TypeScript + Tailwind</span>
+              <span className="text-gray-600 dark:text-gray-400">Frontend: Next.js + TypeScript + Tailwind</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">●</span>
-              <span>Backend: Express.js + Prisma + PostgreSQL</span>
+              <span className="text-gray-600 dark:text-gray-400">Backend: Express.js + Prisma + PostgreSQL</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">●</span>
-              <span>Autenticación: JWT + bcrypt</span>
+              <span className="text-gray-600 dark:text-gray-400">Autenticación: JWT + bcrypt</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">●</span>
-              <span>Despliegue: Docker + Nginx + Cloudflare</span>
+              <span className="text-gray-600 dark:text-gray-400">Despliegue: Docker + Nginx + Cloudflare</span>
             </div>
           </div>
         </div>

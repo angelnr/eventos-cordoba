@@ -146,8 +146,8 @@ export default function CreateEventPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Crear Nuevo Evento</h1>
-                <p className="mt-2 text-gray-600">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Crear Nuevo Evento</h1>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
                   Organiza un evento y comparte momentos inolvidables con la comunidad.
                 </p>
               </div>
@@ -160,17 +160,17 @@ export default function CreateEventPage() {
           </div>
 
           {/* Form */}
-          <div className="bg-white shadow-lg rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <div className="text-sm text-red-700">{error}</div>
+                <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                  <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
                 </div>
               )}
 
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Título del Evento *
                 </label>
                 <input
@@ -180,14 +180,14 @@ export default function CreateEventPage() {
                   required
                   value={formData.title}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Ej: Concierto de Jazz en el Parque"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Descripción
                 </label>
                 <textarea
@@ -196,14 +196,14 @@ export default function CreateEventPage() {
                   rows={4}
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Describe los detalles del evento, qué actividades habrá, etc."
                 />
               </div>
 
               {/* Date and Time */}
               <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Fecha y Hora *
                 </label>
                 <input
@@ -214,13 +214,13 @@ export default function CreateEventPage() {
                   value={formData.date}
                   onChange={handleInputChange}
                   min={new Date().toISOString().slice(0, 16)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
 
               {/* Location */}
               <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Ubicación *
                 </label>
                 <input
@@ -230,7 +230,7 @@ export default function CreateEventPage() {
                   required
                   value={formData.location}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Ej: Plaza de la Constitución, Córdoba"
                 />
               </div>
@@ -238,7 +238,7 @@ export default function CreateEventPage() {
               {/* Capacity and Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="capacity" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Capacidad Máxima *
                   </label>
                   <input
@@ -249,13 +249,13 @@ export default function CreateEventPage() {
                     min="1"
                     value={formData.capacity}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="Ej: 100"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Precio (€)
                   </label>
                   <input
@@ -266,7 +266,7 @@ export default function CreateEventPage() {
                     step="0.01"
                     value={formData.price}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     placeholder="0.00 (gratis)"
                   />
                 </div>
@@ -281,7 +281,7 @@ export default function CreateEventPage() {
 
               {/* Category */}
               <div>
-                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Categoría *
                 </label>
                 <select
@@ -290,7 +290,7 @@ export default function CreateEventPage() {
                   required
                   value={formData.categoryId}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="">Selecciona una categoría</option>
                   {categories.map((category) => (

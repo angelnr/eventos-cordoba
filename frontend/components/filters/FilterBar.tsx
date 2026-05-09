@@ -56,7 +56,7 @@ export default function FilterBar({
     <div className="space-y-4">
       {/* Búsqueda */}
       <div>
-        <label htmlFor="search-input" className="text-sm font-medium text-gray-700">
+        <label htmlFor="search-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
           Buscar eventos
         </label>
         <input
@@ -72,7 +72,7 @@ export default function FilterBar({
       {/* Categorías */}
       {categories && categories.length > 0 && (
         <div>
-          <label className="text-sm font-medium text-gray-700">Categoría</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Categoría</label>
           <div className="mt-1 flex flex-wrap gap-2">
             <Button
               variant={!filters.category ? 'primary' : 'secondary'}
@@ -98,7 +98,7 @@ export default function FilterBar({
 
       {/* Presets de fecha */}
       <div>
-        <label className="text-sm font-medium text-gray-700">Fecha</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fecha</label>
         <div className="mt-1">
           <DatePresetFilter
             value={filters.datePreset}
@@ -149,7 +149,7 @@ export default function FilterBar({
   return (
     <>
       {/* Desktop */}
-      <div className="hidden md:block mb-6 p-4 bg-white border rounded-lg">
+      <div className="hidden md:block mb-6 p-4 bg-white dark:bg-gray-800 border rounded-lg">
         <ActiveFilters
           filters={filters}
           categories={categories}
@@ -185,12 +185,12 @@ export default function FilterBar({
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={() => setShowMobile(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white p-4 overflow-y-auto shadow-xl">
+          <div className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-gray-800 p-4 overflow-y-auto shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Filtros</h2>
               <button
                 onClick={() => setShowMobile(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 text-xl"
                 aria-label="Cerrar filtros"
               >
                 &times;

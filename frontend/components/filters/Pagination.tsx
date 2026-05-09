@@ -42,7 +42,7 @@ export default function Pagination({
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
         Mostrando {startItem}-{endItem} de {total} eventos
       </p>
 
@@ -50,7 +50,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={!hasPrev}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Página anterior"
         >
           Anterior
@@ -58,7 +58,7 @@ export default function Pagination({
 
         {getPageNumbers(page, pages).map((item, i) =>
           typeof item === 'string' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-gray-400">...</span>
+            <span key={`ellipsis-${i}`} className="px-2 text-gray-400 dark:text-gray-500">...</span>
           ) : (
             <button
               key={item}
@@ -66,7 +66,7 @@ export default function Pagination({
               className={`px-3 py-1.5 text-sm border rounded transition-colors ${
                 item === page
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'hover:bg-blue-50'
+                  : 'hover:bg-blue-50 dark:hover:bg-blue-900/30'
               }`}
               aria-label={`Página ${item}`}
               aria-current={item === page ? 'page' : undefined}
@@ -79,7 +79,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={!hasNext}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Página siguiente"
         >
           Siguiente

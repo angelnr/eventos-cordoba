@@ -63,7 +63,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     e.target.value = '';
   };
 
-  // Determinar qué imagen mostrar en preview
   const displayUrl = imageSource?.type === 'file'
     ? imageSource.previewUrl
     : imageSource?.type === 'external'
@@ -74,13 +73,15 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         Imagen del Evento
       </label>
 
       <div
         className={`relative border-2 border-dashed rounded-lg transition-colors ${
-          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+          isDragging
+            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+            : 'border-gray-300 dark:border-gray-600'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -97,14 +98,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="px-2 py-1 bg-white/90 text-gray-700 text-xs rounded hover:bg-white shadow"
+                className="px-2 py-1 bg-white/90 text-gray-700 dark:bg-gray-800/90 dark:text-gray-200 text-xs rounded hover:bg-white dark:hover:bg-gray-700 shadow"
               >
                 Cambiar
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
-                className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 shadow"
+                className="px-2 py-1 bg-red-500/90 text-white text-xs rounded hover:bg-red-600 dark:hover:bg-red-700 shadow"
               >
                 Eliminar
               </button>
@@ -115,13 +116,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
             className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
-            <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-10 h-10 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Arrastra una imagen aquí o haz clic para seleccionar
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {ALLOWED_TYPES_LABEL} · Máximo {MAX_SIZE_LABEL}
             </p>
           </div>
@@ -138,7 +139,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       />
 
       {uploadError && (
-        <p className="text-sm text-red-600">{uploadError}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">{uploadError}</p>
       )}
     </div>
   );

@@ -20,7 +20,16 @@ router.post('/login', async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        name: true,
+        role: true,
+        avatar: true,
+        themePreference: true
+      }
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -46,7 +55,8 @@ router.post('/login', async (req, res) => {
           email: user.email,
           name: user.name,
           role: user.role,
-          avatar: user.avatar
+          avatar: user.avatar,
+          themePreference: user.themePreference || 'system'
         }
       }
     });
@@ -96,6 +106,7 @@ router.post('/register', async (req, res) => {
         email: true,
         name: true,
         role: true,
+        themePreference: true,
         createdAt: true
       }
     });

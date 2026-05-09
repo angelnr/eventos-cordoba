@@ -122,10 +122,10 @@ export default function Favorites() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Mis Favoritos
               </h1>
-              <p className="mt-2 text-sm text-gray-700">
+              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                 Eventos que has marcado como favoritos
               </p>
             </div>
@@ -138,11 +138,11 @@ export default function Favorites() {
               </div>
             ) : favorites.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-500 text-lg">
+                <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400 text-lg">
                   Aún no tienes eventos favoritos
                 </div>
-                <div className="text-gray-400 text-sm mt-2">
-                  <Link href="/events" className="text-blue-600 hover:underline">
+                <div className="text-gray-400 dark:text-gray-500 dark:text-gray-400 text-sm mt-2">
+                  <Link href="/events" className="text-blue-600 dark:text-blue-400 hover:underline">
                     Explora los eventos
                   </Link>
                   {' '}y marca los que te interesen
@@ -156,10 +156,10 @@ export default function Favorites() {
                     return (
                       <div
                         key={fav.eventId}
-                        className="relative bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col"
+                        className="relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col"
                       >
                         <Link href={`/events/${event.id}`}>
-                          <div className="h-48 bg-gray-200 flex items-center justify-center">
+                          <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                             {event.imageUrl ? (
                               <img
                                 src={getImageUrl(event.imageUrl) || ''}
@@ -170,7 +170,7 @@ export default function Favorites() {
                                 }}
                               />
                             ) : (
-                              <div className="text-gray-400 text-center">
+                              <div className="text-gray-400 dark:text-gray-500 dark:text-gray-400 text-center">
                                 <div className="text-4xl mb-2" aria-hidden="true">📅</div>
                                 <div className="text-sm">Sin imagen</div>
                               </div>
@@ -187,18 +187,18 @@ export default function Favorites() {
                                   {event.category.name}
                                 </span>
                               ) : (
-                                <span className="text-xs text-gray-400">Sin categoría</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500 dark:text-gray-400">Sin categoría</span>
                               )}
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-400">
                                 {Math.max(0, event.availableSpots || 0)} plazas libres
                               </span>
                             </div>
 
-                            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2">
                               {event.title}
                             </h3>
 
-                            <div className="text-sm text-gray-600 mt-2">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                               <div className="flex items-center mb-1">
                                 <span className="mr-2" aria-hidden="true">📅</span>
                                 {formatDate(event.date)}
@@ -210,10 +210,10 @@ export default function Favorites() {
                             </div>
 
                             <div className="flex items-center justify-between text-sm mt-auto pt-2">
-                              <span className="text-gray-500">
+                              <span className="text-gray-500 dark:text-gray-400">
                                 Por {event.organizer?.name || 'Organizador desconocido'}
                               </span>
-                              <span className="font-semibold text-green-600">
+                              <span className="font-semibold text-green-600 dark:text-green-400">
                                 {formatPrice(event.price)}
                               </span>
                             </div>
@@ -222,7 +222,7 @@ export default function Favorites() {
 
                         {/* Favorite Button - Outside Link to avoid nesting issues */}
                         <div className="absolute top-2 right-2 z-10">
-                          <div className="bg-white/80 rounded-full px-1">
+                          <div className="bg-white/80 dark:bg-gray-800/80 rounded-full px-1">
                             <FavoriteButton
                               eventId={event.id}
                               initialFavorited={true}
@@ -247,7 +247,7 @@ export default function Favorites() {
                     >
                       ← Anterior
                     </Button>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       Página {page} de {totalPages}
                     </span>
                     <Button

@@ -72,16 +72,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   const currentUserId = user?.id;
 
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           Comentarios ({totalComments})
         </h2>
       </div>
 
       {!user ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 text-center mb-6">
-          <p className="text-gray-600 mb-3">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-3">
             Inicia sesión para comentar
           </p>
           <Link href="/login">
@@ -104,7 +104,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         </div>
       ) : error && comments.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-red-600 mb-3">{error}</p>
+          <p className="text-red-600 dark:text-red-400 mb-3">{error}</p>
           <Button
             variant="secondary"
             size="sm"
@@ -115,7 +115,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
         </div>
       ) : comments.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">Sé el primero en comentar</p>
+          <p className="text-gray-500 dark:text-gray-400">Sé el primero en comentar</p>
         </div>
       ) : (
         <div className="space-y-3">

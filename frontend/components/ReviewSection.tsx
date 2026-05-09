@@ -115,17 +115,17 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
             : 0;
           return (
             <div key={star} className="flex items-center gap-2 text-sm">
-              <span className="w-4 text-right text-gray-600 font-medium">
+              <span className="w-4 text-right text-gray-600 dark:text-gray-400 font-medium">
                 {star}
               </span>
               <span className="text-yellow-400 text-xs">★</span>
-              <div className="flex-1 bg-gray-200 rounded-full h-2">
+              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
                   className="bg-yellow-400 rounded-full h-2 transition-all duration-300"
                   style={{ width: `${percentage}%` }}
                 />
               </div>
-              <span className="w-8 text-right text-gray-500 text-xs">
+              <span className="w-8 text-right text-gray-500 dark:text-gray-400 text-xs">
                 {count}
               </span>
             </div>
@@ -137,7 +137,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
 
   if (loading && !stats) {
     return (
-      <div className="bg-gray-50 rounded-lg p-6">
+      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -147,7 +147,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
 
   if (error && !stats) {
     return (
-      <div className="bg-gray-50 rounded-lg p-6">
+      <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
         <div className="text-center py-8">
           <p className="text-red-600 mb-3">{error}</p>
           <Button
@@ -166,9 +166,9 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
   const averageRating = stats?.averageRating ?? 0;
 
   return (
-    <div className="bg-gray-50 rounded-lg p-6">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           Valoraciones ({reviewCount})
         </h2>
       </div>
@@ -177,7 +177,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
       {reviewCount > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="flex flex-col items-center justify-center">
-            <span className="text-5xl font-bold text-gray-900">
+            <span className="text-5xl font-bold text-gray-900 dark:text-gray-100">
               {averageRating.toFixed(1)}
             </span>
             <StarRating
@@ -185,7 +185,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
               readOnly
               size="sm"
             />
-            <span className="text-sm text-gray-500 mt-1">
+            <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {reviewCount} {reviewCount === 1 ? 'valoración' : 'valoraciones'}
             </span>
           </div>
@@ -195,15 +195,15 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
         </div>
       ) : (
         <div className="text-center py-6 mb-4">
-          <p className="text-gray-500">Sé el primero en valorar este evento</p>
+          <p className="text-gray-500 dark:text-gray-400">Sé el primero en valorar este evento</p>
         </div>
       )}
 
       {/* Sección de acción del usuario */}
-      <div className="border-t border-gray-200 pt-4">
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
         {!user ? (
           <div className="text-center py-4">
-            <p className="text-gray-600 mb-3">
+            <p className="text-gray-600 dark:text-gray-400 mb-3">
               Inicia sesión para valorar este evento
             </p>
             <Link href="/login">
@@ -211,24 +211,24 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
             </Link>
           </div>
         ) : !isPastEvent ? (
-          <p className="text-gray-500 text-center py-4">
+          <p className="text-gray-500 dark:text-gray-400 text-center py-4">
             Las valoraciones estarán disponibles cuando finalice el evento
           </p>
         ) : isOrganizer ? (
-          <p className="text-gray-500 text-center py-4">
+          <p className="text-gray-500 dark:text-gray-400 text-center py-4">
             No puedes valorar tu propio evento
           </p>
         ) : isEditing ? (
           /* Modo edición */
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-700 mb-2">Tu valoración:</p>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Tu valoración:</p>
             <div className="flex items-center gap-3">
               <StarRating
                 rating={selectedRating}
                 onChange={setSelectedRating}
                 size="lg"
               />
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {selectedRating > 0 ? `${selectedRating}/5` : 'Selecciona'}
               </span>
             </div>
@@ -257,10 +257,10 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
         ) : hasUserReview && userReview ? (
           /* Usuario con reseña existente */
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Tu valoración:
             </p>
-            <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
               <div className="flex items-center gap-3">
                 <StarRating
                   rating={userReview.rating}
@@ -268,7 +268,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   size="md"
                   showValue
                 />
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 dark:text-gray-500">
                   {formatDate(userReview.createdAt)}
                 </span>
               </div>
@@ -290,7 +290,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600">¿Seguro?</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">¿Seguro?</span>
                     <Button
                       size="sm"
                       onClick={handleDelete}
@@ -317,15 +317,15 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
           </div>
         ) : (
           /* Usuario sin reseña - selector de estrellas */
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <p className="text-sm text-gray-700 mb-2">Valora este evento:</p>
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Valora este evento:</p>
             <div className="flex items-center gap-3">
               <StarRating
                 rating={selectedRating}
                 onChange={setSelectedRating}
                 size="lg"
               />
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {selectedRating > 0 ? `${selectedRating}/5` : 'Selecciona'}
               </span>
             </div>
@@ -348,28 +348,28 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
 
       {/* Listado de reseñas */}
       {reviews.length > 0 && (
-        <div className="mt-6 border-t border-gray-200 pt-4">
-          <h3 className="text-md font-semibold text-gray-900 mb-4">
+        <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+          <h3 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Todas las valoraciones
           </h3>
           <div className="space-y-3">
             {reviews.map((review) => (
               <div
                 key={review.id}
-                className="bg-white border border-gray-200 rounded-lg p-3"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-xs font-medium">
                         {review.user.name?.charAt(0)?.toUpperCase() || '?'}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {review.user.name}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
                         {formatDate(review.createdAt)}
                       </p>
                     </div>

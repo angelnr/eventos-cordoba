@@ -56,15 +56,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
             Iniciar Sesión
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             ¿No tienes cuenta?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href="/register" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">
               Regístrate aquí
             </Link>
           </p>
@@ -94,8 +94,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+              <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
             </div>
           )}
 
@@ -112,7 +112,7 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center">
-            <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               ← Volver al inicio
             </Link>
           </div>

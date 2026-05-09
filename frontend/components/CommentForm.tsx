@@ -50,7 +50,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3">
       <div>
         <textarea
           ref={textareaRef}
@@ -59,13 +59,13 @@ export const CommentForm: React.FC<CommentFormProps> = ({
           placeholder={placeholder}
           rows={3}
           maxLength={maxLength + 1}
-          className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           disabled={isSubmitting}
         />
         <div className="flex justify-between items-center mt-1">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 dark:text-gray-500">
             {content.length > maxLength - 100 ? (
-              <span className={content.length > maxLength ? 'text-red-500' : 'text-gray-400'}>
+              <span className={content.length > maxLength ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'}>
                 {content.length}/{maxLength}
               </span>
             ) : null}

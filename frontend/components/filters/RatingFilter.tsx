@@ -15,7 +15,7 @@ export default function RatingFilter({ value, onChange }: RatingFilterProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">Rating mínimo</label>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Rating mínimo</label>
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map(star => {
           const filled = displayValue != null && star <= displayValue;
@@ -27,7 +27,7 @@ export default function RatingFilter({ value, onChange }: RatingFilterProps) {
               onMouseLeave={() => setHover(null)}
               onClick={() => onChange(value === star ? undefined : star)}
               className={`text-xl transition-colors ${
-                filled ? 'text-yellow-400' : 'text-gray-300'
+                filled ? 'text-yellow-400 dark:text-yellow-500' : 'text-gray-300 dark:text-gray-600'
               } hover:text-yellow-400 focus:outline-none`}
               aria-label={`${star} estrella${star > 1 ? 's' : ''}`}
             >
@@ -36,7 +36,7 @@ export default function RatingFilter({ value, onChange }: RatingFilterProps) {
           );
         })}
         {value != null && (
-          <span className="text-sm text-gray-500 ml-1">{value}+</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">{value}+</span>
         )}
       </div>
     </div>

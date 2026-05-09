@@ -343,7 +343,7 @@ export default function EventDetail() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">
+          <div className="text-gray-500 dark:text-gray-400 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 text-lg">
             Evento no encontrado
           </div>
 
@@ -416,7 +416,7 @@ export default function EventDetail() {
           <div className="lg:col-span-2">
             {/* Event Image */}
             <div className="mb-6">
-              <div className="h-96 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+              <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center overflow-hidden">
                 {event.imageUrl ? (
                   <img
                     src={getImageUrl(event.imageUrl) || ''}
@@ -428,7 +428,7 @@ export default function EventDetail() {
                     }}
                   />
                 ) : (
-                  <div className="text-gray-400 text-center">
+                  <div className="text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400 text-center">
                     <div
                       className="text-6xl mb-4"
                       aria-hidden="true"
@@ -445,7 +445,7 @@ export default function EventDetail() {
             </div>
 
             {/* Event Details */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               {/* Category and Status */}
               <div className="flex items-center justify-between mb-4">
                 {event.category ? (
@@ -459,7 +459,7 @@ export default function EventDetail() {
                     {event.category.name}
                   </span>
                 ) : (
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-gray-400 dark:text-gray-500 dark:text-gray-400 dark:text-gray-500 dark:text-gray-400">
                     Sin categoría
                   </span>
                 )}
@@ -468,11 +468,11 @@ export default function EventDetail() {
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                     event.status ===
                     'active'
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                       : event.status ===
                         'cancelled'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                   }`}
                 >
                   {event.status ===
@@ -486,18 +486,18 @@ export default function EventDetail() {
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-4">
                 {event.title}
               </h1>
 
               {/* Description */}
               {event.description && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                     Descripción
                   </h3>
 
-                  <p className="text-gray-700 whitespace-pre-line">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
                     {event.description}
                   </p>
                 </div>
@@ -506,11 +506,11 @@ export default function EventDetail() {
               {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                     📅 Fecha y Hora
                   </h3>
 
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300">
                     {formatDate(
                       event.date
                     )}
@@ -518,21 +518,21 @@ export default function EventDetail() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                     📍 Ubicación
                   </h3>
 
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300">
                     {event.location}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                     👥 Capacidad
                   </h3>
 
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300">
                     {event.capacity}{' '}
                     personas total
 
@@ -548,11 +548,11 @@ export default function EventDetail() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                     💰 Precio
                   </h3>
 
-                  <p className="text-xl font-semibold text-green-600">
+                  <p className="text-xl font-semibold text-green-600 dark:text-green-400">
                     {formatPrice(
                       event.price
                     )}
@@ -561,8 +561,8 @@ export default function EventDetail() {
               </div>
 
               {/* Organizer Info */}
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2">
                   👤 Organizador
                 </h3>
 
@@ -571,9 +571,9 @@ export default function EventDetail() {
                     href={`/profile/${event.organizer.id}`}
                     className="block"
                   >
-                    <div className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                    <div className="flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 rounded-full flex items-center justify-center">
                           <span className="text-white font-medium">
                             {event.organizer.name
                               ?.charAt(0)
@@ -584,13 +584,13 @@ export default function EventDetail() {
                       </div>
 
                       <div className="ml-4">
-                        <p className="text-gray-900 font-medium hover:text-blue-600">
+                        <p className="text-gray-900 dark:text-gray-100 font-medium hover:text-blue-600 dark:text-blue-400">
                           {event.organizer
                             .name ||
                             'Organizador desconocido'}
                         </p>
 
-                        <p className="text-gray-500 text-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                           {event.organizer
                             .email || ''}
                         </p>
@@ -598,7 +598,7 @@ export default function EventDetail() {
                     </div>
                   </Link>
                 ) : (
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 dark:text-gray-400">
                     Organizador desconocido
                   </p>
                 )}
@@ -608,7 +608,7 @@ export default function EventDetail() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-6">
               {/* Favorite Button */}
               <div className="mb-6 flex items-center gap-3">
                 <FavoriteButton
@@ -627,34 +627,34 @@ export default function EventDetail() {
                     });
                   }}
                 />
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {event.favoriteCount || 0} {event.favoriteCount === 1 ? 'persona' : 'personas'} lo tienen en favoritos
                 </span>
               </div>
               <hr className="mb-6" />
               {/* Booking Status */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-4">
                   Estado de reservas
                 </h3>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">
                       Total reservas:
                     </span>
 
-                    <span className="font-medium">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {event.totalBookings}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">
                       Plazas disponibles:
                     </span>
 
-                    <span className="font-medium text-green-600">
+                    <span className="font-medium text-green-600 dark:text-green-400">
                       {Math.max(
                         0,
                         event.availableSpots ||
@@ -664,11 +664,11 @@ export default function EventDetail() {
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-gray-600">
+                    <span className="text-gray-600 dark:text-gray-400">
                       Capacidad total:
                     </span>
 
-                    <span className="font-medium">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {event.capacity}
                     </span>
                   </div>
@@ -678,7 +678,7 @@ export default function EventDetail() {
               {/* Booking Button */}
               {isOrganizer ? (
                 <div className="text-center">
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Eres el organizador
                     de este evento
                   </p>
@@ -727,7 +727,7 @@ export default function EventDetail() {
                   </Button>
                 ) : (
                   <div className="text-center">
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                       {isPastEvent
                         ? 'Este evento ya ha pasado'
                         : Math.max(
@@ -742,7 +742,7 @@ export default function EventDetail() {
                 )
               ) : (
                 <div className="text-center">
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Inicia sesión para
                     reservar
                   </p>
@@ -762,8 +762,8 @@ export default function EventDetail() {
               {isOrganizer &&
                 event.bookings.length >
                   0 && (
-                  <div className="mt-6 border-t border-gray-200 pt-6">
-                    <h4 className="text-md font-semibold text-gray-900 mb-4">
+                  <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
                       Últimas reservas
                     </h4>
 
@@ -776,13 +776,13 @@ export default function EventDetail() {
                             className="flex items-center justify-between text-sm"
                           >
                             <div>
-                              <p className="font-medium text-gray-900">
+                              <p className="font-medium text-gray-900 dark:text-gray-100">
                                 {booking.user
                                   ?.name ||
                                   'Usuario'}
                               </p>
 
-                              <p className="text-gray-500">
+                              <p className="text-gray-500 dark:text-gray-400">
                                 {
                                   booking.quantity
                                 }{' '}
@@ -802,7 +802,7 @@ export default function EventDetail() {
                                   : booking.status ===
                                     'cancelled'
                                   ? 'bg-red-100 text-red-800'
-                                  : 'bg-gray-100 text-gray-800'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                               }`}
                             >
                               {booking.status ===

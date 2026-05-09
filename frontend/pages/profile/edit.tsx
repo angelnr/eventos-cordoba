@@ -158,7 +158,7 @@ export default function EditProfile() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">Usuario no encontrado</div>
+          <div className="text-gray-500 dark:text-gray-400 text-lg">Usuario no encontrado</div>
           <Link href="/">
             <Button className="mt-4">Volver al inicio</Button>
           </Link>
@@ -174,8 +174,8 @@ export default function EditProfile() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Editar Perfil</h1>
-              <p className="mt-2 text-sm text-gray-700">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Editar Perfil</h1>
+              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                 Actualiza tu información personal y preferencias
               </p>
             </div>
@@ -188,12 +188,12 @@ export default function EditProfile() {
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Información básica</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información básica</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Email
                   </label>
                   <input
@@ -201,13 +201,13 @@ export default function EditProfile() {
                     id="email"
                     value={user.email}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   />
-                  <p className="mt-1 text-xs text-gray-500">El email no se puede cambiar</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">El email no se puede cambiar</p>
                 </div>
 
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Nombre completo
                   </label>
                   <input
@@ -215,7 +215,7 @@ export default function EditProfile() {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Tu nombre completo"
                   />
                 </div>
@@ -223,12 +223,12 @@ export default function EditProfile() {
             </div>
 
             {/* Profile Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Información del perfil</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información del perfil</h2>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Ubicación
                   </label>
                   <input
@@ -236,13 +236,13 @@ export default function EditProfile() {
                     id="location"
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Ej: Córdoba, Argentina"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Biografía
                   </label>
                   <textarea
@@ -250,11 +250,11 @@ export default function EditProfile() {
                     value={formData.bio}
                     onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Cuéntanos un poco sobre ti..."
                     maxLength={500}
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {formData.bio.length}/500 caracteres
                   </p>
                 </div>
@@ -262,9 +262,9 @@ export default function EditProfile() {
             </div>
 
             {/* Interests */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Intereses</h2>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Intereses</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Selecciona tus intereses para recibir recomendaciones personalizadas
               </p>
 
@@ -277,7 +277,7 @@ export default function EditProfile() {
                       onChange={() => handleInterestToggle(interest)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700">{interest}</span>
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">{interest}</span>
                   </label>
                 ))}
               </div>

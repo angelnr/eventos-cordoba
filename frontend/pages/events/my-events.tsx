@@ -127,9 +127,9 @@ export default function MyEventsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: { label: 'Activo', className: 'bg-green-100 text-green-800' },
-      cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
-      completed: { label: 'Completado', className: 'bg-gray-100 text-gray-800' },
+      active: { label: 'Activo', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+      cancelled: { label: 'Cancelado', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+      completed: { label: 'Completado', className: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.completed;
@@ -160,8 +160,8 @@ export default function MyEventsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Mis Eventos</h1>
-                <p className="mt-2 text-gray-600">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mis Eventos</h1>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
                   Gestiona los eventos que has organizado.
                 </p>
               </div>
@@ -176,16 +176,16 @@ export default function MyEventsPage() {
           {/* Error Message */}
           {error && (
             <div className="mb-6 rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+              <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
             </div>
           )}
 
           {/* Events List */}
           {events.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">📅</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No has creado ningún evento aún</h3>
-              <p className="text-gray-500 mb-6">
+              <div className="text-gray-400 dark:text-gray-500 dark:text-gray-400 text-6xl mb-4">📅</div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No has creado ningún evento aún</h3>
+              <p className="text-gray-500 dark:text-gray-400 dark:text-gray-400 mb-6">
                 ¡Es hora de organizar tu primer evento! Crea experiencias inolvidables para la comunidad.
               </p>
               <Link href="/events/create">
@@ -197,9 +197,9 @@ export default function MyEventsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.map((event) => (
-                <div key={event.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                <div key={event.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
                   {/* Event Image */}
-                  <div className="h-48 bg-gray-200 flex items-center justify-center">
+                  <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     {event.imageUrl ? (
                       <img
                         src={getImageUrl(event.imageUrl) || ''}
@@ -207,7 +207,7 @@ export default function MyEventsPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="text-gray-400 text-4xl">📅</div>
+                      <div className="text-gray-400 dark:text-gray-500 dark:text-gray-400 text-4xl">📅</div>
                     )}
                   </div>
 
@@ -225,12 +225,12 @@ export default function MyEventsPage() {
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-2 line-clamp-2">
                       {event.title}
                     </h3>
 
                     {/* Date and Location */}
-                    <div className="space-y-1 mb-4 text-sm text-gray-600">
+                    <div className="space-y-1 mb-4 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center">
                         <span className="mr-2">📅</span>
                         {formatDate(event.date)}
@@ -244,18 +244,18 @@ export default function MyEventsPage() {
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                       <div className="text-center">
-                        <div className="font-semibold text-gray-900">{event.totalBookings}</div>
-                        <div className="text-gray-500">Reservas</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">{event.totalBookings}</div>
+                        <div className="text-gray-500 dark:text-gray-400">Reservas</div>
                       </div>
                       <div className="text-center">
-                        <div className="font-semibold text-gray-900">{event.availableSpots}</div>
-                        <div className="text-gray-500">Disponibles</div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">{event.availableSpots}</div>
+                        <div className="text-gray-500 dark:text-gray-400">Disponibles</div>
                       </div>
                     </div>
 
                     {/* Price */}
                     <div className="text-center mb-4">
-                      <span className="text-xl font-bold text-green-600">
+                      <span className="text-xl font-bold text-green-600 dark:text-green-400">
                         {formatPrice(event.price)}
                       </span>
                     </div>

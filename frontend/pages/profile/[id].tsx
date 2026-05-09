@@ -146,8 +146,8 @@ export default function UserProfile() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg mb-2">Acceso restringido</div>
-          <div className="text-gray-400 text-sm mb-4">
+          <div className="text-gray-500 dark:text-gray-400 text-lg mb-2">Acceso restringido</div>
+          <div className="text-gray-400 dark:text-gray-500 text-sm mb-4">
             Debes iniciar sesión para ver perfiles de usuario
           </div>
           <Link href="/login">
@@ -165,7 +165,7 @@ export default function UserProfile() {
     return (
       <Layout>
         <div className="text-center py-12">
-          <div className="text-gray-500 text-lg">Usuario no encontrado</div>
+          <div className="text-gray-500 dark:text-gray-400 text-lg">Usuario no encontrado</div>
           <Link href="/">
             <Button className="mt-4">Volver al inicio</Button>
           </Link>
@@ -198,7 +198,7 @@ export default function UserProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 sticky top-6">
               {/* Avatar and Basic Info */}
               <div className="text-center mb-6">
                 <div className="relative inline-block">
@@ -210,7 +210,7 @@ export default function UserProfile() {
                     />
                   ) : (
                     <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-gray-600 font-medium text-2xl">
+                      <span className="text-gray-600 dark:text-gray-400 font-medium text-2xl">
                         {user.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -224,14 +224,14 @@ export default function UserProfile() {
                   )}
                 </div>
 
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">{user.name}</h1>
-                <p className="text-gray-600 capitalize">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{user.name}</h1>
+                <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 capitalize">
                   {user.role === 'organizer' ? 'Organizador' :
                    user.role === 'admin' ? 'Administrador' : 'Usuario'}
                 </p>
 
                 {user.location && (
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                     📍 {user.location}
                   </p>
                 )}
@@ -251,20 +251,20 @@ export default function UserProfile() {
               {/* Bio */}
               {user.bio && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Sobre mí</h3>
-                  <p className="text-gray-700 text-sm leading-relaxed">{user.bio}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Sobre mí</h3>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{user.bio}</p>
                 </div>
               )}
 
               {/* Interests */}
               {user.interests && user.interests.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Intereses</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Intereses</h3>
                   <div className="flex flex-wrap gap-2">
                     {user.interests.map((interest, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
                       >
                         {interest}
                       </span>
@@ -274,16 +274,16 @@ export default function UserProfile() {
               )}
 
               {/* Stats */}
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas</h3>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Estadísticas</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Miembro desde:</span>
-                    <span className="font-medium">{formatDate(user.createdAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Miembro desde:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(user.createdAt)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Eventos organizados:</span>
-                    <span className="font-medium">{events.length}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Eventos organizados:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{events.length}</span>
                   </div>
                 </div>
               </div>
@@ -293,17 +293,17 @@ export default function UserProfile() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Events Organized */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 dark:text-gray-100">
                   Eventos organizados ({events.length})
                 </h2>
               </div>
 
               {events.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-500 text-lg mb-2">No hay eventos organizados</div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-gray-500 dark:text-gray-400 text-lg mb-2">No hay eventos organizados</div>
+                  <div className="text-gray-400 dark:text-gray-500 text-sm">
                     {user.role === 'organizer' ? 'Los eventos aparecerán aquí cuando los organice' : 'Este usuario aún no ha organizado eventos'}
                   </div>
                 </div>
@@ -311,10 +311,10 @@ export default function UserProfile() {
                 <div className="space-y-4">
                   {events.map((event) => (
                     <Link key={event.id} href={`/events/${event.id}`}>
-                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-1">
-                            <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{event.title}</h3>
                             <span
                               className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
                               style={{ backgroundColor: event.category.color }}
@@ -322,7 +322,7 @@ export default function UserProfile() {
                               {event.category.name}
                             </span>
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
                             📅 {formatDate(event.date)} • 📍 {event.location}
                           </div>
                         </div>
@@ -330,7 +330,7 @@ export default function UserProfile() {
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             event.status === 'active' ? 'bg-green-100 text-green-800' :
                             event.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                           }`}>
                             {event.status === 'active' ? 'Activo' :
                              event.status === 'cancelled' ? 'Cancelado' : 'Completado'}

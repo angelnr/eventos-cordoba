@@ -99,8 +99,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   };
 
   return (
-    <article className={`${isReply ? 'ml-8 mt-2 border-l-2 border-gray-200 pl-4' : ''}`}>
-      <div className={`${isReply ? '' : 'bg-white border border-gray-200 rounded-lg p-4'} ${isReply ? 'py-2' : ''}`}>
+    <article className={`${isReply ? 'ml-8 mt-2 border-l-2 border-gray-200 dark:border-gray-700 pl-4' : ''}`}>
+      <div className={`${isReply ? '' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'} ${isReply ? 'py-2' : ''}`}>
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
             {comment.user.avatar ? (
@@ -110,8 +110,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 text-sm font-medium">
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                   {getAvatarInitial(comment.user.name)}
                 </span>
               </div>
@@ -119,8 +119,8 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-gray-900 text-sm">{comment.user.name}</span>
-              <span className="text-gray-400 text-xs">{formatRelativeDate(comment.createdAt)}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{comment.user.name}</span>
+              <span className="text-gray-400 dark:text-gray-500 text-xs">{formatRelativeDate(comment.createdAt)}</span>
               {isHiddenByModeration && (
                 <span className="text-xs text-yellow-600 font-medium">Oculto</span>
               )}
@@ -141,7 +141,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 />
               </div>
             ) : (
-              <div className={`mt-1 text-sm ${isDeleted ? 'text-gray-400 italic' : isHiddenByModeration ? 'text-gray-400' : 'text-gray-700'}`}>
+              <div className={`mt-1 text-sm ${isDeleted ? 'text-gray-400 dark:text-gray-500 italic' : isHiddenByModeration ? 'text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
                 {isDeleted ? '[comentario eliminado]' : isHiddenByModeration ? (
                   <span className="italic">Comentario oculto por moderación</span>
                 ) : (
@@ -155,7 +155,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {currentUserId && !isReply && (
                   <button
                     onClick={() => onReply(comment.id)}
-                    className="text-xs text-gray-500 hover:text-blue-600 font-medium transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                     aria-label="Responder al comentario"
                   >
                     Responder
@@ -164,7 +164,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {canEdit && (
                   <button
                     onClick={handleStartEdit}
-                    className="text-xs text-gray-500 hover:text-blue-600 font-medium transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
                     aria-label="Editar comentario"
                   >
                     Editar
@@ -173,7 +173,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {canDelete && (
                   <button
                     onClick={handleDelete}
-                    className="text-xs text-gray-500 hover:text-red-600 font-medium transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 font-medium transition-colors"
                     aria-label="Eliminar comentario"
                   >
                     Eliminar
@@ -182,7 +182,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {canHide && (
                   <button
                     onClick={handleHide}
-                    className="text-xs text-gray-500 hover:text-yellow-600 font-medium transition-colors"
+                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 font-medium transition-colors"
                     aria-label={comment.status === 'hidden' ? 'Mostrar comentario' : 'Ocultar comentario'}
                   >
                     {comment.status === 'hidden' ? 'Mostrar' : 'Ocultar'}
@@ -210,7 +210,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       </div>
 
       {comment.replies && comment.replies.length > 0 && !isReply && (
-        <div className="ml-8 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
+        <div className="ml-8 mt-2 space-y-3 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
           {comment.replies.map((reply) => (
             <CommentItem
               key={reply.id}

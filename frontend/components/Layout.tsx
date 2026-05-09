@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from './ui/Button';
 import { UserMenu } from './UserMenu';
+import { ThemeToggle } from './ui/ThemeToggle';
 import { useAuth } from '../lib/auth';
 
 interface LayoutProps {
@@ -12,13 +13,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white shadow-sm border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">
+              <Link href="/" className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Eventos Córdoba
               </Link>
             </div>
@@ -36,6 +37,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Button>
                 </Link>
               )}
+              <ThemeToggle />
               <UserMenu />
             </div>
           </div>

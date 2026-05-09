@@ -156,12 +156,12 @@ export default function DashboardPage() {
   const isAdmin = user?.role === 'admin';
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
           <div className="text-center">
             <div className="text-6xl mb-4">🚫</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Acceso Denegado</h1>
-            <p className="text-gray-600 mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Acceso Denegado</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Solo los administradores pueden acceder al dashboard.
             </p>
             <a
@@ -181,31 +181,31 @@ export default function DashboardPage() {
       <Layout>
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
               Bienvenido a tu panel de control, {user?.name}
             </p>
           </div>
 
           {/* User Info Card */}
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Tu Información</h2>
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Tu Información</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.name}</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 dark:text-gray-100">{user?.name}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.email}</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 dark:text-gray-100">{user?.email}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">ID de Usuario</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.id}</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">ID de Usuario</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 dark:text-gray-100">{user?.id}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Fecha de Registro</label>
-                <p className="mt-1 text-sm text-gray-900">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha de Registro</label>
+                <p className="mt-1 text-sm text-gray-900 dark:text-gray-100 dark:text-gray-100">
                   Usuario autenticado
                 </p>
               </div>
@@ -213,9 +213,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Users Management */}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Gestión de Usuarios</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Gestión de Usuarios</h2>
               <div className="space-x-2">
                 <Button
                   variant="secondary"
@@ -245,52 +245,52 @@ export default function DashboardPage() {
             </div>
 
             {error && (
-              <div className="mb-4 rounded-md bg-red-50 p-4">
-                <div className="text-sm text-red-700">{error}</div>
+              <div className="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+                <div className="text-sm text-red-700 dark:text-red-300">{error}</div>
               </div>
             )}
 
             {/* Users Table */}
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Nombre
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Fecha de Registro
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200">
                   {users.map((userItem) => (
-                    <tr key={userItem.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={userItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                         {userItem.id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {userItem.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {userItem.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {new Date(userItem.createdAt).toLocaleDateString('es-ES')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => deleteUser(userItem.id, userItem.name || userItem.email)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center px-3 py-1 border border-red-300 rounded-md text-sm font-medium bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-white inline-flex items-center px-3 py-1 border border-red-300 dark:border-red-600 rounded-md text-sm font-medium bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                           disabled={userItem.id === user?.id} // No permitir eliminar al propio admin
                         >
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -305,7 +305,7 @@ export default function DashboardPage() {
               </table>
 
               {users.length === 0 && !isLoadingUsers && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No hay usuarios registrados aún.
                 </div>
               )}

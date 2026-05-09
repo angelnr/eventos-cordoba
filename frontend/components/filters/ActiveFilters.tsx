@@ -62,12 +62,12 @@ export default function ActiveFilters({ filters, categories, onRemove, onReset, 
 
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
-      <span className="text-sm text-gray-500 font-medium">Filtros activos:</span>
+      <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Filtros activos:</span>
       {activeChips.map(chip => (
         <button
           key={chip.key}
           onClick={() => onRemove(chip.key)}
-          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
           aria-label={`Eliminar filtro: ${chip.label}`}
         >
           {chip.label}
@@ -77,7 +77,7 @@ export default function ActiveFilters({ filters, categories, onRemove, onReset, 
       {activeCount > 1 && (
         <button
           onClick={onReset}
-          className="text-sm text-red-600 hover:text-red-800 underline ml-2"
+          className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 underline ml-2"
         >
           Limpiar todo
         </button>

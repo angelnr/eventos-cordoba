@@ -22,7 +22,7 @@ export default function SortSelect({ sortBy, sortOrder, onChange }: SortSelectPr
 
   return (
     <div className="flex items-center gap-2">
-      <label htmlFor="sort-select" className="text-sm text-gray-600 hidden sm:inline">
+      <label htmlFor="sort-select" className="text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">
         Ordenar:
       </label>
       <select
@@ -32,7 +32,7 @@ export default function SortSelect({ sortBy, sortOrder, onChange }: SortSelectPr
           const [newSortBy, newSortOrder] = e.target.value.split('-');
           onChange(newSortBy, newSortOrder);
         }}
-        className="border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
         {OPTIONS.map(opt => (
           <option key={`${opt.sortBy}-${opt.sortOrder}`} value={`${opt.sortBy}-${opt.sortOrder}`}>

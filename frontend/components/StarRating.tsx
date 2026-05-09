@@ -62,8 +62,8 @@ export const StarRating: React.FC<StarRatingProps> = ({
           key={star}
           className={`${sizeClasses[size]} transition-colors duration-150 select-none ${
             star <= displayRating
-              ? 'text-yellow-400'
-              : 'text-gray-300'
+              ? 'text-yellow-400 dark:text-yellow-500'
+              : 'text-gray-300 dark:text-gray-600'
           } ${
             !readOnly
               ? 'cursor-pointer hover:scale-110'
@@ -81,7 +81,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
         </span>
       ))}
       {showValue && (
-        <span className="ml-2 text-gray-600 font-medium text-sm">
+        <span className="ml-2 text-gray-600 dark:text-gray-400 font-medium text-sm">
           {rating > 0 ? rating.toFixed(1) : '-'}
         </span>
       )}
