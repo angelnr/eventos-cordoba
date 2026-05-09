@@ -2,12 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from './ui/Button';
 import { UserMenu } from './UserMenu';
+import { useAuth } from '../lib/auth';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -21,17 +23,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Link>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/events">
                 <Button variant="secondary" size="sm">
                   Eventos
                 </Button>
               </Link>
-              <Link href="/favorites">
-                <Button variant="secondary" size="sm">
-                  Favoritos
-                </Button>
-              </Link>
+              {user && (
+                <Link href="/favorites">
+                  <Button variant="secondary" size="sm">
+                    Favoritos
+                  </Button>
+                </Link>
+              )}
               <UserMenu />
             </div>
           </div>
