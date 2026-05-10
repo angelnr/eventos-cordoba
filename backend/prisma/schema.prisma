@@ -84,6 +84,7 @@ model Event {
   @@index([status, averageRating])
   @@index([categoryId, status])
   @@index([status, currentBookings, capacity])
+  @@index([organizerId, status, date])
   @@map("events")
 }
 
@@ -115,6 +116,7 @@ model Booking {
   payment      Payment?
 
   @@index([userId])
+  @@index([userId, status])
   @@map("bookings")
 }
 
@@ -140,6 +142,7 @@ model Favorite {
 
   @@id([userId, eventId])
   @@index([eventId])
+  @@index([userId, createdAt])
   @@map("favorites")
 }
 

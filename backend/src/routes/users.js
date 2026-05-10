@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const myEventsService = require('../services/myEventsService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -146,6 +147,75 @@ router.put('/me/preferences', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Update preferences error:', error);
     res.status(500).json({ success: false, error: 'Error al actualizar preferencias' });
+  }
+});
+
+// GET /api/users/my-events-summary - Resumen de todas las secciones de Mis Eventos
+router.get('/my-events-summary', authenticateToken, async (req, res) => {
+  try {
+    const data = await myEventsService.getMyEventsSummary(req.user.id);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get my events summary error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener resumen de eventos' });
+  }
+});
+
+// GET /api/users/my-upcoming-events - Próximos eventos del usuario
+router.get('/my-upcoming-events', authenticateToken, async (req, res) => {
+  try {
+    const result = await myEventsService.getUpcomingEvents(req.user.id, {
+      paginate: true,
+      query: req.query,
+    });
+    res.json({ success: true, data: result.events, pagination: result.pagination });
+  } catch (error) {
+    console.error('Get upcoming events error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener próximos eventos' });
+  }
+});
+
+// GET /api/users/my-past-events - Eventos pasados del usuario
+router.get('/my-past-events', authenticateToken, async (req, res) => {
+  try {
+    const result = await myEventsService.getPastEvents(req.user.id, {
+      paginate: true,
+      query: req.query,
+    });
+    res.json({ success: true, data: result.events, pagination: result.pagination });
+  } catch (error) {
+    console.error('Get past events error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener eventos pasados' });
+  }
+});
+
+// GET /api/users/my-favorite-events - Eventos favoritos del usuario
+router.get('/my-favorite-events', authenticateToken, async (req, res) => {
+  try {
+    const result = await myEventsService.getFavoriteEvents(req.user.id, {
+      paginate: true,
+      query: req.query,
+      categoryId: req.query.category,
+    });
+    res.json({ success: true, data: result.events, pagination: result.pagination });
+  } catch (error) {
+    console.error('Get favorite events error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener eventos favoritos' });
+  }
+});
+
+// GET /api/users/my-organized-events - Eventos organizados por el usuario
+router.get('/my-organized-events', authenticateToken, async (req, res) => {
+  try {
+    const result = await myEventsService.getOrganizedEvents(req.user.id, {
+      paginate: true,
+      query: req.query,
+      status: req.query.status,
+    });
+    res.json({ success: true, data: result.events, pagination: result.pagination });
+  } catch (error) {
+    console.error('Get organized events error:', error);
+    res.status(500).json({ success: false, error: 'Error al obtener eventos organizados' });
   }
 });
 
