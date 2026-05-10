@@ -151,7 +151,7 @@ async function main() {
       create: {
         ...e,
         slug: slugify(e.title),
-        status: 'active',
+        status: 'SCHEDULED',
       },
     });
 

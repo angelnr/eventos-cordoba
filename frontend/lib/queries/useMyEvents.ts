@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../api';
+import type { EventStatusEnum } from './useEvents';
 
 export interface MyEventItem {
   id: number;
@@ -9,7 +10,7 @@ export interface MyEventItem {
   date?: string | null;
   location: string;
   capacity: number;
-  status: string;
+  status: EventStatusEnum;
   imageUrl?: string;
   price: number;
   organizerId: number;

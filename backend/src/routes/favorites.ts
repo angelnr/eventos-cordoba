@@ -72,7 +72,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       where.event = { categoryId: parseInt(category as string) };
     }
 
-    const eventFilter = { status: { not: 'cancelled' } };
+    const eventFilter = { status: { not: 'CANCELLED' } };
     if (where.event) {
       where.event = { ...where.event, ...eventFilter };
     } else {
@@ -141,7 +141,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       where: { id: parsedEventId }
     });
 
-    if (!event || event.status === 'cancelled') {
+    if (!event || event.status === 'CANCELLED') {
       return res.status(404).json({
         success: false,
         error: 'El evento no existe o no está disponible'

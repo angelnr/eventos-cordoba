@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { requireAuth } from '../middleware/auth';
 import { createNotification } from '../services/notificationService';
 import { generateTicketForBooking } from '../services/ticketService';
@@ -55,9 +55,21 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         }
       });
 
-      if (!event || event.status !== 'active') {
-        const err: any = new Error('Evento no encontrado o no disponible');
+      if (!event) {
+        const err: any = new Error('Evento no encontrado');
         err.statusCode = 404;
+        throw err;
+      }
+
+      if (event.status !== 'SCHEDULED') {
+        const statusMessages: Record<string, string> = {
+          CANCELLED: 'El evento ha sido cancelado',
+          FINISHED: 'El evento ya ha finalizado',
+          FULL: 'El evento está completo, no hay plazas disponibles',
+        };
+        const message = statusMessages[event.status] || 'El evento no está disponible para reservas';
+        const err: any = new Error(message);
+        err.statusCode = 400;
         throw err;
       }
 
@@ -102,6 +114,23 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         where: { id: parsedEventId },
         data: { currentBookings: { increment: parsedQuantity } }
       });
+
+      // Transición automática a FULL si se completa el aforo
+      if (event.currentBookings + parsedQuantity >= event.capacity && event.status === 'SCHEDULED') {
+        await tx.event.update({
+          where: { id: parsedEventId },
+          data: { status: 'FULL' },
+        });
+        await tx.eventStatusLog.create({
+          data: {
+            eventId: parsedEventId,
+            fromStatus: 'SCHEDULED',
+            toStatus: 'FULL',
+            reason: 'Aforo completo tras reserva',
+            changedById: null,
+          },
+        });
+      }
 
       return booking;
     });
@@ -224,21 +253,22 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 
     // Transacción atómica: cancelar reserva + decrementar contador
     await prisma.$transaction(async (tx) => {
-      const event = await tx.event.findUnique({
+      // Leer estado del evento actual antes de modificar
+      const eventBefore = await tx.event.findUnique({
         where: { id: booking.eventId },
-        select: { id: true, currentBookings: true }
+        select: { id: true, currentBookings: true, status: true }
       });
 
-      if (!event) {
+      if (!eventBefore) {
         const err: any = new Error('Evento no encontrado');
         err.statusCode = 404;
         throw err;
       }
 
-      if (event.currentBookings < booking.quantity) {
+      if (eventBefore.currentBookings < booking.quantity) {
         console.error('Inconsistencia en currentBookings:', {
-          eventId: event.id,
-          currentBookings: event.currentBookings,
+          eventId: eventBefore.id,
+          currentBookings: eventBefore.currentBookings,
           attemptedDecrement: booking.quantity
         });
         const err: any = new Error('Error de consistencia en la base de datos');
@@ -259,6 +289,24 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
         where: { id: booking.eventId },
         data: { currentBookings: { decrement: booking.quantity } }
       });
+
+      // Transición automática de FULL a SCHEDULED si se libera plaza
+      const newCurrentBookings = eventBefore.currentBookings - booking.quantity;
+      if (eventBefore.status === 'FULL' && newCurrentBookings < eventBefore.currentBookings) {
+        await tx.event.update({
+          where: { id: booking.eventId },
+          data: { status: 'SCHEDULED' },
+        });
+        await tx.eventStatusLog.create({
+          data: {
+            eventId: booking.eventId,
+            fromStatus: 'FULL',
+            toStatus: 'SCHEDULED',
+            reason: 'Plaza liberada tras cancelación de reserva',
+            changedById: req.user!.id,
+          },
+        });
+      }
 
       // Invalidar el ticket asociado si existe
       const associatedTicket = await tx.ticket.findUnique({

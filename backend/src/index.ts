@@ -15,6 +15,7 @@ import notificationsRoutes from './routes/notifications';
 import ticketsRoutes from './routes/tickets';
 import { startReminderJob } from './jobs/reminderJob';
 import { startCleanupJob } from './jobs/cleanupJob';
+import { startStatusTransitionJob } from './jobs/statusTransitionJob';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -103,6 +104,7 @@ app.listen(PORT as number, '0.0.0.0', () => {
   console.log('✅ Rutas CRUD de usuarios implementadas');
   startReminderJob();
   startCleanupJob();
+  startStatusTransitionJob();
 });
 
 // Manejo de cierre graceful

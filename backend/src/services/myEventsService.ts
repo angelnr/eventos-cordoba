@@ -80,7 +80,7 @@ export async function getUpcomingEvents(userId: number, options: MyEventsOptions
     status: 'confirmed',
     Event: {
       date: { gt: new Date() },
-      status: { not: 'cancelled' },
+      status: { not: 'CANCELLED' },
     },
   };
 
@@ -125,7 +125,7 @@ export async function getPastEvents(userId: number, options: MyEventsOptions = {
     status: 'confirmed',
     Event: {
       date: { lte: new Date() },
-      status: { not: 'cancelled' },
+      status: { not: 'CANCELLED' },
     },
   };
 
@@ -167,7 +167,7 @@ export async function getFavoriteEvents(userId: number, options: MyEventsOptions
 
   const where: any = {
     userId,
-    event: { status: { not: 'cancelled' } },
+    event: { status: { not: 'CANCELLED' } },
   };
 
   if (options.categoryId) {

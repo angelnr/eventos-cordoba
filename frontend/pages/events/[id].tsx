@@ -10,6 +10,8 @@ import { getImageUrl } from '../../lib/imageUtils';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { CommentSection } from '../../components/CommentSection';
 import { ReviewSection } from '../../components/ReviewSection';
+import { StatusBadge } from '../../components/StatusBadge';
+import type { EventStatusEnum } from '../../components/StatusBadge';
 
 interface Event {
   id: number;
@@ -19,7 +21,7 @@ interface Event {
   location: string;
   capacity: number;
   price?: number | string | null;
-  status: 'active' | 'cancelled' | 'draft' | 'completed';
+  status: EventStatusEnum;
   imageUrl?: string;
 
   organizer?: {
@@ -386,7 +388,7 @@ export default function EventDetail() {
       0,
       event.availableSpots || 0
     ) > 0 &&
-    event.status === 'active';
+    event.status === 'SCHEDULED';
 
   const eventDate = event.date
     ? new Date(event.date)
@@ -415,6 +417,35 @@ export default function EventDetail() {
             </Button>
           </Link>
         </div>
+
+        {/* Status Banners */}
+        {event.status === 'CANCELLED' && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-700 dark:text-red-300 font-semibold">
+              ⚠️ Este evento ha sido cancelado
+            </p>
+            <p className="text-red-600 dark:text-red-400 text-sm mt-1">
+              Las inscripciones están bloqueadas y las entradas existentes han sido invalidadas.
+            </p>
+          </div>
+        )}
+        {event.status === 'FULL' && (
+          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <p className="text-amber-700 dark:text-amber-300 font-semibold">
+              Aforo completo
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 text-sm mt-1">
+              No quedan plazas disponibles. Si ya tienes reserva, puedes ver tu entrada.
+            </p>
+          </div>
+        )}
+        {event.status === 'FINISHED' && (
+          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <p className="text-gray-600 dark:text-gray-300 font-semibold">
+              Este evento ya ha finalizado
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -471,22 +502,22 @@ export default function EventDetail() {
 
                 <span
                   className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                    event.status ===
-                    'active'
+                    event.status === 'SCHEDULED'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                      : event.status ===
-                        'cancelled'
+                      : event.status === 'CANCELLED'
                       ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      : event.status === 'FULL'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
                       : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                   }`}
                 >
-                  {event.status ===
-                  'active'
-                    ? 'Activo'
-                    : event.status ===
-                      'cancelled'
+                  {event.status === 'SCHEDULED'
+                    ? 'Programado'
+                    : event.status === 'CANCELLED'
                     ? 'Cancelado'
-                    : 'Completado'}
+                    : event.status === 'FULL'
+                    ? 'Completo'
+                    : 'Finalizado'}
                 </span>
               </div>
 

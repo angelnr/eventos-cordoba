@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../api';
 import type { EventFilters } from '../useEventFilters';
 
+export type EventStatusEnum = 'SCHEDULED' | 'CANCELLED' | 'FINISHED' | 'FULL';
+
 export interface EventResponse {
   id: number;
   slug?: string;
@@ -10,7 +12,7 @@ export interface EventResponse {
   date?: string | null;
   location: string;
   capacity: number;
-  status: string;
+  status: EventStatusEnum;
   imageUrl?: string;
   price: number;
   organizerId: number;

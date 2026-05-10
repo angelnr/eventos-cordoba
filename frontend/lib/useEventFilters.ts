@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router';
 import { useCallback, useMemo } from 'react';
+import type { EventStatusEnum } from './queries/useEvents';
 
 export interface EventFilters {
   page: number;
@@ -15,6 +16,7 @@ export interface EventFilters {
   available?: boolean;
   soldOut?: boolean;
   isFree?: boolean;
+  status?: EventStatusEnum;
   sortBy: 'date' | 'price' | 'averageRating' | 'createdAt' | 'title';
   sortOrder: 'asc' | 'desc';
 }
@@ -49,6 +51,9 @@ export function useEventFilters() {
       ...(q.available === 'true' && { available: true }),
       ...(q.soldOut === 'true' && { soldOut: true }),
       ...(q.isFree === 'true' && { isFree: true }),
+      ...(q.status === 'SCHEDULED' || q.status === 'CANCELLED' || q.status === 'FINISHED' || q.status === 'FULL'
+        ? { status: q.status as EventStatusEnum }
+        : {}),
       ...(q.sortBy === 'price' || q.sortBy === 'averageRating' || q.sortBy === 'createdAt' || q.sortBy === 'title'
         ? { sortBy: q.sortBy as EventFilters['sortBy'] }
         : {}),
@@ -102,6 +107,7 @@ export function useEventFilters() {
     if (filters.available) count++;
     if (filters.soldOut) count++;
     if (filters.isFree) count++;
+    if (filters.status) count++;
     if (filters.sortBy !== 'date') count++;
     if (filters.sortOrder !== 'asc') count++;
     return count;

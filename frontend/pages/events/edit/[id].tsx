@@ -101,63 +101,79 @@ export default function EditEventPage() {
     fetchCategories();
   }, []);
 
-  // Cargar evento
-  useEffect(() => {
-    if (!id || !token) return;
+const STATUS_LABELS: Record<string, string> = {
+  SCHEDULED: 'Programado',
+  CANCELLED: 'Cancelado',
+  FINISHED: 'Finalizado',
+  FULL: 'Completo',
+};
 
-    const fetchEvent = async () => {
-      setLoading(true);
-      try {
-        const apiUrl = getApiUrl();
-        const response = await fetch(`${apiUrl}/api/events/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+const [allowedTransitions, setAllowedTransitions] = useState<string[]>([]);
 
-        if (response.ok) {
-          const data = await response.json();
-          const eventData = data.data;
-          
-          // Verificar que el usuario sea el organizador
-          if (eventData.organizerId !== user?.id && user?.role !== 'admin') {
-            showError('No tienes permisos para editar este evento');
-            router.push('/events/my-events');
-            return;
-          }
+// Cargar evento
+useEffect(() => {
+  if (!id || !token) return;
 
-          setEvent(eventData);
-          setEventImageUrl(eventData.imageUrl || null);
+  const fetchEvent = async () => {
+    setLoading(true);
+    try {
+      const apiUrl = getApiUrl();
 
-          // Formatear la fecha para datetime-local input
-          const dateObj = new Date(eventData.date);
-          const formattedDate = dateObj.toISOString().slice(0, 16);
+      // Fetch event data and allowed transitions in parallel
+      const [eventRes, transitionsRes] = await Promise.all([
+        fetch(`${apiUrl}/api/events/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }),
+        fetch(`${apiUrl}/api/events/status-transitions`),
+      ]);
 
-          setFormData({
-            title: eventData.title,
-            description: eventData.description || '',
-            date: formattedDate,
-            location: eventData.location,
-            capacity: eventData.capacity.toString(),
-            price: eventData.price.toString(),
-            categoryId: eventData.categoryId.toString(),
-            status: eventData.status,
-          });
-        } else {
-          showError('Error al cargar el evento');
+      if (eventRes.ok && transitionsRes.ok) {
+        const eventData = (await eventRes.json()).data;
+        const transitionsData = (await transitionsRes.json()).data;
+
+        if (eventData.organizerId !== user?.id && user?.role !== 'admin') {
+          showError('No tienes permisos para editar este evento');
           router.push('/events/my-events');
+          return;
         }
-      } catch (error) {
-        console.error('Error loading event:', error);
+
+        const currentStatus = eventData.status;
+        const config = transitionsData[currentStatus];
+        if (config) {
+          setAllowedTransitions(config.allowedTransitions);
+        }
+
+        setEvent(eventData);
+        setEventImageUrl(eventData.imageUrl || null);
+
+        const dateObj = new Date(eventData.date);
+        const formattedDate = dateObj.toISOString().slice(0, 16);
+
+        setFormData({
+          title: eventData.title,
+          description: eventData.description || '',
+          date: formattedDate,
+          location: eventData.location,
+          capacity: eventData.capacity.toString(),
+          price: eventData.price.toString(),
+          categoryId: eventData.categoryId.toString(),
+          status: currentStatus,
+        });
+      } else {
         showError('Error al cargar el evento');
         router.push('/events/my-events');
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error loading event:', error);
+      showError('Error al cargar el evento');
+      router.push('/events/my-events');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchEvent();
-  }, [id, token, user]);
+  fetchEvent();
+}, [id, token, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -175,6 +191,24 @@ export default function EditEventPage() {
     try {
       const apiUrl = getApiUrl();
 
+      // If status changed, call PATCH /status first
+      if (formData.status !== event?.status && event) {
+        const statusRes = await fetch(`${apiUrl}/api/events/${id}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: formData.status, reason: 'Cambio de estado desde edición' }),
+        });
+
+        if (!statusRes.ok) {
+          const statusData = await statusRes.json();
+          throw new Error(statusData.error || 'Error al cambiar el estado del evento');
+        }
+      }
+
+      // Update event fields (without status)
       const formDataBody = new FormData();
       formDataBody.append('title', formData.title);
       formDataBody.append('description', formData.description || '');
@@ -183,7 +217,6 @@ export default function EditEventPage() {
       formDataBody.append('capacity', formData.capacity);
       formDataBody.append('price', formData.price || '0');
       formDataBody.append('categoryId', formData.categoryId);
-      formDataBody.append('status', formData.status);
 
       if (imageData.file) {
         formDataBody.append('image', imageData.file);
@@ -421,10 +454,22 @@ export default function EditEventPage() {
                   onChange={handleInputChange}
                   className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
-                  <option value="active">Activo</option>
-                  <option value="cancelled">Cancelado</option>
-                  <option value="completed">Completado</option>
+                  <option value={event?.status || ''}>
+                    {STATUS_LABELS[event?.status || ''] || event?.status || 'Desconocido'} (actual)
+                  </option>
+                  {allowedTransitions.map((s: string) => (
+                    <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
+                  ))}
                 </select>
+                {event?.status === 'FINISHED' || event?.status === 'CANCELLED' ? (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Este evento no puede cambiar de estado.
+                  </p>
+                ) : allowedTransitions.length === 0 ? (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    No hay transiciones disponibles desde este estado.
+                  </p>
+                ) : null}
               </div>
 
               {/* Submit Button */}

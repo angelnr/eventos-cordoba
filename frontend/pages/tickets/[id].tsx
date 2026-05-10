@@ -150,6 +150,15 @@ export default function TicketDetailPage() {
       <Layout>
         <div className="max-w-lg mx-auto mt-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            {/* Event cancelled banner */}
+            {event && (event.status === 'CANCELLED') && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-700 dark:text-red-300 text-sm font-semibold">
+                  ⚠️ El evento asociado a esta entrada ha sido cancelado
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Mi Entrada

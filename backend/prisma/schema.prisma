@@ -7,33 +7,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EventStatus {
+  SCHEDULED
+  CANCELLED
+  FINISHED
+  FULL
+}
+
 model User {
-  id              Int                       @id @default(autoincrement())
-  email           String                    @unique
-  password        String
-  name            String?
-  avatar          String?
-  bio             String?
-  location        String?
-  role            String                    @default("user")
-  isVerified      Boolean                   @default(false)
-  themePreference String?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-  interests       String[]                  @default([])
-  bookings        Booking[]
-  comments        Comment[]
-  conversations   ConversationParticipant[]
-  organizedEvents Event[]
-  favorites       Favorite[]
-  groupsOwned     Group[]
-  messagesSent    Message[]
-  notifications   Notification[]
-  reviews         Review[]
-  userGroups      UserGroup[]
-  validatedTickets   Ticket[]               @relation("ValidatedTickets")
-  invalidatedTickets Ticket[]               @relation("InvalidatedTickets")
+  id                 Int                       @id @default(autoincrement())
+  email              String                    @unique
+  password           String
+  name               String?
+  avatar             String?
+  bio                String?
+  location           String?
+  role               String                    @default("user")
+  isVerified         Boolean                   @default(false)
+  themePreference    String?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  interests          String[]                  @default([])
+  bookings           Booking[]
+  comments           Comment[]
+  conversations      ConversationParticipant[]
+  organizedEvents    Event[]
+  favorites          Favorite[]
+  groupsOwned        Group[]
+  messagesSent       Message[]
+  notifications      Notification[]
+  reviews            Review[]
+  userGroups         UserGroup[]
+  validatedTickets   Ticket[]                  @relation("ValidatedTickets")
+  invalidatedTickets Ticket[]                  @relation("InvalidatedTickets")
   ticketAuditLogs    TicketAuditLog[]
+  statusChanges      EventStatusLog[]          @relation("UserStatusChanges")
 
   @@map("users")
 }
@@ -51,8 +59,8 @@ model Category {
 }
 
 model Event {
-  id              Int          @id @default(autoincrement())
-  slug            String?      @unique
+  id              Int              @id @default(autoincrement())
+  slug            String?          @unique
   title           String
   description     String?
   date            DateTime
@@ -60,24 +68,25 @@ model Event {
   latitude        Float?
   longitude       Float?
   capacity        Int
-  status          String       @default("active")
+  status          EventStatus      @default(SCHEDULED)
   imageUrl        String?
-  price           Float        @default(0)
+  price           Float            @default(0)
   organizerId     Int
   categoryId      Int
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  averageRating   Float        @default(0)
-  reviewCount     Int          @default(0)
-  currentBookings Int          @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  averageRating   Float            @default(0)
+  reviewCount     Int              @default(0)
+  currentBookings Int              @default(0)
   bookings        Booking[]
   comments        Comment[]
-  category        Category     @relation(fields: [categoryId], references: [id])
-  organizer       User         @relation(fields: [organizerId], references: [id])
+  category        Category         @relation(fields: [categoryId], references: [id])
+  organizer       User             @relation(fields: [organizerId], references: [id])
   favorites       Favorite[]
   reviews         Review[]
   ticketTypes     TicketType[]
   notifications   Notification[]
+  statusLogs      EventStatusLog[]
 
   @@index([date])
   @@index([status])
@@ -89,6 +98,24 @@ model Event {
   @@index([status, currentBookings, capacity])
   @@index([organizerId, status, date])
   @@map("events")
+}
+
+model EventStatusLog {
+  id          Int         @id @default(autoincrement())
+  eventId     Int
+  fromStatus  EventStatus
+  toStatus    EventStatus
+  reason      String      @default("")
+  changedById Int?
+  createdAt   DateTime    @default(now())
+
+  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  changedBy User? @relation("UserStatusChanges", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([eventId, createdAt])
+  @@index([toStatus])
+  @@map("event_status_logs")
 }
 
 model TicketType {
@@ -266,22 +293,22 @@ model Message {
 }
 
 model Ticket {
-  id                 Int              @id @default(autoincrement())
-  token              String           @unique @db.Uuid
-  status             String           @default("valid")
-  bookingId          Int              @unique
+  id                 Int       @id @default(autoincrement())
+  token              String    @unique @db.Uuid
+  status             String    @default("valid")
+  bookingId          Int       @unique
   scannedAt          DateTime?
   validatedById      Int?
   invalidatedAt      DateTime?
   invalidatedById    Int?
   invalidationReason String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  booking         Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  validatedBy     User?            @relation("ValidatedTickets", fields: [validatedById], references: [id])
-  invalidatedBy   User?            @relation("InvalidatedTickets", fields: [invalidatedById], references: [id])
-  auditLogs       TicketAuditLog[]
+  booking       Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  validatedBy   User?            @relation("ValidatedTickets", fields: [validatedById], references: [id])
+  invalidatedBy User?            @relation("InvalidatedTickets", fields: [invalidatedById], references: [id])
+  auditLogs     TicketAuditLog[]
 
   @@index([token])
   @@index([status])
@@ -298,8 +325,8 @@ model TicketAuditLog {
   metadata  String?
   createdAt DateTime @default(now())
 
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([ticketId])
   @@index([action])

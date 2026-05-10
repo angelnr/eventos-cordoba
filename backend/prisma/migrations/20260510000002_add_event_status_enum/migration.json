@@ -1,0 +1,33 @@
+{
+  "version": "5.2",
+  "steps": [
+    {
+      "tag": "AlterTable",
+      "table": "events"
+    },
+    {
+      "tag": "CreateTable",
+      "table": "event_status_logs"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_event_status_logs_eventId"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_event_status_logs_eventId_createdAt"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_event_status_logs_toStatus"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "event_status_logs_eventId_fkey"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "event_status_logs_changedById_fkey"
+    }
+  ]
+}

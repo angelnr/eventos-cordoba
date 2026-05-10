@@ -151,8 +151,8 @@ export async function validateTicket(
         },
       });
 
-      if (!booking || booking.Event.status === 'cancelled') {
-        throw Object.assign(new Error('El evento asociado está cancelado'), { statusCode: 422 });
+      if (!booking || booking.Event.status === 'CANCELLED' || booking.Event.status === 'FINISHED') {
+        throw Object.assign(new Error('El evento asociado está cancelado o ha finalizado'), { statusCode: 422 });
       }
 
       const updatedTicket = await tx.ticket.update({

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, EventStatus } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { upload } from '../middleware/upload';
 import { saveImage, deleteImage, isLocalImage } from '../services/storageService';
@@ -12,6 +12,7 @@ import {
   buildAppliedFiltersSummary
 } from '../services/eventFilters';
 import { requireAuth, requireOrganizer, optionalAuth } from '../middleware/auth';
+import { transitionEventStatus, getAllowedTransitions, EVENT_STATUS_CONFIG } from '../services/eventStatusService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -237,18 +238,18 @@ router.get('/filters-meta', async (req: Request, res: Response) => {
   try {
     const [categories, priceRange, totalActive, totalFree, totalSoldOutRaw] = await Promise.all([
       prisma.category.findMany({
-        include: { _count: { select: { events: { where: { status: 'active' } } } } },
+        include: { _count: { select: { events: { where: { status: 'SCHEDULED' } } } } },
         orderBy: { name: 'asc' }
       }),
       prisma.event.aggregate({
-        where: { status: 'active' },
+        where: { status: 'SCHEDULED' },
         _min: { price: true },
         _max: { price: true },
         _avg: { averageRating: true }
       }),
-      prisma.event.count({ where: { status: 'active' } }),
-      prisma.event.count({ where: { status: 'active', price: 0 } }),
-      prisma.$queryRaw<Array<{ count: number }>>`SELECT COUNT(*)::int as count FROM events WHERE status = 'active' AND "currentBookings" >= capacity`
+      prisma.event.count({ where: { status: 'SCHEDULED' } }),
+      prisma.event.count({ where: { status: 'SCHEDULED', price: 0 } }),
+      prisma.$queryRaw<Array<{ count: number }>>`SELECT COUNT(*)::int as count FROM events WHERE status = 'SCHEDULED' AND "currentBookings" >= capacity`
     ]);
 
     const totalSoldOut = totalSoldOutRaw[0]?.count || 0;
@@ -260,7 +261,7 @@ router.get('/filters-meta', async (req: Request, res: Response) => {
           id: c.id,
           name: c.name,
           color: c.color,
-          eventCount: c._count.events
+          eventCount: (c as any)._count.events
         })),
         priceRange: {
           min: priceRange._min.price || 0,
@@ -282,6 +283,183 @@ router.get('/filters-meta', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Error al obtener metadatos de filtros'
+    });
+  }
+});
+
+// GET /api/events/status-transitions - Transiciones permitidas (DEBE IR ANTES DE /:id)
+router.get('/status-transitions', async (req: Request, res: Response) => {
+  try {
+    const transitions = EVENT_STATUS_CONFIG;
+    const data: Record<string, any> = {};
+    for (const [status, config] of Object.entries(transitions)) {
+      data[status] = {
+        label: config.label,
+        allowedTransitions: getAllowedTransitions(status as EventStatus),
+        canBook: config.canBook,
+        canGenerateTicket: config.canGenerateTicket,
+        canCheckIn: config.canCheckIn,
+        canFavorite: config.canFavorite,
+      };
+    }
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get status transitions error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener transiciones de estado'
+    });
+  }
+});
+
+// PATCH /api/events/:id/status - Cambiar estado del evento (DEBE IR ANTES DE /:id)
+router.patch('/:id/status', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'El campo status es requerido'
+      });
+    }
+
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId) || parsedId < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de evento inválido'
+      });
+    }
+
+    const validStatuses: EventStatus[] = ['SCHEDULED', 'CANCELLED', 'FINISHED', 'FULL'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: `Estado inválido: ${status}. Valores permitidos: ${validStatuses.join(', ')}`
+      });
+    }
+
+    // Verificar permisos (solo organizador del evento o admin)
+    const event = await prisma.event.findUnique({
+      where: { id: parsedId },
+      select: { id: true, organizerId: true }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado'
+      });
+    }
+
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes permisos para cambiar el estado de este evento'
+      });
+    }
+
+    const result = await transitionEventStatus(
+      parsedId,
+      status as EventStatus,
+      req.user!.id,
+      reason || ''
+    );
+
+    res.json({
+      success: true,
+      message: `Estado actualizado de ${result.log.fromStatus} a ${result.log.toStatus}`,
+      data: {
+        id: result.event.id,
+        title: result.event.title,
+        status: result.event.status,
+        previousStatus: result.log.fromStatus,
+        updatedAt: result.event.updatedAt
+      }
+    });
+  } catch (error: any) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message
+      });
+    }
+    console.error('Update event status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al cambiar el estado del evento'
+    });
+  }
+});
+
+// GET /api/events/:id/status-log - Historial de cambios de estado (DEBE IR ANTES DE /:id)
+router.get('/:id/status-log', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const parsedId = parseInt(id);
+    if (isNaN(parsedId) || parsedId < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de evento inválido'
+      });
+    }
+
+    // Verificar permisos (solo organizador del evento o admin)
+    const event = await prisma.event.findUnique({
+      where: { id: parsedId },
+      select: { id: true, organizerId: true }
+    });
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado'
+      });
+    }
+
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'No tienes permisos para ver el historial de este evento'
+      });
+    }
+
+    const [logs, total] = await Promise.all([
+      prisma.eventStatusLog.findMany({
+        where: { eventId: parsedId },
+        include: {
+          changedBy: { select: { id: true, name: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.eventStatusLog.count({ where: { eventId: parsedId } }),
+    ]);
+
+    res.json({
+      success: true,
+      data: logs,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1,
+      }
+    });
+  } catch (error) {
+    console.error('Get event status log error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener historial de estados'
     });
   }
 });
@@ -444,6 +622,13 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
     const { id } = req.params;
     const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status } = req.body;
 
+    if (status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Para cambiar el estado del evento, usa PATCH /api/events/:id/status'
+      });
+    }
+
     // Buscar el evento
     const event = await prisma.event.findUnique({
       where: { id: parseInt(id) }
@@ -491,7 +676,6 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
     if (parsedCapacity !== undefined && !Number.isNaN(parsedCapacity)) updateData.capacity = parsedCapacity;
     if (parsedPrice !== undefined && !Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
     if (parsedCategoryId !== undefined && !Number.isNaN(parsedCategoryId)) updateData.categoryId = parsedCategoryId;
-    if (status) updateData.status = status;
 
     // Manejo de imagen
     if (req.file) {
@@ -538,16 +722,6 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
         }
       }
     });
-
-    // Generar notificaciones si el evento fue cancelado
-    if (updateData.status === 'cancelled') {
-      createEventNotifications(parseInt(id), {
-        type: 'EVENT_CANCELLED' as any,
-        title: 'Evento cancelado',
-        message: `El evento "${event.title}" ha sido cancelado por el organizador.`,
-        link: `/events/${id}`
-      }).catch(err => console.error('Error creating cancellation notifications:', err));
-    }
 
     // Generar notificaciones si cambió la fecha
     if (updateData.date && new Date(updateData.date).getTime() !== new Date(event.date).getTime()) {

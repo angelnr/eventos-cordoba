@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { FavoriteButton } from './FavoriteButton';
 import { getImageUrl } from '../lib/imageUtils';
+import { StatusBadge } from './StatusBadge';
 import type { EventResponse } from '../lib/queries/useEvents';
 
 interface EventCardProps {
@@ -34,7 +35,12 @@ export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
   return (
     <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/25 transition-shadow">
       <Link href={`/events/${event.id}`}>
-        <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
+          {event.status !== 'SCHEDULED' && (
+            <div className="absolute top-2 left-2 z-10">
+              <StatusBadge status={event.status} size="sm" />
+            </div>
+          )}
           {event.imageUrl ? (
             <img
               src={getImageUrl(event.imageUrl) || ''}

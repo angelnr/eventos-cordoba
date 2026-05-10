@@ -8,6 +8,7 @@ import RatingFilter from './RatingFilter';
 import AvailabilityFilter from './AvailabilityFilter';
 import SortSelect from './SortSelect';
 import ActiveFilters from './ActiveFilters';
+import type { EventStatusEnum } from '../StatusBadge';
 
 interface FilterBarProps {
   filters: EventFilters;
@@ -134,6 +135,22 @@ export default function FilterBar({
         totalSoldOutEvents={totalSoldOutEvents}
         totalFreeEvents={totalFreeEvents}
       />
+
+      {/* Estado */}
+      <div>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Estado</label>
+        <select
+          value={filters.status || ''}
+          onChange={e => onSetFilters({ status: (e.target.value || undefined) as EventStatusEnum | undefined })}
+          className="mt-1 w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+        >
+          <option value="">Todos</option>
+          <option value="SCHEDULED">Programado</option>
+          <option value="FULL">Completo</option>
+          <option value="FINISHED">Finalizado</option>
+          <option value="CANCELLED">Cancelado</option>
+        </select>
+      </div>
 
       {/* Ordenación */}
       <SortSelect

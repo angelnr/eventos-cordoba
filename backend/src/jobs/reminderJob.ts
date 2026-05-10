@@ -19,7 +19,7 @@ async function runReminders(): Promise<void> {
 
     const eventsIn24h = await prisma.event.findMany({
       where: {
-        status: 'active',
+        status: 'SCHEDULED',
         date: {
           gte: new Date(now.getTime() + 23 * 60 * 60 * 1000),
           lte: new Date(now.getTime() + 25 * 60 * 60 * 1000)
@@ -30,7 +30,7 @@ async function runReminders(): Promise<void> {
 
     const eventsIn2h = await prisma.event.findMany({
       where: {
-        status: 'active',
+        status: 'SCHEDULED',
         date: {
           gte: new Date(now.getTime() + 1.5 * 60 * 60 * 1000),
           lte: new Date(now.getTime() + 2.5 * 60 * 60 * 1000)
