@@ -1,77 +1,30 @@
-const express = require('express');
-const path = require('path');
-const { PrismaClient } = require('@prisma/client');
-const { upload } = require('../middleware/upload');
-const { saveImage, deleteImage, isLocalImage } = require('../services/storageService');
-const { createEventNotifications } = require('../services/notificationService');
-const {
+import { Router, Request, Response } from 'express';
+import path from 'path';
+import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import { upload } from '../middleware/upload';
+import { saveImage, deleteImage, isLocalImage } from '../services/storageService';
+import { createEventNotifications } from '../services/notificationService';
+import {
   validateFilterParams,
   buildFilterWhere,
   getAvailabilityIds,
   buildAppliedFiltersSummary
-} = require('../services/eventFilters');
+} from '../services/eventFilters';
+import { requireAuth, requireOrganizer, optionalAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
-
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Token requerido'
-    });
-  }
-
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Token inválido'
-    });
-  }
-};
-
-// Middleware para verificar rol de organizador o admin
-const requireOrganizer = (req, res, next) => {
-  if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      error: 'Se requieren permisos de organizador'
-    });
-  }
-  next();
-};
-
-// Middleware de autenticación opcional — no falla si no hay token
-const optionalAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token) {
-    try {
-      const jwt = require('jsonwebtoken');
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      // Token inválido — continuar sin usuario
-    }
-  }
-  next();
-};
 
 // Middleware condicional: si es multipart/form-data, usar Multer.
 // Si no, pasar al handler (express.json() ya procesó el body).
-const conditionalUpload = (req, res, next) => {
+const conditionalUpload = (req: Request, res: Response, next: any) => {
   const contentType = req.headers['content-type'] || '';
   if (!contentType.includes('multipart/form-data')) {
     return next();
   }
 
-  upload.single('image')(req, res, (err) => {
+  upload.single('image')(req, res, (err: any) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({
@@ -95,9 +48,9 @@ const conditionalUpload = (req, res, next) => {
 };
 
 // GET /api/events - Listar eventos con filtros avanzados
-router.get('/', optionalAuth, async (req, res) => {
+router.get('/', optionalAuth, async (req: Request, res: Response) => {
   try {
-    const { cleaned, errors } = validateFilterParams(req.query);
+    const { cleaned, errors } = validateFilterParams(req.query as Record<string, any>);
 
     if (errors.length > 0) {
       return res.status(400).json({
@@ -107,9 +60,9 @@ router.get('/', optionalAuth, async (req, res) => {
       });
     }
 
-    const where = buildFilterWhere(cleaned);
-    const skip = (cleaned.page - 1) * cleaned.limit;
-    const take = cleaned.limit;
+    const where: any = buildFilterWhere(cleaned);
+    const skip = (cleaned.page! - 1) * cleaned.limit!;
+    const take = cleaned.limit!;
 
     // Si hay filtro de disponibilidad, obtener IDs primero
     if (cleaned.available || cleaned.soldOut) {
@@ -140,8 +93,8 @@ router.get('/', optionalAuth, async (req, res) => {
       }
     }
 
-    const orderBy = {};
-    orderBy[cleaned.sortBy] = cleaned.sortOrder;
+    const orderBy: any = {};
+    orderBy[cleaned.sortBy!] = cleaned.sortOrder;
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
@@ -188,6 +141,7 @@ router.get('/', optionalAuth, async (req, res) => {
     }
 
     // Añadir conteo de favoritos
+    let eventsWithFavCounts = eventsWithFavorites;
     if (eventsWithFavorites.length > 0) {
       const eventIds = eventsWithFavorites.map(e => e.id);
       const favoriteCounts = await prisma.favorite.groupBy({
@@ -195,9 +149,9 @@ router.get('/', optionalAuth, async (req, res) => {
         where: { eventId: { in: eventIds } },
         _count: { eventId: true }
       });
-      const countMap = {};
+      const countMap: Record<number, number> = {};
       favoriteCounts.forEach(fc => { countMap[fc.eventId] = fc._count.eventId; });
-      eventsWithFavorites = eventsWithFavorites.map(e => ({
+      eventsWithFavCounts = eventsWithFavorites.map(e => ({
         ...e,
         favoriteCount: countMap[e.id] || 0
       }));
@@ -207,14 +161,14 @@ router.get('/', optionalAuth, async (req, res) => {
 
     res.json({
       success: true,
-      data: eventsWithFavorites,
+      data: eventsWithFavCounts,
       pagination: {
         page: cleaned.page,
         limit: take,
         total,
         pages,
-        hasNext: cleaned.page < pages,
-        hasPrev: cleaned.page > 1
+        hasNext: cleaned.page! < pages,
+        hasPrev: cleaned.page! > 1
       },
       filters: {
         applied: buildAppliedFiltersSummary(cleaned)
@@ -229,11 +183,11 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/events/my-events - Eventos organizados por el usuario actual (DEBE IR ANTES de /:id)
-router.get('/my-events', requireAuth, requireOrganizer, async (req, res) => {
+// GET /api/events/my-events - Eventos organizados por el usuario actual (DEBE IR ANTES DE /:id)
+router.get('/my-events', requireAuth, requireOrganizer, async (req: Request, res: Response) => {
   try {
     const events = await prisma.event.findMany({
-      where: { organizerId: req.user.id },
+      where: { organizerId: req.user!.id },
       include: {
         organizer: {
           select: { id: true, name: true, email: true }
@@ -278,8 +232,8 @@ router.get('/my-events', requireAuth, requireOrganizer, async (req, res) => {
   }
 });
 
-// GET /api/events/filters-meta - Metadatos para filtros (DEBE IR ANTES de /:id)
-router.get('/filters-meta', async (req, res) => {
+// GET /api/events/filters-meta - Metadatos para filtros (DEBE IR ANTES DE /:id)
+router.get('/filters-meta', async (req: Request, res: Response) => {
   try {
     const [categories, priceRange, totalActive, totalFree, totalSoldOutRaw] = await Promise.all([
       prisma.category.findMany({
@@ -294,7 +248,7 @@ router.get('/filters-meta', async (req, res) => {
       }),
       prisma.event.count({ where: { status: 'active' } }),
       prisma.event.count({ where: { status: 'active', price: 0 } }),
-      prisma.$queryRaw`SELECT COUNT(*)::int as count FROM events WHERE status = 'active' AND "currentBookings" >= capacity`
+      prisma.$queryRaw<Array<{ count: number }>>`SELECT COUNT(*)::int as count FROM events WHERE status = 'active' AND "currentBookings" >= capacity`
     ]);
 
     const totalSoldOut = totalSoldOutRaw[0]?.count || 0;
@@ -333,7 +287,7 @@ router.get('/filters-meta', async (req, res) => {
 });
 
 // GET /api/events/:id - Obtener evento específico
-router.get('/:id', optionalAuth, async (req, res) => {
+router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -380,7 +334,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
     };
 
     // Añadir información de favoritos
-    let result = { ...eventWithStats };
+    let result: any = { ...eventWithStats };
 
     if (req.user) {
       const favorite = await prisma.favorite.findUnique({
@@ -407,7 +361,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/events - Crear evento (requiere autenticación y rol organizador)
-router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req, res) => {
+router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: Request, res: Response) => {
   try {
     const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl } = req.body;
 
@@ -432,12 +386,12 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req, r
     }
 
     // Determinar imageUrl: archivo subido tiene prioridad sobre URL externa
-    let finalImageUrl = externalImageUrl || null;
+    let finalImageUrl: string | null = externalImageUrl || null;
 
     if (req.file) {
       try {
         finalImageUrl = await saveImage(req.file.buffer, path.extname(req.file.originalname));
-      } catch (saveError) {
+      } catch (saveError: any) {
         if (saveError.message === 'FILE_TOO_LARGE') {
           return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
         }
@@ -457,7 +411,7 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req, r
         capacity: capacity ? parseInt(capacity) : 100,
         price: price ? parseFloat(price) : 0,
         categoryId: parseInt(categoryId),
-        organizerId: req.user.id,
+        organizerId: req.user!.id,
         imageUrl: finalImageUrl
       },
       include: {
@@ -485,7 +439,7 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req, r
 });
 
 // PUT /api/events/:id - Actualizar evento (solo organizador del evento o admin)
-router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
+router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status } = req.body;
@@ -503,7 +457,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
     }
 
     // Verificar permisos (solo organizador del evento o admin)
-    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para editar este evento'
@@ -529,7 +483,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
     const parsedCategoryId = categoryId !== undefined ? parseInt(categoryId) : undefined;
 
     // Construir objeto de actualización
-    const updateData = {};
+    const updateData: Record<string, any> = {};
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (date) updateData.date = new Date(date);
@@ -548,7 +502,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
         if (isLocalImage(oldImageUrl)) {
           await deleteImage(oldImageUrl).catch(() => {});
         }
-      } catch (saveError) {
+      } catch (saveError: any) {
         if (saveError.message === 'FILE_TOO_LARGE') {
           return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
         }
@@ -588,7 +542,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
     // Generar notificaciones si el evento fue cancelado
     if (updateData.status === 'cancelled') {
       createEventNotifications(parseInt(id), {
-        type: 'EVENT_CANCELLED',
+        type: 'EVENT_CANCELLED' as any,
         title: 'Evento cancelado',
         message: `El evento "${event.title}" ha sido cancelado por el organizador.`,
         link: `/events/${id}`
@@ -602,7 +556,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
         day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
       });
       createEventNotifications(parseInt(id), {
-        type: 'EVENT_DATE_CHANGED',
+        type: 'EVENT_DATE_CHANGED' as any,
         title: 'Cambio de fecha',
         message: `La fecha del evento "${event.title}" ha cambiado al ${formattedDate}.`,
         link: `/events/${id}`
@@ -624,7 +578,7 @@ router.put('/:id', requireAuth, conditionalUpload, async (req, res) => {
 });
 
 // DELETE /api/events/:id - Eliminar evento (solo organizador del evento o admin)
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -641,7 +595,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     // Verificar permisos (solo organizador del evento o admin)
-    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para eliminar este evento'
@@ -650,10 +604,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     // Notificar a los usuarios antes de eliminar el evento
     createEventNotifications(parseInt(id), {
-      type: 'EVENT_CANCELLED',
+      type: 'EVENT_CANCELLED' as any,
       title: 'Evento eliminado',
       message: `El evento "${event.title}" ha sido eliminado.`,
-      link: null
+      link: null as any
     }).catch(err => console.error('Error creating deletion notifications:', err));
 
     // Eliminar imagen del filesystem si es local
@@ -684,7 +638,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // POST /api/events/:id/image - Subir imagen para evento (requiere autenticación)
-router.post('/:id/image', requireAuth, (req, res, next) => {
+router.post('/:id/image', requireAuth, (req: Request, res: Response, next: any) => {
   const contentType = req.headers['content-type'] || '';
   if (!contentType.includes('multipart/form-data')) {
     return res.status(400).json({
@@ -693,7 +647,7 @@ router.post('/:id/image', requireAuth, (req, res, next) => {
     });
   }
 
-  upload.single('image')(req, res, (err) => {
+  upload.single('image')(req, res, (err: any) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
@@ -705,7 +659,7 @@ router.post('/:id/image', requireAuth, (req, res, next) => {
     }
     next();
   });
-}, async (req, res) => {
+}, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -729,7 +683,7 @@ router.post('/:id/image', requireAuth, (req, res, next) => {
     }
 
     // Verificar permisos (solo organizador del evento o admin)
-    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para editar este evento'
@@ -740,7 +694,7 @@ router.post('/:id/image', requireAuth, (req, res, next) => {
     let imageUrl;
     try {
       imageUrl = await saveImage(req.file.buffer, path.extname(req.file.originalname));
-    } catch (saveError) {
+    } catch (saveError: any) {
       if (saveError.message === 'FILE_TOO_LARGE') {
         return res.status(400).json({ success: false, error: 'El archivo excede el tamaño máximo de 5MB.' });
       }
@@ -787,7 +741,7 @@ router.post('/:id/image', requireAuth, (req, res, next) => {
 });
 
 // DELETE /api/events/:id/image - Eliminar imagen de evento
-router.delete('/:id/image', requireAuth, async (req, res) => {
+router.delete('/:id/image', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -802,7 +756,7 @@ router.delete('/:id/image', requireAuth, async (req, res) => {
       });
     }
 
-    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para editar este evento'
@@ -849,4 +803,4 @@ router.delete('/:id/image', requireAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,0 +1,77 @@
+{
+  "version": "5.2",
+  "steps": [
+    {
+      "tag": "CreateTable",
+      "table": "tickets"
+    },
+    {
+      "tag": "CreateTable",
+      "table": "ticket_audit_logs"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "tickets_token_key"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "tickets_bookingId_key"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_tickets_token"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_tickets_status"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_tickets_bookingId"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_tickets_status_created"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_audit_ticketId"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_audit_action"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_audit_ticket_created"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_audit_created"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "tickets_bookingId_fkey"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "tickets_validatedById_fkey"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "tickets_invalidatedById_fkey"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "ticket_audit_logs_ticketId_fkey"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "ticket_audit_logs_userId_fkey"
+    },
+    {
+      "tag": "AlterTable",
+      "table": "bookings"
+    }
+  ]
+}

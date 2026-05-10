@@ -1,9 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
-const { createNotificationForUsers } = require('../services/notificationService');
+import { PrismaClient } from '@prisma/client';
+import { createNotificationForUsers } from '../services/notificationService';
 
 const prisma = new PrismaClient();
 
-function startReminderJob() {
+export function startReminderJob(): void {
   const INTERVAL_MS = 60 * 60 * 1000;
 
   setTimeout(runReminders, 30_000);
@@ -13,7 +13,7 @@ function startReminderJob() {
   console.log('[ReminderJob] Job de recordatorios iniciado (cada 60 minutos)');
 }
 
-async function runReminders() {
+async function runReminders(): Promise<void> {
   try {
     const now = new Date();
 
@@ -57,7 +57,7 @@ async function runReminders() {
   }
 }
 
-async function createRemindersForEvent(event, timeframe) {
+async function createRemindersForEvent(event: { id: number; title: string; date: Date }, timeframe: string): Promise<number> {
   const link = `/events/${event.id}?reminder=${timeframe}`;
 
   const existingReminders = await prisma.notification.findMany({
@@ -82,9 +82,9 @@ async function createRemindersForEvent(event, timeframe) {
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
   });
 
-  const titles = { '24h': 'Recordatorio: evento ma\u00f1ana', '2h': 'Recordatorio: evento pronto' };
-  const messages = {
-    '24h': `El evento "${event.title}" es ma\u00f1ana (${formattedDate}).`,
+  const titles: Record<string, string> = { '24h': 'Recordatorio: evento mañana', '2h': 'Recordatorio: evento pronto' };
+  const messages: Record<string, string> = {
+    '24h': `El evento "${event.title}" es mañana (${formattedDate}).`,
     '2h': `El evento "${event.title}" comienza pronto (${formattedDate}).`
   };
 
@@ -98,5 +98,3 @@ async function createRemindersForEvent(event, timeframe) {
 
   return userIds.length;
 }
-
-module.exports = { startReminderJob };

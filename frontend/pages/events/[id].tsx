@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+// Link usado en: evento detalle, ver entrada, y navegacion
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
@@ -74,6 +75,8 @@ export default function EventDetail() {
     useState(true);
 
   const [bookingLoading, setBookingLoading] =
+    useState(false);
+  const [bookingSuccess, setBookingSuccess] =
     useState(false);
 
   // Determinar la URL del API según el entorno
@@ -232,6 +235,7 @@ export default function EventDetail() {
           setEvent(refreshData.data);
         }
         showSuccess('¡Reserva realizada con éxito!');
+        setBookingSuccess(true);
       } else {
         const errorData =
           await response.json();
@@ -686,30 +690,45 @@ export default function EventDetail() {
 
                   <Link
                     href={`/events/edit/${event.id}`}
-                    className="block"
+                    className="block mb-2"
                   >
                     <Button fullWidth>
                       Editar Evento
                     </Button>
                   </Link>
+                  <Link
+                    href={`/events/${event.id}/attendees`}
+                    className="block"
+                  >
+                    <Button fullWidth variant="secondary">
+                      Ver Asistentes
+                    </Button>
+                  </Link>
                 </div>
               ) : user ? (
                 hasBooked ? (
-                  <Button
-                    fullWidth
-                    variant="danger"
-                    onClick={
-                      handleCancelBooking
-                    }
-                    isLoading={
-                      bookingLoading
-                    }
-                    disabled={
-                      bookingLoading
-                    }
-                  >
-                    Cancelar Reserva
-                  </Button>
+                  <>
+                    <Link href="/my-tickets">
+                      <Button fullWidth className="mb-2">
+                        Ver mi Entrada
+                      </Button>
+                    </Link>
+                    <Button
+                      fullWidth
+                      variant="danger"
+                      onClick={
+                        handleCancelBooking
+                      }
+                      isLoading={
+                        bookingLoading
+                      }
+                      disabled={
+                        bookingLoading
+                      }
+                    >
+                      Cancelar Reserva
+                    </Button>
+                  </>
                 ) : canBook &&
                   !isPastEvent ? (
                   <Button

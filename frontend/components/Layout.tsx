@@ -38,6 +38,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Button>
                 </Link>
               )}
+              {user && (
+                <Link href="/my-tickets">
+                  <Button variant="secondary" size="sm">
+                    Mis Entradas
+                  </Button>
+                </Link>
+              )}
               <ThemeToggle />
               <NotificationBell />
               <UserMenu />

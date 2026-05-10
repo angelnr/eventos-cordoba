@@ -1,13 +1,13 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -41,8 +41,8 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+      process.env.JWT_SECRET || '',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
     );
 
     res.json({
@@ -70,7 +70,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
@@ -113,8 +113,8 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+      process.env.JWT_SECRET || '',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
     );
 
     res.status(201).json({
@@ -135,7 +135,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/verify - Verificar token
-router.post('/verify', async (req, res) => {
+router.post('/verify', async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
 
@@ -146,7 +146,7 @@ router.post('/verify', async (req, res) => {
       });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+    jwt.verify(token, process.env.JWT_SECRET || '', async (err: any, decoded: any) => {
       if (err) {
         return res.status(401).json({
           success: false,
@@ -194,7 +194,7 @@ router.post('/verify', async (req, res) => {
 });
 
 // POST /api/auth/db-test - Probar conexión a base de datos
-router.post('/db-test', async (req, res) => {
+router.post('/db-test', async (req: Request, res: Response) => {
   try {
     // Probar conexión básica a la base de datos
     await prisma.$connect();
@@ -210,7 +210,7 @@ router.post('/db-test', async (req, res) => {
         database: 'connected'
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Database connection error:', error);
     res.status(500).json({
       success: false,
@@ -222,6 +222,4 @@ router.post('/db-test', async (req, res) => {
   }
 });
 
-
-
-module.exports = router;
+export default router;

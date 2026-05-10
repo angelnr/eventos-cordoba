@@ -1,13 +1,14 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth, optionalAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 // Rate limiting en memoria
-const commentRateLimit = new Map();
+const commentRateLimit = new Map<number, { count: number; resetAt: number }>();
 
-function checkRateLimit(userId) {
+function checkRateLimit(userId: number): boolean {
   const MAX_COMMENTS_PER_HOUR = 10;
   const WINDOW_MS = 60 * 60 * 1000;
   const now = Date.now();
@@ -23,7 +24,7 @@ function checkRateLimit(userId) {
   return true;
 }
 
-function sanitizeContent(content) {
+function sanitizeContent(content: string): string {
   return content
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -33,50 +34,12 @@ function sanitizeContent(content) {
     .trim();
 }
 
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Token requerido'
-    });
-  }
-
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Token inválido'
-    });
-  }
-};
-
-// Middleware de autenticación opcional
-const optionalAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token) {
-    try {
-      const jwt = require('jsonwebtoken');
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      // Token inválido — continuar sin usuario
-    }
-  }
-  next();
-};
-
 // GET /api/comments/events/:id/comments - Listar comentarios de un evento
-router.get('/events/:id/comments', optionalAuth, async (req, res) => {
+router.get('/events/:id/comments', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
 
     const event = await prisma.event.findUnique({ where: { id: parseInt(id) } });
     if (!event) {
@@ -89,7 +52,7 @@ router.get('/events/:id/comments', optionalAuth, async (req, res) => {
     const isOrganizerOrAdmin = req.user &&
       (req.user.role === 'admin' || event.organizerId === req.user.id);
 
-    const whereRoot = {
+    const whereRoot: any = {
       eventId: parseInt(id),
       parentId: null,
     };
@@ -171,7 +134,7 @@ router.get('/events/:id/comments', optionalAuth, async (req, res) => {
 });
 
 // POST /api/comments - Crear comentario o respuesta
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId, content, parentId } = req.body;
 
@@ -226,7 +189,7 @@ router.post('/', requireAuth, async (req, res) => {
       }
     }
 
-    if (!checkRateLimit(req.user.id)) {
+    if (!checkRateLimit(req.user!.id)) {
       return res.status(429).json({
         success: false,
         error: 'Demasiados comentarios. Espera un momento antes de comentar de nuevo.'
@@ -239,7 +202,7 @@ router.post('/', requireAuth, async (req, res) => {
       data: {
         content: sanitizedContent,
         status: 'approved',
-        userId: req.user.id,
+        userId: req.user!.id,
         eventId: parseInt(eventId),
         parentId: parentId ? parseInt(parentId) : null,
       },
@@ -248,7 +211,7 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
-    console.log('POST /api/comments - User:', req.user.id, 'Event:', eventId);
+    console.log('POST /api/comments - User:', req.user!.id, 'Event:', eventId);
 
     res.status(201).json({
       success: true,
@@ -265,7 +228,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PUT /api/comments/:id - Editar comentario
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
@@ -292,7 +255,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       });
     }
 
-    if (comment.userId !== req.user.id) {
+    if (comment.userId !== req.user!.id) {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para editar este comentario'
@@ -333,7 +296,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/comments/:id - Eliminar comentario (soft delete)
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -349,9 +312,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
       });
     }
 
-    const isOwner = comment.userId === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-    const isOrganizer = comment.event.organizerId === req.user.id;
+    const isOwner = comment.userId === req.user!.id;
+    const isAdmin = req.user!.role === 'admin';
+    const isOrganizer = comment.event.organizerId === req.user!.id;
 
     if (!isOwner && !isAdmin && !isOrganizer) {
       return res.status(403).json({
@@ -382,7 +345,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/comments/:id/hide - Moderación: ocultar/mostrar comentario
-router.patch('/:id/hide', requireAuth, async (req, res) => {
+router.patch('/:id/hide', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -406,8 +369,8 @@ router.patch('/:id/hide', requireAuth, async (req, res) => {
       });
     }
 
-    const isAdmin = req.user.role === 'admin';
-    const isOrganizer = comment.event.organizerId === req.user.id;
+    const isAdmin = req.user!.role === 'admin';
+    const isOrganizer = comment.event.organizerId === req.user!.id;
 
     if (!isAdmin && !isOrganizer) {
       return res.status(403).json({
@@ -427,7 +390,7 @@ router.patch('/:id/hide', requireAuth, async (req, res) => {
     res.json({
       success: true,
       message: status === 'hidden' ? 'Comentario ocultado exitosamente' : 'Comentario visible nuevamente',
-      data: { ...updated, isOwner: comment.userId === req.user.id },
+      data: { ...updated, isOwner: comment.userId === req.user!.id },
     });
   } catch (error) {
     console.error('Hide comment error:', error);
@@ -438,4 +401,4 @@ router.patch('/:id/hide', requireAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

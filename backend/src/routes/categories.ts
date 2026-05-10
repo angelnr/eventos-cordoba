@@ -1,11 +1,11 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 // GET /api/categories - Listar todas las categorías (público)
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const categories = await prisma.category.findMany({
       orderBy: { name: 'asc' }
@@ -24,4 +24,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

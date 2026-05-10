@@ -1,13 +1,14 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth, optionalAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
 // Rate limiting en memoria (5 reseñas por hora por usuario)
-const reviewRateLimit = new Map();
+const reviewRateLimit = new Map<number, { count: number; resetAt: number }>();
 
-function checkReviewRateLimit(userId) {
+function checkReviewRateLimit(userId: number): boolean {
   const MAX_REVIEWS_PER_HOUR = 5;
   const WINDOW_MS = 60 * 60 * 1000;
   const now = Date.now();
@@ -23,38 +24,8 @@ function checkReviewRateLimit(userId) {
   return true;
 }
 
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ success: false, error: 'Token requerido' });
-  }
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ success: false, error: 'Token inválido' });
-  }
-};
-
-// Middleware de autenticación opcional
-const optionalAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token) {
-    try {
-      const jwt = require('jsonwebtoken');
-      req.user = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      // Token inválido — continuar sin usuario
-    }
-  }
-  next();
-};
-
 // POST /api/reviews - Crear reseña
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId, rating } = req.body;
 
@@ -89,7 +60,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Rate limit
-    if (!checkReviewRateLimit(req.user.id)) {
+    if (!checkReviewRateLimit(req.user!.id)) {
       return res.status(429).json({
         success: false,
         error: 'Demasiadas reseñas. Espera un momento.'
@@ -118,7 +89,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Validar que no es el organizador
-    if (event.organizerId === req.user.id) {
+    if (event.organizerId === req.user!.id) {
       return res.status(403).json({
         success: false,
         error: 'No puedes reseñar tu propio evento'
@@ -135,7 +106,7 @@ router.post('/', requireAuth, async (req, res) => {
         prisma.review.create({
           data: {
             rating: parsedRating,
-            userId: req.user.id,
+            userId: req.user!.id,
             eventId: parsedEventId,
           },
           include: {
@@ -151,7 +122,7 @@ router.post('/', requireAuth, async (req, res) => {
         }),
       ]);
       newReview = result[0];
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === 'P2002') {
         return res.status(409).json({
           success: false,
@@ -161,7 +132,7 @@ router.post('/', requireAuth, async (req, res) => {
       throw error;
     }
 
-    console.log('POST /api/reviews - User:', req.user.id, 'Event:', parsedEventId, 'Rating:', parsedRating);
+    console.log('POST /api/reviews - User:', req.user!.id, 'Event:', parsedEventId, 'Rating:', parsedRating);
 
     res.status(201).json({
       success: true,
@@ -178,7 +149,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PUT /api/reviews/:id - Actualizar reseña
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { rating } = req.body;
@@ -214,7 +185,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
 
     // Solo el propietario puede actualizar
-    if (existingReview.userId !== req.user.id) {
+    if (existingReview.userId !== req.user!.id) {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para editar esta reseña'
@@ -242,7 +213,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       }),
     ]);
 
-    console.log('PUT /api/reviews/:id - User:', req.user.id, 'Review:', id, 'New rating:', parsedRating);
+    console.log('PUT /api/reviews/:id - User:', req.user!.id, 'Review:', id, 'New rating:', parsedRating);
 
     res.json({
       success: true,
@@ -259,7 +230,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/reviews/:id - Eliminar reseña
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -279,9 +250,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     // Verificar permisos: propietario, admin u organizador del evento
-    const isOwner = review.userId === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-    const isOrganizer = review.event.organizerId === req.user.id;
+    const isOwner = review.userId === req.user!.id;
+    const isAdmin = req.user!.role === 'admin';
+    const isOrganizer = review.event.organizerId === req.user!.id;
 
     if (!isOwner && !isAdmin && !isOrganizer) {
       return res.status(403).json({
@@ -310,7 +281,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       }),
     ]);
 
-    console.log('DELETE /api/reviews/:id - User:', req.user.id, 'Review:', id);
+    console.log('DELETE /api/reviews/:id - User:', req.user!.id, 'Review:', id);
 
     res.json({
       success: true,
@@ -326,14 +297,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // GET /api/reviews/events/:eventId/my-review - Obtener reseña del usuario actual
-router.get('/events/:eventId/my-review', requireAuth, async (req, res) => {
+router.get('/events/:eventId/my-review', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const parsedEventId = parseInt(eventId);
 
     const review = await prisma.review.findUnique({
       where: {
-        userId_eventId: { userId: req.user.id, eventId: parsedEventId },
+        userId_eventId: { userId: req.user!.id, eventId: parsedEventId },
       },
     });
 
@@ -351,7 +322,7 @@ router.get('/events/:eventId/my-review', requireAuth, async (req, res) => {
 });
 
 // GET /api/reviews/events/:eventId/stats - Estadísticas de reseñas del evento
-router.get('/events/:eventId/stats', optionalAuth, async (req, res) => {
+router.get('/events/:eventId/stats', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const parsedEventId = parseInt(eventId);
@@ -377,7 +348,7 @@ router.get('/events/:eventId/stats', optionalAuth, async (req, res) => {
     });
 
     // Formatear distribución: asegurar que 1-5 estén presentes
-    const distribution = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
+    const distribution: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
     distributionRaw.forEach((d) => {
       distribution[String(d.rating)] = d._count.rating;
     });
@@ -412,7 +383,7 @@ router.get('/events/:eventId/stats', optionalAuth, async (req, res) => {
 });
 
 // GET /api/reviews/events/:eventId - Listar reseñas paginadas
-router.get('/events/:eventId', optionalAuth, async (req, res) => {
+router.get('/events/:eventId', optionalAuth, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const parsedEventId = parseInt(eventId);
@@ -430,8 +401,8 @@ router.get('/events/:eventId', optionalAuth, async (req, res) => {
       });
     }
 
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
 
     const total = await prisma.review.count({
       where: { eventId: parsedEventId },
@@ -471,4 +442,4 @@ router.get('/events/:eventId', optionalAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

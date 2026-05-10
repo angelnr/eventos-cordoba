@@ -157,6 +157,18 @@ export const UserMenu: React.FC = () => {
               Mis eventos
             </Link>
 
+            {(user.role === 'staff' || user.role === 'organizer' || user.role === 'admin') && (
+              <Link
+                href="/staff/validate"
+                className="flex items-center px-4 py-2 text-sm text-green-700 dark:text-green-400 font-medium hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Validar Entradas
+              </Link>
+            )}
+
             {user.role === 'admin' && (
               <Link
                 href="/dashboard"

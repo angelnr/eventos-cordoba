@@ -1,39 +1,15 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const myEventsService = require('../services/myEventsService');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { requireAuth } from '../middleware/auth';
+import * as myEventsService from '../services/myEventsService';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
-// Middleware de autenticación
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    console.log('❌ Token no proporcionado');
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.log('❌ Token inválido o expirado:', err.message);
-      return res.status(403).json({ error: 'Token inválido o expirado. Por favor, inicia sesión nuevamente.' });
-    }
-
-    console.log('✅ Token válido. Usuario:', decoded.id, 'Role:', decoded.role);
-    // Por ahora usamos la info del token. En una implementación completa,
-    // podríamos consultar la DB aquí, pero para evitar complejidad,
-    // asumimos que el token contiene la info correcta del usuario.
-    req.user = decoded;
-    next();
-  });
-};
-
 // GET /api/users - Listar todos los usuarios
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -59,10 +35,10 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/me - Obtener perfil del usuario autenticado
-router.get('/me', authenticateToken, async (req, res) => {
+router.get('/me', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       select: {
         id: true,
         email: true,
@@ -87,10 +63,10 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/me/preferences - Obtener preferencias del usuario autenticado
-router.get('/me/preferences', authenticateToken, async (req, res) => {
+router.get('/me/preferences', requireAuth, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       select: { themePreference: true }
     });
 
@@ -111,7 +87,7 @@ router.get('/me/preferences', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/users/me/preferences - Actualizar themePreference
-router.put('/me/preferences', authenticateToken, async (req, res) => {
+router.put('/me/preferences', requireAuth, async (req: Request, res: Response) => {
   const VALID_THEMES = ['light', 'dark', 'system'];
   const { themePreference } = req.body;
 
@@ -124,7 +100,7 @@ router.put('/me/preferences', authenticateToken, async (req, res) => {
 
   try {
     const currentUser = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       select: { themePreference: true }
     });
 
@@ -136,7 +112,7 @@ router.put('/me/preferences', authenticateToken, async (req, res) => {
     }
 
     await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: req.user!.id },
       data: { themePreference }
     });
 
@@ -151,9 +127,9 @@ router.put('/me/preferences', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/my-events-summary - Resumen de todas las secciones de Mis Eventos
-router.get('/my-events-summary', authenticateToken, async (req, res) => {
+router.get('/my-events-summary', requireAuth, async (req: Request, res: Response) => {
   try {
-    const data = await myEventsService.getMyEventsSummary(req.user.id);
+    const data = await myEventsService.getMyEventsSummary(req.user!.id);
     res.json({ success: true, data });
   } catch (error) {
     console.error('Get my events summary error:', error);
@@ -162,11 +138,11 @@ router.get('/my-events-summary', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/my-upcoming-events - Próximos eventos del usuario
-router.get('/my-upcoming-events', authenticateToken, async (req, res) => {
+router.get('/my-upcoming-events', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await myEventsService.getUpcomingEvents(req.user.id, {
+    const result = await myEventsService.getUpcomingEvents(req.user!.id, {
       paginate: true,
-      query: req.query,
+      query: req.query as any,
     });
     res.json({ success: true, data: result.events, pagination: result.pagination });
   } catch (error) {
@@ -176,11 +152,11 @@ router.get('/my-upcoming-events', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/my-past-events - Eventos pasados del usuario
-router.get('/my-past-events', authenticateToken, async (req, res) => {
+router.get('/my-past-events', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await myEventsService.getPastEvents(req.user.id, {
+    const result = await myEventsService.getPastEvents(req.user!.id, {
       paginate: true,
-      query: req.query,
+      query: req.query as any,
     });
     res.json({ success: true, data: result.events, pagination: result.pagination });
   } catch (error) {
@@ -190,12 +166,12 @@ router.get('/my-past-events', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/my-favorite-events - Eventos favoritos del usuario
-router.get('/my-favorite-events', authenticateToken, async (req, res) => {
+router.get('/my-favorite-events', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await myEventsService.getFavoriteEvents(req.user.id, {
+    const result = await myEventsService.getFavoriteEvents(req.user!.id, {
       paginate: true,
-      query: req.query,
-      categoryId: req.query.category,
+      query: req.query as any,
+      categoryId: req.query.category ? parseInt(req.query.category as string) : undefined,
     });
     res.json({ success: true, data: result.events, pagination: result.pagination });
   } catch (error) {
@@ -205,12 +181,12 @@ router.get('/my-favorite-events', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/my-organized-events - Eventos organizados por el usuario
-router.get('/my-organized-events', authenticateToken, async (req, res) => {
+router.get('/my-organized-events', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await myEventsService.getOrganizedEvents(req.user.id, {
+    const result = await myEventsService.getOrganizedEvents(req.user!.id, {
       paginate: true,
-      query: req.query,
-      status: req.query.status,
+      query: req.query as any,
+      status: req.query.status as string,
     });
     res.json({ success: true, data: result.events, pagination: result.pagination });
   } catch (error) {
@@ -220,7 +196,7 @@ router.get('/my-organized-events', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/:id - Obtener usuario por ID
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -261,7 +237,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // POST /api/users - Crear nuevo usuario
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
@@ -302,8 +278,8 @@ router.post('/', async (req, res) => {
     // Generar token JWT
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+      process.env.JWT_SECRET || '',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
     );
 
     res.status(201).json({
@@ -321,17 +297,17 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/users/:id - Actualizar usuario
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { email, name, bio, location, interests, avatar } = req.body;
 
     // Solo el propietario o admin puede actualizar
-    if (req.user.id !== parseInt(id)) {
+    if (req.user!.id !== parseInt(id)) {
       return res.status(403).json({ error: 'No tienes permisos para actualizar este usuario' });
     }
 
-    const updateData = {};
+    const updateData: Record<string, any> = {};
     if (email) updateData.email = email;
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
@@ -359,7 +335,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       message: 'Usuario actualizado exitosamente',
       data: user
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating user:', error);
 
     if (error.code === 'P2025') {
@@ -371,14 +347,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/users/:id - Eliminar usuario (propietario o admin)
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id);
 
     // Verificar permisos: solo el propietario o admin puede eliminar
-    const isOwner = req.user.id === userId;
-    const isAdmin = req.user.role === 'admin';
+    const isOwner = req.user!.id === userId;
+    const isAdmin = req.user!.role === 'admin';
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({
@@ -388,7 +364,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     // Evitar que el admin se elimine a sí mismo
-    if (isAdmin && req.user.id === userId) {
+    if (isAdmin && req.user!.id === userId) {
       return res.status(400).json({
         success: false,
         error: 'No puedes eliminar tu propia cuenta de admin'
@@ -403,7 +379,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       success: true,
       message: 'Usuario eliminado exitosamente'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting user:', error);
 
     if (error.code === 'P2025') {
@@ -421,7 +397,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // POST /api/users/generate - Generar usuarios de prueba
-router.post('/generate', async (req, res) => {
+router.post('/generate', async (req: Request, res: Response) => {
   try {
     const { count = 5 } = req.body;
 
@@ -429,7 +405,7 @@ router.post('/generate', async (req, res) => {
       return res.status(400).json({ error: 'Máximo 50 usuarios por generación' });
     }
 
-    const users = [];
+    const users: Array<{ id: number; email: string; name: string }> = [];
 
     for (let i = 0; i < count; i++) {
       const email = `user${Date.now()}${i}@example.com`;
@@ -463,4 +439,4 @@ router.post('/generate', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

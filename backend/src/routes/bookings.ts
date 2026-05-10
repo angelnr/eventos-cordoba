@@ -1,36 +1,14 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { createNotification } = require('../services/notificationService');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth } from '../middleware/auth';
+import { createNotification } from '../services/notificationService';
+import { generateTicketForBooking } from '../services/ticketService';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Token requerido'
-    });
-  }
-
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Token inválido'
-    });
-  }
-};
-
 // POST /api/bookings - Crear reserva
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId, quantity = 1 } = req.body;
 
@@ -78,13 +56,13 @@ router.post('/', requireAuth, async (req, res) => {
       });
 
       if (!event || event.status !== 'active') {
-        const err = new Error('Evento no encontrado o no disponible');
+        const err: any = new Error('Evento no encontrado o no disponible');
         err.statusCode = 404;
         throw err;
       }
 
-      if (event.organizerId === req.user.id) {
-        const err = new Error('No puedes reservar tu propio evento');
+      if (event.organizerId === req.user!.id) {
+        const err: any = new Error('No puedes reservar tu propio evento');
         err.statusCode = 400;
         throw err;
       }
@@ -92,20 +70,20 @@ router.post('/', requireAuth, async (req, res) => {
       const existingBooking = await tx.booking.findFirst({
         where: {
           eventId: parsedEventId,
-          userId: req.user.id,
+          userId: req.user!.id,
           status: 'confirmed'
         },
         select: { id: true }
       });
 
       if (existingBooking) {
-        const err = new Error('Ya tienes una reserva confirmada para este evento');
+        const err: any = new Error('Ya tienes una reserva confirmada para este evento');
         err.statusCode = 400;
         throw err;
       }
 
       if (event.currentBookings + parsedQuantity > event.capacity) {
-        const err = new Error('No hay suficientes plazas disponibles');
+        const err: any = new Error('No hay suficientes plazas disponibles');
         err.statusCode = 400;
         throw err;
       }
@@ -113,7 +91,7 @@ router.post('/', requireAuth, async (req, res) => {
       const booking = await tx.booking.create({
         data: {
           eventId: parsedEventId,
-          userId: req.user.id,
+          userId: req.user!.id,
           quantity: parsedQuantity,
           totalPrice: event.price * parsedQuantity,
           status: 'confirmed'
@@ -129,7 +107,7 @@ router.post('/', requireAuth, async (req, res) => {
     });
 
     createNotification({
-      userId: req.user.id,
+      userId: req.user!.id,
       type: 'BOOKING_CONFIRMED',
       title: 'Reserva confirmada',
       message: `Tu reserva para "${eventInfo?.title || 'el evento'}" ha sido confirmada.`,
@@ -137,13 +115,18 @@ router.post('/', requireAuth, async (req, res) => {
       link: `/events/${parsedEventId}`
     }).catch(err => console.error('Error creating booking notification:', err));
 
+    // Generar ticket automáticamente
+    generateTicketForBooking(booking.id, req.user!.id).catch(err =>
+      console.error('Error generating ticket for booking:', err)
+    );
+
     res.status(201).json({
       success: true,
       message: 'Reserva creada exitosamente',
       data: booking
     });
 
-  } catch (error) {
+  } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
@@ -159,10 +142,18 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // GET /api/bookings - Mis reservas
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
+    const { status } = req.query;
+    const where: any = { userId: req.user!.id };
+    if (status && status !== 'all') {
+      where.status = status as string;
+    } else if (!status) {
+      where.status = { not: 'cancelled' };
+    }
+
     const bookings = await prisma.booking.findMany({
-      where: { userId: req.user.id },
+      where,
       include: {
         Event: {
           include: {
@@ -192,8 +183,8 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/bookings/:id - Cancelar reserva
-router.delete('/:id', requireAuth, async (req, res) => {
+// DELETE /api/bookings/:id - Cancelar reserva (soft delete)
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const parsedId = parseInt(id);
@@ -219,7 +210,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     // Verificar que pertenece al usuario
-    if (booking.userId !== req.user.id) {
+    if (booking.userId !== req.user!.id) {
       return res.status(403).json({
         success: false,
         error: 'No tienes permisos para cancelar esta reserva'
@@ -231,7 +222,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       select: { title: true }
     });
 
-    // Transacción atómica: eliminar reserva + decrementar contador
+    // Transacción atómica: cancelar reserva + decrementar contador
     await prisma.$transaction(async (tx) => {
       const event = await tx.event.findUnique({
         where: { id: booking.eventId },
@@ -239,7 +230,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       });
 
       if (!event) {
-        const err = new Error('Evento no encontrado');
+        const err: any = new Error('Evento no encontrado');
         err.statusCode = 404;
         throw err;
       }
@@ -250,23 +241,52 @@ router.delete('/:id', requireAuth, async (req, res) => {
           currentBookings: event.currentBookings,
           attemptedDecrement: booking.quantity
         });
-        const err = new Error('Error de consistencia en la base de datos');
+        const err: any = new Error('Error de consistencia en la base de datos');
         err.statusCode = 500;
         throw err;
       }
 
-      await tx.booking.delete({
-        where: { id: parsedId }
+      // Soft delete: marcar como cancelado en vez de eliminar
+      await tx.booking.update({
+        where: { id: parsedId },
+        data: {
+          status: 'cancelled',
+          cancelledAt: new Date()
+        }
       });
 
       await tx.event.update({
         where: { id: booking.eventId },
         data: { currentBookings: { decrement: booking.quantity } }
       });
+
+      // Invalidar el ticket asociado si existe
+      const associatedTicket = await tx.ticket.findUnique({
+        where: { bookingId: parsedId },
+        select: { id: true, status: true }
+      });
+      if (associatedTicket && associatedTicket.status === 'valid') {
+        await tx.ticket.update({
+          where: { id: associatedTicket.id },
+          data: {
+            status: 'invalidated',
+            invalidatedAt: new Date(),
+            invalidationReason: 'Reserva cancelada por el usuario'
+          }
+        });
+        await tx.ticketAuditLog.create({
+          data: {
+            ticketId: associatedTicket.id,
+            action: 'TICKET_INVALIDATED',
+            userId: req.user!.id,
+            metadata: JSON.stringify({ reason: 'Reserva cancelada por el usuario', bookingId: parsedId })
+          }
+        });
+      }
     });
 
     createNotification({
-      userId: req.user.id,
+      userId: req.user!.id,
       type: 'EVENT_CANCELLED',
       title: 'Reserva cancelada',
       message: `Tu reserva para "${eventTitle?.title || 'el evento'}" ha sido cancelada.`,
@@ -279,7 +299,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       message: 'Reserva cancelada exitosamente'
     });
 
-  } catch (error) {
+  } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
@@ -294,4 +314,4 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

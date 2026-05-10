@@ -31,6 +31,9 @@ model User {
   notifications   Notification[]
   reviews         Review[]
   userGroups      UserGroup[]
+  validatedTickets   Ticket[]               @relation("ValidatedTickets")
+  invalidatedTickets Ticket[]               @relation("InvalidatedTickets")
+  ticketAuditLogs    TicketAuditLog[]
 
   @@map("users")
 }
@@ -107,6 +110,7 @@ model Booking {
   totalPrice   Float
   status       String      @default("pending")
   bookedAt     DateTime    @default(now())
+  cancelledAt  DateTime?
   userId       Int
   ticketTypeId Int?
   eventId      Int
@@ -114,6 +118,7 @@ model Booking {
   ticketType   TicketType? @relation(fields: [ticketTypeId], references: [id])
   user         User        @relation(fields: [userId], references: [id])
   payment      Payment?
+  ticket       Ticket?
 
   @@index([userId])
   @@index([userId, status])
@@ -258,4 +263,47 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+model Ticket {
+  id                 Int              @id @default(autoincrement())
+  token              String           @unique @db.Uuid
+  status             String           @default("valid")
+  bookingId          Int              @unique
+  scannedAt          DateTime?
+  validatedById      Int?
+  invalidatedAt      DateTime?
+  invalidatedById    Int?
+  invalidationReason String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  booking         Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  validatedBy     User?            @relation("ValidatedTickets", fields: [validatedById], references: [id])
+  invalidatedBy   User?            @relation("InvalidatedTickets", fields: [invalidatedById], references: [id])
+  auditLogs       TicketAuditLog[]
+
+  @@index([token])
+  @@index([status])
+  @@index([bookingId])
+  @@index([status, createdAt])
+  @@map("tickets")
+}
+
+model TicketAuditLog {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  action    String
+  userId    Int?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([action])
+  @@index([ticketId, createdAt])
+  @@index([createdAt])
+  @@map("ticket_audit_logs")
 }

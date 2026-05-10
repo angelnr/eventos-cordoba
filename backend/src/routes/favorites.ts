@@ -1,35 +1,12 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth } from '../middleware/auth';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
-// Middleware para verificar autenticación
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Token requerido'
-    });
-  }
-
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Token inválido'
-    });
-  }
-};
-
 // GET /api/favorites/check - Comprobar estado de favoritos (batch) - DEBE IR ANTES DE /:eventId
-router.get('/check', requireAuth, async (req, res) => {
+router.get('/check', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventIds } = req.query;
 
@@ -40,7 +17,7 @@ router.get('/check', requireAuth, async (req, res) => {
       });
     }
 
-    const ids = eventIds.split(',').map(Number).filter(n => !isNaN(n) && n > 0);
+    const ids = (eventIds as string).split(',').map(Number).filter(n => !isNaN(n) && n > 0);
 
     if (ids.length === 0) {
       return res.status(400).json({
@@ -58,14 +35,14 @@ router.get('/check', requireAuth, async (req, res) => {
 
     const favorites = await prisma.favorite.findMany({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         eventId: { in: ids }
       },
       select: { eventId: true }
     });
 
     // Construir mapa de resultados: { "eventId": true/false }
-    const result = {};
+    const result: Record<number, boolean> = {};
     ids.forEach(id => { result[id] = false; });
     favorites.forEach(f => { result[f.eventId] = true; });
 
@@ -83,16 +60,16 @@ router.get('/check', requireAuth, async (req, res) => {
 });
 
 // GET /api/favorites - Listar favoritos del usuario
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 10, category } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = Math.min(parseInt(limit), 50);
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = Math.min(parseInt(limit as string), 50);
 
-    const where = { userId: req.user.id };
+    const where: any = { userId: req.user!.id };
 
     if (category) {
-      where.event = { categoryId: parseInt(category) };
+      where.event = { categoryId: parseInt(category as string) };
     }
 
     const eventFilter = { status: { not: 'cancelled' } };
@@ -123,7 +100,7 @@ router.get('/', requireAuth, async (req, res) => {
       success: true,
       data: favorites,
       pagination: {
-        page: parseInt(page),
+        page: parseInt(page as string),
         limit: take,
         total,
         pages: Math.ceil(total / take)
@@ -139,7 +116,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/favorites - Añadir favorito (idempotente)
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.body;
 
@@ -174,7 +151,7 @@ router.post('/', requireAuth, async (req, res) => {
     // Intentar crear el favorito. Si ya existe (P2002), devolver el existente con 200.
     const favorite = await prisma.favorite.create({
       data: {
-        userId: req.user.id,
+        userId: req.user!.id,
         eventId: parsedEventId
       }
     });
@@ -184,14 +161,14 @@ router.post('/', requireAuth, async (req, res) => {
       message: 'Evento añadido a favoritos',
       data: favorite
     });
-  } catch (error) {
+  } catch (error: any) {
     // P2002 = unique constraint violation (ya era favorito)
     if (error.code === 'P2002') {
       try {
         const existing = await prisma.favorite.findUnique({
           where: {
             userId_eventId: {
-              userId: req.user.id,
+              userId: req.user!.id,
               eventId: parseInt(req.body.eventId)
             }
           }
@@ -220,7 +197,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/favorites/:eventId - Eliminar favorito (idempotente)
-router.delete('/:eventId', requireAuth, async (req, res) => {
+router.delete('/:eventId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
     const parsedEventId = parseInt(eventId);
@@ -235,7 +212,7 @@ router.delete('/:eventId', requireAuth, async (req, res) => {
     // deleteMany es idempotente: no falla si no existe el registro
     await prisma.favorite.deleteMany({
       where: {
-        userId: req.user.id,
+        userId: req.user!.id,
         eventId: parsedEventId
       }
     });
@@ -253,4 +230,4 @@ router.delete('/:eventId', requireAuth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

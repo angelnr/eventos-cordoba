@@ -1,58 +1,26 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { createNotification, createEventNotifications, VALID_TYPES } = require('../services/notificationService');
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth, requireOrganizer } from '../middleware/auth';
+import { createNotification, createEventNotifications, VALID_TYPES } from '../services/notificationService';
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
-const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'Token requerido'
-    });
-  }
-
+router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      error: 'Token inv\u00e1lido'
-    });
-  }
-};
-
-const requireOrganizer = (req, res, next) => {
-  if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      error: 'Se requieren permisos de organizador'
-    });
-  }
-  next();
-};
-
-router.get('/', requireAuth, async (req, res) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const unreadOnly = req.query.unreadOnly === 'true';
-    const type = req.query.type || null;
+    const type = req.query.type as string || null;
 
-    if (type && !VALID_TYPES.includes(type)) {
+    if (type && !VALID_TYPES.includes(type as any)) {
       return res.status(400).json({
         success: false,
-        error: `Tipo de notificaci\u00f3n inv\u00e1lido. V\u00e1lidos: ${VALID_TYPES.join(', ')}`
+        error: `Tipo de notificación inválido. Válidos: ${VALID_TYPES.join(', ')}`
       });
     }
 
-    const where = { userId: req.user.id };
+    const where: any = { userId: req.user!.id };
     if (unreadOnly) where.isRead = false;
     if (type) where.type = type;
 
@@ -72,7 +40,7 @@ router.get('/', requireAuth, async (req, res) => {
         take
       }),
       prisma.notification.count({ where }),
-      prisma.notification.count({ where: { userId: req.user.id, isRead: false } })
+      prisma.notification.count({ where: { userId: req.user!.id, isRead: false } })
     ]);
 
     const pages = Math.ceil(total / take);
@@ -99,10 +67,10 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/unread-count', requireAuth, async (req, res) => {
+router.get('/unread-count', requireAuth, async (req: Request, res: Response) => {
   try {
     const unreadCount = await prisma.notification.count({
-      where: { userId: req.user.id, isRead: false }
+      where: { userId: req.user!.id, isRead: false }
     });
 
     res.json({
@@ -118,7 +86,7 @@ router.get('/unread-count', requireAuth, async (req, res) => {
   }
 });
 
-router.patch('/:id/read', requireAuth, async (req, res) => {
+router.patch('/:id/read', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const notificationId = parseInt(id);
@@ -126,7 +94,7 @@ router.patch('/:id/read', requireAuth, async (req, res) => {
     if (isNaN(notificationId)) {
       return res.status(400).json({
         success: false,
-        error: 'ID de notificaci\u00f3n inv\u00e1lido'
+        error: 'ID de notificación inválido'
       });
     }
 
@@ -134,10 +102,10 @@ router.patch('/:id/read', requireAuth, async (req, res) => {
       where: { id: notificationId }
     });
 
-    if (!notification || notification.userId !== req.user.id) {
+    if (!notification || notification.userId !== req.user!.id) {
       return res.status(404).json({
         success: false,
-        error: 'Notificaci\u00f3n no encontrada'
+        error: 'Notificación no encontrada'
       });
     }
 
@@ -159,15 +127,15 @@ router.patch('/:id/read', requireAuth, async (req, res) => {
     console.error('Mark notification as read error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al marcar notificaci\u00f3n como le\u00edda'
+      error: 'Error al marcar notificación como leída'
     });
   }
 });
 
-router.patch('/mark-all-read', requireAuth, async (req, res) => {
+router.patch('/mark-all-read', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await prisma.notification.updateMany({
-      where: { userId: req.user.id, isRead: false },
+      where: { userId: req.user!.id, isRead: false },
       data: { isRead: true }
     });
 
@@ -179,15 +147,15 @@ router.patch('/mark-all-read', requireAuth, async (req, res) => {
     console.error('Mark all notifications as read error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al marcar todas las notificaciones como le\u00eddas'
+      error: 'Error al marcar todas las notificaciones como leídas'
     });
   }
 });
 
-router.delete('/read-all', requireAuth, async (req, res) => {
+router.delete('/read-all', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await prisma.notification.deleteMany({
-      where: { userId: req.user.id, isRead: true }
+      where: { userId: req.user!.id, isRead: true }
     });
 
     res.json({
@@ -198,12 +166,12 @@ router.delete('/read-all', requireAuth, async (req, res) => {
     console.error('Delete read notifications error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al eliminar notificaciones le\u00eddas'
+      error: 'Error al eliminar notificaciones leídas'
     });
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const notificationId = parseInt(id);
@@ -211,35 +179,35 @@ router.delete('/:id', requireAuth, async (req, res) => {
     if (isNaN(notificationId)) {
       return res.status(400).json({
         success: false,
-        error: 'ID de notificaci\u00f3n inv\u00e1lido'
+        error: 'ID de notificación inválido'
       });
     }
 
     const result = await prisma.notification.deleteMany({
-      where: { id: notificationId, userId: req.user.id }
+      where: { id: notificationId, userId: req.user!.id }
     });
 
     if (result.count === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Notificaci\u00f3n no encontrada'
+        error: 'Notificación no encontrada'
       });
     }
 
     res.json({
       success: true,
-      message: 'Notificaci\u00f3n eliminada'
+      message: 'Notificación eliminada'
     });
   } catch (error) {
     console.error('Delete notification error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al eliminar notificaci\u00f3n'
+      error: 'Error al eliminar notificación'
     });
   }
 });
 
-router.post('/', requireAuth, requireOrganizer, async (req, res) => {
+router.post('/', requireAuth, requireOrganizer, async (req: Request, res: Response) => {
   try {
     const { eventId, type, title, message } = req.body;
 
@@ -297,7 +265,7 @@ router.post('/', requireAuth, requireOrganizer, async (req, res) => {
       });
     }
 
-    if (event.organizerId !== req.user.id && req.user.role !== 'admin') {
+    if (event.organizerId !== req.user!.id && req.user!.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'No eres el organizador de este evento'
@@ -313,16 +281,16 @@ router.post('/', requireAuth, requireOrganizer, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: `Notificaci\u00f3n enviada a ${result.recipientCount} usuarios`,
+      message: `Notificación enviada a ${result.recipientCount} usuarios`,
       data: { recipientCount: result.recipientCount }
     });
   } catch (error) {
     console.error('Create notification error:', error);
     res.status(500).json({
       success: false,
-      error: 'Error al crear notificaci\u00f3n'
+      error: 'Error al crear notificación'
     });
   }
 });
 
-module.exports = router;
+export default router;

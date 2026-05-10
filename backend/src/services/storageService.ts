@@ -1,19 +1,26 @@
-const fs = require('fs').promises;
-const path = require('path');
-const crypto = require('crypto');
-const { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } = require('../middleware/upload');
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '../middleware/upload';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 const EVENTS_DIR = path.join(UPLOAD_DIR, 'events');
 
-const MAGIC_BYTES = [
+interface MagicSignature {
+  mime: string;
+  ext: string;
+  bytes: number[][];
+  ranges?: number[][];
+}
+
+const MAGIC_BYTES: MagicSignature[] = [
   { mime: 'image/jpeg', ext: 'jpg',  bytes: [[0xFF, 0xD8, 0xFF]] },
   { mime: 'image/png',  ext: 'png',  bytes: [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]] },
   { mime: 'image/webp', ext: 'webp', bytes: [[0x52, 0x49, 0x46, 0x46], [0x57, 0x45, 0x42, 0x50]], ranges: [[0, 4], [8, 12]] },
   { mime: 'image/gif',  ext: 'gif',  bytes: [[0x47, 0x49, 0x46, 0x38]] },
 ];
 
-function detectImageType(buffer) {
+function detectImageType(buffer: Buffer): { mime: string; ext: string } | null {
   for (const sig of MAGIC_BYTES) {
     if (sig.ranges) {
       let match = true;
@@ -38,21 +45,21 @@ function detectImageType(buffer) {
   return null;
 }
 
-async function ensureUploadDir() {
-  await fs.mkdir(EVENTS_DIR, { recursive: true });
+async function ensureUploadDir(): Promise<void> {
+  await fs.promises.mkdir(EVENTS_DIR, { recursive: true });
 }
 
-function isLocalImage(imageUrl) {
+export function isLocalImage(imageUrl: string | null | undefined): boolean {
   if (!imageUrl) return false;
   return imageUrl.startsWith('/uploads/');
 }
 
-function getFilePath(imageUrl) {
+export function getFilePath(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
   return path.join(UPLOAD_DIR, imageUrl.replace('/uploads/', ''));
 }
 
-async function validateImageBuffer(buffer) {
+export async function validateImageBuffer(buffer: Buffer): Promise<{ mime: string; ext: string }> {
   if (!buffer || buffer.length === 0) {
     throw new Error('EMPTY_BUFFER');
   }
@@ -78,7 +85,7 @@ async function validateImageBuffer(buffer) {
   return detected;
 }
 
-async function saveImage(buffer, originalExtension) {
+export async function saveImage(buffer: Buffer, originalExtension: string): Promise<string> {
   await ensureUploadDir();
 
   const validated = await validateImageBuffer(buffer);
@@ -93,28 +100,29 @@ async function saveImage(buffer, originalExtension) {
     throw new Error('PATH_TRAVERSAL_DETECTED');
   }
 
-  await fs.writeFile(filePath, buffer);
+  await fs.promises.writeFile(filePath, buffer);
 
   return '/uploads/events/' + filename;
 }
 
-async function deleteImage(imageUrl) {
+export async function deleteImage(imageUrl: string | null | undefined): Promise<void> {
   if (!isLocalImage(imageUrl)) {
     return;
   }
 
   const filePath = getFilePath(imageUrl);
+  if (!filePath) return;
   try {
-    await fs.access(filePath);
-    await fs.unlink(filePath);
-  } catch (error) {
+    await fs.promises.access(filePath);
+    await fs.promises.unlink(filePath);
+  } catch (error: any) {
     if (error.code !== 'ENOENT') {
       console.error('[STORAGE] Error deleting image file:', error);
     }
   }
 }
 
-async function replaceImage(newBuffer, newExtension, oldImageUrl) {
+export async function replaceImage(newBuffer: Buffer, newExtension: string, oldImageUrl: string | null | undefined): Promise<string> {
   const newPath = await saveImage(newBuffer, newExtension);
 
   if (oldImageUrl) {
@@ -124,13 +132,5 @@ async function replaceImage(newBuffer, newExtension, oldImageUrl) {
   return newPath;
 }
 
-module.exports = {
-  saveImage,
-  deleteImage,
-  replaceImage,
-  isLocalImage,
-  getFilePath,
-  validateImageBuffer,
-  UPLOAD_DIR,
-  EVENTS_DIR,
-};
+export { UPLOAD_DIR };
+export { EVENTS_DIR };

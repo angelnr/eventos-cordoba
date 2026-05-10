@@ -20,8 +20,11 @@ echo "✅ Seed completado!"
 
 echo "🚀 Iniciando aplicación..."
 if [ "$NODE_ENV" = "development" ]; then
-  echo "📦 Modo desarrollo — usando nodemon para hot-reload"
-  exec npx nodemon src/index.js
+  echo "📦 Modo desarrollo — usando ts-node-dev"
+  exec npx ts-node-dev --respawn --transpile-only src/index.ts
 else
-  exec node src/index.js
+  echo "📦 Modo producción — compilando TypeScript..."
+  npx tsc
+  echo "✅ Compilación TypeScript completada"
+  exec node dist/index.js
 fi

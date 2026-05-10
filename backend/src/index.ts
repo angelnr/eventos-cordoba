@@ -1,19 +1,20 @@
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
+import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
+import cors from 'cors';
 
 // Importar rutas
-const authRoutes = require('./routes/auth');
-const usersRoutes = require('./routes/users');
-const eventsRoutes = require('./routes/events');
-const categoriesRoutes = require('./routes/categories');
-const bookingsRoutes = require('./routes/bookings');
-const favoritesRoutes = require('./routes/favorites');
-const commentsRoutes = require('./routes/comments');
-const reviewsRoutes = require('./routes/reviews');
-const notificationsRoutes = require('./routes/notifications');
-const { startReminderJob } = require('./jobs/reminderJob');
-const { startCleanupJob } = require('./jobs/cleanupJob');
+import authRoutes from './routes/auth';
+import usersRoutes from './routes/users';
+import eventsRoutes from './routes/events';
+import categoriesRoutes from './routes/categories';
+import bookingsRoutes from './routes/bookings';
+import favoritesRoutes from './routes/favorites';
+import commentsRoutes from './routes/comments';
+import reviewsRoutes from './routes/reviews';
+import notificationsRoutes from './routes/notifications';
+import ticketsRoutes from './routes/tickets';
+import { startReminderJob } from './jobs/reminderJob';
+import { startCleanupJob } from './jobs/cleanupJob';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,7 +30,7 @@ app.use(cors({
 }));
 
 // Middleware de logging global
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`📨 ${req.method} ${req.path} - Headers:`, req.headers.authorization ? 'Token presente' : 'Sin token');
   next();
 });
@@ -46,6 +47,7 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/tickets', ticketsRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
@@ -56,9 +58,10 @@ console.log('  - /api/favorites/*');
 console.log('  - /api/comments/*');
 console.log('  - /api/reviews/*');
 console.log('  - /api/notifications/*');
+console.log('  - /api/tickets/*');
 
 // Rutas existentes
-app.get('/api/test', (req, res) => {
+app.get('/api/test', (req: Request, res: Response) => {
   console.log('✅ Petición recibida en /api/test desde:', req.get('origin'));
   res.json({
     message: '¡Backend funcionando perfectamente!',
@@ -68,7 +71,7 @@ app.get('/api/test', (req, res) => {
 });
 
 // Health check específico para Cloudflare
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'OK',
     service: 'backend',
@@ -81,18 +84,18 @@ app.get('/health', (req, res) => {
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   maxAge: '30d',
   immutable: true,
-  setHeaders: (res, filePath) => {
+  setHeaders: (res: Response, filePath: string) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
   }
 }));
 
 // Manejo de errores global
-app.use((err, req, res, next) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Algo salió mal!' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT as number, '0.0.0.0', () => {
   console.log(`🚀 Backend ejecutándose en http://0.0.0.0:${PORT}`);
   console.log('✅ CORS configurado para eventoscordoba.xyz');
   console.log('✅ Base de datos conectada con Prisma');

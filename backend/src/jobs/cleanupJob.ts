@@ -1,8 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-function startCleanupJob() {
+export function startCleanupJob(): void {
   const INTERVAL_MS = 24 * 60 * 60 * 1000;
 
   setTimeout(runCleanup, 5 * 60 * 1000);
@@ -12,7 +12,7 @@ function startCleanupJob() {
   console.log('[CleanupJob] Job de limpieza iniciado (cada 24 horas)');
 }
 
-async function runCleanup() {
+async function runCleanup(): Promise<void> {
   try {
     const now = new Date();
     const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
@@ -32,10 +32,8 @@ async function runCleanup() {
       }
     });
 
-    console.log(`[CleanupJob] Eliminadas: ${deletedRead.count} le\u00eddas (>90d), ${deletedUnread.count} no le\u00eddas (>180d)`);
+    console.log(`[CleanupJob] Eliminadas: ${deletedRead.count} leídas (>90d), ${deletedUnread.count} no leídas (>180d)`);
   } catch (error) {
     console.error('[CleanupJob] Error:', error);
   }
 }
-
-module.exports = { startCleanupJob };

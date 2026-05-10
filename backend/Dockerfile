@@ -15,8 +15,9 @@ RUN npm install
 # Generar cliente Prisma
 RUN npx prisma generate
 
-# Copiar código y script de entrypoint
+# Copiar código, tsconfig y script de entrypoint
 COPY src/ ./src/
+COPY tsconfig.json ./
 COPY entrypoint.sh ./
 
 # Hacer ejecutable el script

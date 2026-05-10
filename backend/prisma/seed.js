@@ -64,6 +64,22 @@ async function main() {
     },
   });
 
+  const staffUser = await prisma.user.upsert({
+    where: { email: 'staff@example.com' },
+    update: {},
+    create: {
+      email: 'staff@example.com',
+      password: await bcrypt.hash('staff123', 10),
+      name: 'Ana Staff',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80',
+      bio: 'Staff de validación de entrada.',
+      location: 'Córdoba, España',
+      interests: ['Eventos', 'Atención al público'],
+      role: 'staff',
+      isVerified: true,
+    },
+  });
+
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { name: 'Música' },

@@ -1,13 +1,39 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const VALID_SORT_FIELDS = ['date', 'price', 'averageRating', 'createdAt', 'title'];
-const VALID_SORT_ORDERS = ['asc', 'desc'];
-const VALID_STATUSES = ['active', 'cancelled', 'draft', 'completed'];
-const VALID_DATE_PRESETS = ['today', 'this_week', 'this_weekend', 'upcoming'];
+export const VALID_SORT_FIELDS = ['date', 'price', 'averageRating', 'createdAt', 'title'];
+export const VALID_SORT_ORDERS = ['asc', 'desc'];
+export const VALID_STATUSES = ['active', 'cancelled', 'draft', 'completed'];
+export const VALID_DATE_PRESETS = ['today', 'this_week', 'this_weekend', 'upcoming'];
 
-function resolveDatePreset(preset) {
+interface FilterParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  category?: number;
+  categoryId?: number;
+  search?: string;
+  organizerId?: number;
+  datePreset?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  available?: boolean;
+  soldOut?: boolean;
+  isFree?: boolean;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
+export function resolveDatePreset(preset: string): DateRange {
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -42,9 +68,9 @@ function resolveDatePreset(preset) {
   }
 }
 
-function validateFilterParams(params) {
-  const errors = [];
-  const cleaned = {};
+export function validateFilterParams(params: Record<string, any>): { cleaned: FilterParams; errors: string[] } {
+  const errors: string[] = [];
+  const cleaned: FilterParams = {};
 
   // page
   cleaned.page = Math.max(1, Math.min(100, parseInt(params.page) || 1));
@@ -188,8 +214,8 @@ function validateFilterParams(params) {
   return { cleaned, errors };
 }
 
-function buildFilterWhere(params) {
-  const conditions = [];
+export function buildFilterWhere(params: FilterParams): any {
+  const conditions: any[] = [];
 
   conditions.push({ status: params.status || 'active' });
 
@@ -212,7 +238,7 @@ function buildFilterWhere(params) {
   }
 
   // Rango de fecha
-  const dateCondition = {};
+  const dateCondition: any = {};
   if (params.dateFrom) dateCondition.gte = params.dateFrom;
   if (params.dateTo) dateCondition.lte = params.dateTo;
   if (Object.keys(dateCondition).length > 0) {
@@ -220,7 +246,7 @@ function buildFilterWhere(params) {
   }
 
   // Rango de precio
-  const priceCondition = {};
+  const priceCondition: any = {};
   if (params.minPrice != null) priceCondition.gte = params.minPrice;
   if (params.maxPrice != null) priceCondition.lte = params.maxPrice;
   if (Object.keys(priceCondition).length > 0) {
@@ -237,31 +263,28 @@ function buildFilterWhere(params) {
     conditions.push({ price: 0 });
   }
 
-  // NOTA: available/soldOut NO se añaden aquí.
-  // Se manejan en la ruta con getAvailabilityIds() y se inyectan como id: { in: ids }
-
   if (conditions.length === 0) return {};
   if (conditions.length === 1) return conditions[0];
   return { AND: conditions };
 }
 
-async function getAvailabilityIds(params) {
+export async function getAvailabilityIds(params: FilterParams): Promise<number[] | null> {
   const status = params.status || 'active';
 
   if (params.available && params.soldOut) {
     return [];
   }
 
-  let results;
+  let results: Array<{ id: number }>;
 
   if (params.available) {
-    results = await prisma.$queryRaw`
+    results = await prisma.$queryRaw<Array<{ id: number }>>`
       SELECT id FROM events
       WHERE status = ${status}
       AND "currentBookings" < capacity
     `;
   } else if (params.soldOut) {
-    results = await prisma.$queryRaw`
+    results = await prisma.$queryRaw<Array<{ id: number }>>`
       SELECT id FROM events
       WHERE status = ${status}
       AND "currentBookings" >= capacity
@@ -273,8 +296,8 @@ async function getAvailabilityIds(params) {
   return results.map(r => r.id);
 }
 
-function buildAppliedFiltersSummary(params) {
-  const applied = {};
+export function buildAppliedFiltersSummary(params: FilterParams): Record<string, any> {
+  const applied: Record<string, any> = {};
 
   if (params.categoryId) applied.category = params.categoryId;
   if (params.search) applied.search = params.search;
@@ -297,15 +320,3 @@ function buildAppliedFiltersSummary(params) {
 
   return applied;
 }
-
-module.exports = {
-  validateFilterParams,
-  buildFilterWhere,
-  resolveDatePreset,
-  getAvailabilityIds,
-  buildAppliedFiltersSummary,
-  VALID_SORT_FIELDS,
-  VALID_SORT_ORDERS,
-  VALID_STATUSES,
-  VALID_DATE_PRESETS
-};

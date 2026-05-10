@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const VALID_TYPES = [
@@ -7,11 +7,20 @@ const VALID_TYPES = [
   'EVENT_REMINDER',
   'ORGANIZER_ANNOUNCEMENT',
   'BOOKING_CONFIRMED'
-];
+] as const;
 
-async function createNotification({ userId, type, title, message, eventId = null, link = null }) {
+type NotificationType = typeof VALID_TYPES[number];
+
+export async function createNotification({ userId, type, title, message, eventId = null, link = null }: {
+  userId: number;
+  type: NotificationType;
+  title: string;
+  message: string;
+  eventId?: number | null;
+  link?: string | null;
+}) {
   if (!VALID_TYPES.includes(type)) {
-    throw new Error(`Tipo de notificaci\u00f3n inv\u00e1lido: ${type}`);
+    throw new Error(`Tipo de notificación inválido: ${type}`);
   }
   if (!userId || !title || !message) {
     throw new Error('userId, title y message son requeridos');
@@ -30,7 +39,13 @@ async function createNotification({ userId, type, title, message, eventId = null
   });
 }
 
-async function createNotificationForUsers(userIds, { type, title, message, eventId = null, link = null }) {
+export async function createNotificationForUsers(userIds: number[], { type, title, message, eventId = null, link = null }: {
+  type: NotificationType;
+  title: string;
+  message: string;
+  eventId?: number | null;
+  link?: string | null;
+}) {
   if (!Array.isArray(userIds) || userIds.length === 0) {
     return { count: 0 };
   }
@@ -51,7 +66,12 @@ async function createNotificationForUsers(userIds, { type, title, message, event
   return { count: result.count };
 }
 
-async function createEventNotifications(eventId, { type, title, message, link = null }) {
+export async function createEventNotifications(eventId: number, { type, title, message, link = null }: {
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string | null;
+}) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     select: { id: true }
@@ -72,7 +92,7 @@ async function createEventNotifications(eventId, { type, title, message, link = 
     })
   ]);
 
-  const userIdSet = new Set();
+  const userIdSet = new Set<number>();
   bookings.forEach(b => userIdSet.add(b.userId));
   favorites.forEach(f => userIdSet.add(f.userId));
   const userIds = [...userIdSet];
@@ -85,9 +105,4 @@ async function createEventNotifications(eventId, { type, title, message, link = 
   return { recipientCount: userIds.length };
 }
 
-module.exports = {
-  createNotification,
-  createNotificationForUsers,
-  createEventNotifications,
-  VALID_TYPES
-};
+export { VALID_TYPES };
