@@ -685,11 +685,11 @@ export default function EventDetail() {
                   </p>
 
                   <Link
-                    href="/dashboard"
+                    href={`/events/edit/${event.id}`}
                     className="block"
                   >
                     <Button fullWidth>
-                      Ir al Dashboard
+                      Editar Evento
                     </Button>
                   </Link>
                 </div>
