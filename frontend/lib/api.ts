@@ -21,10 +21,10 @@ export function getApiUrl(): string {
   }
 
   if (hostname === 'eventoscordoba.xyz') {
-    return '';
+    return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || '';
+  return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
 }
 
 export async function apiFetch<T>(

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../lib/theme';
 
-export const ThemeToggle: React.FC = () => {
+export const ThemeToggle: React.FC<{ onDark?: boolean }> = ({ onDark = false }) => {
   const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
@@ -9,12 +9,11 @@ export const ThemeToggle: React.FC = () => {
       onClick={toggleTheme}
       type="button"
       aria-label={resolvedTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg
-                 text-gray-500 transition-colors
-                 hover:bg-gray-100 hover:text-gray-900
-                 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                 dark:focus:ring-offset-gray-900"
+      className={`relative inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+        onDark
+          ? 'text-black hover:text-white hover:bg-white/10'
+          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+      }`}
     >
       <svg
         className={`h-5 w-5 transition-transform ${resolvedTheme === 'dark' ? 'scale-100 rotate-0' : 'scale-0 rotate-90'}`}

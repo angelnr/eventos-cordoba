@@ -10,10 +10,10 @@ function getApiBaseUrl(): string {
   }
 
   if (hostname === 'eventoscordoba.xyz') {
-    return '';
+    return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || '';
+  return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
 }
 
 export function getAvatarUrl(avatarUrl: string | null | undefined, version?: number): string | null {

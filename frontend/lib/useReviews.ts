@@ -48,9 +48,9 @@ const getApiUrl = () => {
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
   const isProduction = hostname === 'eventoscordoba.xyz';
   if (isLocalhost) return 'http://localhost:3001';
-  if (isProduction) return '';
+  if (isProduction) return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  return '';
+  return 'https://api.eventoscordoba.xyz';
 };
 
 export function useReviews(eventId: number | undefined, token: string | null): UseReviewsReturn {

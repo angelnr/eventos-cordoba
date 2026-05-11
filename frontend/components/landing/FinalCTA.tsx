@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { Button } from '../ui/Button';
 import AnimatedSection from './AnimatedSection';
 
 export default function FinalCTA() {
@@ -14,14 +13,12 @@ export default function FinalCTA() {
         <p className="text-lg text-blue-100 mb-8">
           Regístrate gratis y descubre lo fácil que es gestionar eventos con Eventos Córdoba.
         </p>
-        <Link href="/events">
-          <Button
-            size="lg"
-            className="bg-white text-blue-700 hover:bg-gray-100 shadow-xl gap-2 text-base px-8"
-          >
-            Ver eventos
-            <ArrowRight className="w-5 h-5" />
-          </Button>
+        <Link
+          href="/events"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-white text-gray-900 hover:bg-gray-100 shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-base px-8 py-3 font-medium"
+        >
+          Ver eventos
+          <ArrowRight className="w-5 h-5" />
         </Link>
       </div>
     </AnimatedSection>

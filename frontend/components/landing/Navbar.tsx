@@ -40,13 +40,17 @@ export default function Navbar() {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
           ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur shadow-sm'
-          : 'bg-transparent'
+          : 'bg-black/30'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <span className={`text-xl font-bold transition-colors ${
+              scrolled
+                ? 'text-gray-900 dark:text-gray-100'
+                : 'text-white'
+            }`}>
               Eventos Córdoba
             </span>
           </Link>
@@ -57,7 +61,11 @@ export default function Navbar() {
               <button
                 key={item.href}
                 onClick={() => handleNavClick(item.href)}
-                className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className={`text-sm font-medium transition-colors ${
+                  scrolled
+                    ? 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                    : 'text-white hover:text-white/80'
+                }`}
               >
                 {item.label}
               </button>
@@ -86,7 +94,7 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center gap-1">
-              <ThemeToggle />
+              <ThemeToggle onDark={!scrolled} />
               {user ? (
                 <>
                   <NotificationBell />
@@ -110,7 +118,11 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setLangOpen(!langOpen)}
-                  className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors px-2 py-1"
+                  className={`flex items-center gap-1 text-sm transition-colors px-2 py-1 ${
+                    scrolled
+                      ? 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                      : 'text-white hover:text-white/80'
+                  }`}
                 >
                   <Globe className="w-4 h-4" />
                   <span>ES</span>
@@ -147,7 +159,7 @@ export default function Navbar() {
                 </Button>
               </Link>
             </div>
-            <ThemeToggle />
+            <ThemeToggle onDark={!scrolled} />
             {user && <NotificationBell />}
             {user ? (
               <div className="hidden md:block">
@@ -163,7 +175,11 @@ export default function Navbar() {
               </div>
             )}
             <button
-              className="p-2 text-gray-600 dark:text-gray-300"
+              className={`p-2 transition-colors ${
+                scrolled
+                  ? 'text-gray-600 dark:text-gray-300'
+                  : 'text-white'
+              }`}
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Abrir menú"
             >

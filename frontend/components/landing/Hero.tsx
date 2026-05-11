@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Calendar } from 'lucide-react';
-import { Button } from '../ui/Button';
 
 export default function Hero() {
   return (
@@ -30,14 +29,12 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/events">
-            <Button
-              size="lg"
-              className="bg-white text-blue-700 hover:bg-gray-100 shadow-xl shadow-blue-900/20 gap-2 text-base px-8"
-            >
-              Ver eventos
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+          <Link
+            href="/events"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-white text-gray-900 hover:bg-gray-100 shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-base px-8 py-3 font-medium"
+          >
+            Ver eventos
+            <ArrowRight className="w-5 h-5" />
           </Link>
           <button
             onClick={() => {

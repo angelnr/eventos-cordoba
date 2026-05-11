@@ -78,14 +78,14 @@ export default function UserProfile() {
     }
 
     if (isProduction) {
-      return '';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
     }
 
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return '';
+    return 'https://api.eventoscordoba.xyz';
   };
 
   useEffect(() => {

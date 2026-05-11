@@ -63,9 +63,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return 'http://localhost:3001';
     }
 
-    // En producción (eventoscordoba.xyz) - usar URL conocida
+    // En producción (eventoscordoba.xyz) - usar subdominio API
     if (isProduction) {
-      return '';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
     }
 
     // En producción - usar la URL configurada
@@ -73,8 +73,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    // Fallback: asumir que el backend está en el mismo dominio
-    return '';
+    // Fallback: asumir que el backend está en el subdominio api
+    return 'https://api.eventoscordoba.xyz';
   };
 
   // Verificar token al cargar la aplicación
