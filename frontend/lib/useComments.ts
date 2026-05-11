@@ -42,9 +42,9 @@ const getApiUrl = () => {
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
   const isProduction = hostname === 'eventoscordoba.xyz';
   if (isLocalhost) return 'http://localhost:3001';
-  if (isProduction) return 'https://api.eventoscordoba.xyz';
+  if (isProduction) return '';
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  return 'https://api.eventoscordoba.xyz';
+  return '';
 };
 
 export function useComments(eventId: number | undefined, token: string | null): UseCommentsReturn {

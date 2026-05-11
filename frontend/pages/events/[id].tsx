@@ -120,14 +120,14 @@ export default function EventDetail() {
     const isProduction = hostname === 'eventoscordoba.xyz';
 
     if (isProduction) {
-      return 'https://api.eventoscordoba.xyz';
+      return '';
     }
 
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return 'https://api.eventoscordoba.xyz';
+    return '';
   };
 
   useEffect(() => {

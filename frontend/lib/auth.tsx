@@ -65,7 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // En producción (eventoscordoba.xyz) - usar URL conocida
     if (isProduction) {
-      return 'https://api.eventoscordoba.xyz';
+      return '';
     }
 
     // En producción - usar la URL configurada

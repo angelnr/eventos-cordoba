@@ -51,14 +51,14 @@ export default function Favorites() {
     }
 
     if (isProduction) {
-      return 'https://api.eventoscordoba.xyz';
+      return '';
     }
 
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return 'https://api.eventoscordoba.xyz';
+    return '';
   };
 
   const handleRemoveFavorite = (eventId: number) => {

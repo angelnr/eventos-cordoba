@@ -53,7 +53,7 @@ export default function EditProfile() {
     }
 
     if (isProduction) {
-      return 'https://api.eventoscordoba.xyz';
+      return '';
     }
 
     if (process.env.NEXT_PUBLIC_API_URL) {

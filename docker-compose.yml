@@ -34,18 +34,14 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: node:20-alpine
-    user: "1000:1000"
-    working_dir: /app
+    build: ./frontend
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
       - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-    command: sh -c "cd /app && npx next dev -H 0.0.0.0"
+      - NODE_ENV=production
     networks:
       - app-network
     restart: unless-stopped
