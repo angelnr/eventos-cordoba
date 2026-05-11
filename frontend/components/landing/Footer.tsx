@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Mail, MapPin } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -16,6 +17,9 @@ const LEGAL_LINKS = [
 ];
 
 export default function Footer() {
+  const { pathname } = useRouter();
+  const isLanding = pathname === '/';
+
   return (
     <footer id="contacto" className="bg-gray-900 dark:bg-gray-950 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -27,28 +31,30 @@ export default function Footer() {
             </p>
           </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Navegación
-            </h4>
-            <ul className="space-y-2">
-              {NAV_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const el = document.querySelector(href);
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="text-sm text-gray-400 hover:text-white transition-colors"
-                  >
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {isLanding && (
+            <div>
+              <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+                Navegación
+              </h4>
+              <ul className="space-y-2">
+                {NAV_LINKS.map(({ label, href }) => (
+                  <li key={label}>
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const el = document.querySelector(href);
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div>
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">

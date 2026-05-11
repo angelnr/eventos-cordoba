@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Menu, X, Globe } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { Button } from '../ui/Button';
@@ -19,6 +20,8 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const { user } = useAuth();
+  const { pathname } = useRouter();
+  const isLanding = pathname === '/';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -50,7 +53,7 @@ export default function Navbar() {
 
           {/* Full desktop nav - lg and above */}
           <nav className="hidden lg:flex items-center gap-4">
-            {NAV_ITEMS.map((item) => (
+            {isLanding && NAV_ITEMS.map((item) => (
               <button
                 key={item.href}
                 onClick={() => handleNavClick(item.href)}
@@ -103,34 +106,36 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors px-2 py-1"
-              >
-                <Globe className="w-4 h-4" />
-                <span>ES</span>
-              </button>
-              {langOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} />
-                  <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 z-20">
-                    <button
-                      onClick={() => setLangOpen(false)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      🇪🇸 ES
-                    </button>
-                    <button
-                      onClick={() => setLangOpen(false)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      🇬🇧 EN
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            {isLanding && (
+              <div className="relative">
+                <button
+                  onClick={() => setLangOpen(!langOpen)}
+                  className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors px-2 py-1"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>ES</span>
+                </button>
+                {langOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} />
+                    <div className="absolute right-0 mt-1 w-24 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 z-20">
+                      <button
+                        onClick={() => setLangOpen(false)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        🇪🇸 ES
+                      </button>
+                      <button
+                        onClick={() => setLangOpen(false)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        🇬🇧 EN
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Compact tablet + mobile nav - below lg */}
@@ -171,7 +176,7 @@ export default function Navbar() {
       {isOpen && (
         <div className="lg:hidden bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
           <div className="px-4 py-3 space-y-2">
-            {NAV_ITEMS.map((item) => (
+            {isLanding && NAV_ITEMS.map((item) => (
               <button
                 key={item.href}
                 onClick={() => handleNavClick(item.href)}
@@ -180,7 +185,7 @@ export default function Navbar() {
                 {item.label}
               </button>
             ))}
-            <hr className="border-gray-200 dark:border-gray-700" />
+            {isLanding && <hr className="border-gray-200 dark:border-gray-700" />}
             <Link href="/events" className="block">
               <Button variant="secondary" fullWidth size="sm">Eventos</Button>
             </Link>
