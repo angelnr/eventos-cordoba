@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import AnimatedSection from './AnimatedSection';
 import EventMap from '../EventMap';
 
-const CORDOBA_COORDS = { lat: -31.4201, lng: -64.1888 };
+const CORDOBA_COORDS = { lat: 37.8882, lng: -4.7794 };
 
 export default function EventMapSection() {
   return (
@@ -26,7 +26,7 @@ export default function EventMapSection() {
               <EventMap
                 latitude={CORDOBA_COORDS.lat}
                 longitude={CORDOBA_COORDS.lng}
-                title="Córdoba, Argentina"
+                title="Córdoba, España"
               />
             </div>
           </div>
