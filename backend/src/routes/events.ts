@@ -104,6 +104,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
         select: {
           id: true, slug: true, title: true, description: true,
           date: true, location: true, latitude: true, longitude: true,
+          placeId: true, formattedAddress: true, city: true, country: true, postalCode: true,
           capacity: true, status: true, imageUrl: true, price: true,
           organizerId: true, categoryId: true, createdAt: true, updatedAt: true,
           averageRating: true, reviewCount: true, currentBookings: true,
@@ -544,7 +545,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
 // POST /api/events - Crear evento (requiere autenticación y rol organizador)
 router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: Request, res: Response) => {
   try {
-    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, latitude, longitude, placeId, formattedAddress, city, country, postalCode, locationMetadata } = req.body;
 
     // Validaciones
     if (!title || !date || !location || !categoryId) {
@@ -563,6 +564,35 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
       return res.status(400).json({
         success: false,
         error: 'Categoría no encontrada'
+      });
+    }
+
+    // Validación de coordenadas geográficas
+    const parsedLat = latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(String(latitude)) : null;
+    const parsedLng = longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(String(longitude)) : null;
+
+    if (parsedLat !== null && parsedLng === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Si proporcionas latitud, también debes proporcionar longitud'
+      });
+    }
+    if (parsedLng !== null && parsedLat === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Si proporcionas longitud, también debes proporcionar latitud'
+      });
+    }
+    if (parsedLat !== null && (isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Latitud inválida. Debe ser un número entre -90 y 90'
+      });
+    }
+    if (parsedLng !== null && (isNaN(parsedLng) || parsedLng < -180 || parsedLng > 180)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Longitud inválida. Debe ser un número entre -180 y 180'
       });
     }
 
@@ -589,6 +619,14 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
         description: description || null,
         date: new Date(date),
         location,
+        latitude: parsedLat !== null ? parsedLat : undefined,
+        longitude: parsedLng !== null ? parsedLng : undefined,
+        placeId: placeId || undefined,
+        formattedAddress: formattedAddress || undefined,
+        city: city || undefined,
+        country: country || undefined,
+        postalCode: postalCode || undefined,
+        locationMetadata: locationMetadata || undefined,
         capacity: capacity ? parseInt(capacity) : 100,
         price: price ? parseFloat(price) : 0,
         categoryId: parseInt(categoryId),
@@ -625,7 +663,7 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
 router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status, latitude, longitude, placeId, formattedAddress, city, country, postalCode, locationMetadata } = req.body;
 
     if (status) {
       return res.status(400).json({
@@ -668,6 +706,35 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
       }
     }
 
+    // Validación de coordenadas geográficas
+    const parsedLat = latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(String(latitude)) : null;
+    const parsedLng = longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(String(longitude)) : null;
+
+    if (parsedLat !== null && parsedLng === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Si proporcionas latitud, también debes proporcionar longitud'
+      });
+    }
+    if (parsedLng !== null && parsedLat === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Si proporcionas longitud, también debes proporcionar latitud'
+      });
+    }
+    if (parsedLat !== null && (isNaN(parsedLat) || parsedLat < -90 || parsedLat > 90)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Latitud inválida. Debe ser un número entre -90 y 90'
+      });
+    }
+    if (parsedLng !== null && (isNaN(parsedLng) || parsedLng < -180 || parsedLng > 180)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Longitud inválida. Debe ser un número entre -180 y 180'
+      });
+    }
+
     const parsedPrice = price !== undefined ? parseFloat(price) : undefined;
     const parsedCapacity = capacity !== undefined ? parseInt(capacity) : undefined;
     const parsedCategoryId = categoryId !== undefined ? parseInt(categoryId) : undefined;
@@ -681,6 +748,14 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
     if (parsedCapacity !== undefined && !Number.isNaN(parsedCapacity)) updateData.capacity = parsedCapacity;
     if (parsedPrice !== undefined && !Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
     if (parsedCategoryId !== undefined && !Number.isNaN(parsedCategoryId)) updateData.categoryId = parsedCategoryId;
+    if (parsedLat !== null) updateData.latitude = parsedLat;
+    if (parsedLng !== null) updateData.longitude = parsedLng;
+    if (placeId !== undefined) updateData.placeId = placeId || null;
+    if (formattedAddress !== undefined) updateData.formattedAddress = formattedAddress || null;
+    if (city !== undefined) updateData.city = city || null;
+    if (country !== undefined) updateData.country = country || null;
+    if (postalCode !== undefined) updateData.postalCode = postalCode || null;
+    if (locationMetadata !== undefined) updateData.locationMetadata = locationMetadata || null;
 
     // Manejo de imagen
     if (req.file) {

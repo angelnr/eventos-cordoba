@@ -65,8 +65,14 @@ model Event {
   description     String?
   date            DateTime
   location        String
-  latitude        Float?
-  longitude       Float?
+  latitude        Decimal?       @db.Decimal(10, 8)
+  longitude       Decimal?       @db.Decimal(11, 8)
+  placeId         String?
+  formattedAddress String?
+  city            String?
+  country         String?
+  postalCode      String?
+  locationMetadata String?
   capacity        Int
   status          EventStatus      @default(SCHEDULED)
   imageUrl        String?
@@ -97,6 +103,8 @@ model Event {
   @@index([categoryId, status])
   @@index([status, currentBookings, capacity])
   @@index([organizerId, status, date])
+  @@index([latitude, longitude])
+  @@index([city])
   @@map("events")
 }
 

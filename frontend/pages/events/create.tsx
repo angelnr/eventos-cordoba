@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { AuthGuard } from '../../components/AuthGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { ImageUpload } from '../../components/ui/ImageUpload';
 import { useAuth } from '../../lib/auth';
 import { showSuccess } from '../../lib/notifications';
+
+const LocationPicker = dynamic(() => import('../../components/LocationPicker'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  ),
+});
 
 interface Category {
   id: number;
@@ -34,6 +44,17 @@ export default function CreateEventPage() {
     externalUrl: null,
     removed: false,
   });
+  const [locationData, setLocationData] = useState<{
+    location: string;
+    latitude: number | null;
+    longitude: number | null;
+    placeId: string | null;
+    formattedAddress: string | null;
+    city: string | null;
+    country: string | null;
+    postalCode: string | null;
+    locationMetadata: string | null;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Determinar la URL del API según el entorno
@@ -103,6 +124,16 @@ export default function CreateEventPage() {
       formDataBody.append('description', formData.description || '');
       formDataBody.append('date', new Date(formData.date).toISOString());
       formDataBody.append('location', formData.location);
+      if (locationData) {
+        if (locationData.latitude !== null) formDataBody.append('latitude', locationData.latitude.toString());
+        if (locationData.longitude !== null) formDataBody.append('longitude', locationData.longitude.toString());
+        if (locationData.placeId) formDataBody.append('placeId', locationData.placeId);
+        if (locationData.formattedAddress) formDataBody.append('formattedAddress', locationData.formattedAddress);
+        if (locationData.city) formDataBody.append('city', locationData.city);
+        if (locationData.country) formDataBody.append('country', locationData.country);
+        if (locationData.postalCode) formDataBody.append('postalCode', locationData.postalCode);
+        if (locationData.locationMetadata) formDataBody.append('locationMetadata', locationData.locationMetadata);
+      }
       formDataBody.append('capacity', formData.capacity);
       formDataBody.append('price', formData.price || '0');
       formDataBody.append('categoryId', formData.categoryId);
@@ -220,21 +251,13 @@ export default function CreateEventPage() {
               </div>
 
               {/* Location */}
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Ubicación *
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  required
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Ej: Plaza de la Constitución, Córdoba"
-                />
-              </div>
+              <LocationPicker
+                onLocationChange={(data) => {
+                  setLocationData(data);
+                  setFormData(prev => ({ ...prev, location: data.location }));
+                }}
+                onError={(err) => setError(err)}
+              />
 
               {/* Capacity and Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

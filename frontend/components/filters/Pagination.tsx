@@ -50,7 +50,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={!hasPrev}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm border rounded text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Página anterior"
         >
           Anterior
@@ -66,7 +66,7 @@ export default function Pagination({
               className={`px-3 py-1.5 text-sm border rounded transition-colors ${
                 item === page
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30'
               }`}
               aria-label={`Página ${item}`}
               aria-current={item === page ? 'page' : undefined}
@@ -79,7 +79,7 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={!hasNext}
-          className="px-3 py-1.5 text-sm border rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm border rounded text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Página siguiente"
         >
           Siguiente

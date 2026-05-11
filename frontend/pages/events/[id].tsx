@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 // Link usado en: evento detalle, ver entrada, y navegacion
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
@@ -13,12 +14,28 @@ import { ReviewSection } from '../../components/ReviewSection';
 import { StatusBadge } from '../../components/StatusBadge';
 import type { EventStatusEnum } from '../../components/StatusBadge';
 
+const EventMap = dynamic(() => import('../../components/EventMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+    </div>
+  ),
+});
+
 interface Event {
   id: number;
   title: string;
   description?: string;
   date?: string | null;
   location: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  city?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
   capacity: number;
   price?: number | string | null;
   status: EventStatusEnum;
@@ -558,9 +575,23 @@ export default function EventDetail() {
                     📍 Ubicación
                   </h3>
 
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {event.location}
+                  <p className="text-gray-700 dark:text-gray-300 mb-3">
+                    {event.formattedAddress || event.location}
                   </p>
+                  {event.latitude && event.longitude && (
+                    <div className="mt-2">
+                      <EventMap
+                        latitude={parseFloat(String(event.latitude))}
+                        longitude={parseFloat(String(event.longitude))}
+                        title={event.title}
+                      />
+                    </div>
+                  )}
+                  {event.city && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      {[event.city, event.postalCode, event.country].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                 </div>
 
                 <div>
