@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './ui/Button';
 import { CommentForm } from './CommentForm';
+import { getImageUrl } from '../lib/imageUtils';
 import type { Comment } from '../lib/useComments';
 
 interface CommentItemProps {
@@ -39,6 +40,29 @@ function isWithinEditWindow(createdAt: string): boolean {
   const commentAge = Date.now() - new Date(createdAt).getTime();
   return commentAge <= EDIT_WINDOW_MS;
 }
+
+const CommentAvatar: React.FC<{ src: string | null | undefined; name: string }> = ({ src, name }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !src) {
+    return (
+      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+        <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+          {name?.charAt(0)?.toUpperCase() || '?'}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={getImageUrl(src) || undefined}
+      alt={name}
+      className="w-8 h-8 rounded-full object-cover"
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 export const CommentItem: React.FC<CommentItemProps> = ({
   comment,
@@ -103,19 +127,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       <div className={`${isReply ? '' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4'} ${isReply ? 'py-2' : ''}`}>
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
-            {comment.user.avatar ? (
-              <img
-                src={comment.user.avatar}
-                alt={comment.user.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">
-                  {getAvatarInitial(comment.user.name)}
-                </span>
-              </div>
-            )}
+            <CommentAvatar src={comment.user.avatar} name={comment.user.name} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

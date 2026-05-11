@@ -319,6 +319,39 @@ GET {{baseUrl}}/api/events
 Authorization: Bearer {{token}}
 
 ### ============================================================================
+### 🖼️ AVATAR - SUBIDA Y ELIMINACIÓN
+### ============================================================================
+#
+# Para subir avatar desde línea de comandos (reemplazar {{token}}):
+#   curl -X POST {{baseUrl}}/api/users/me/avatar \
+#     -H "Authorization: Bearer {{token}}" \
+#     -F "avatar=@./test-avatar.jpg"
+#
+# Hay un archivo test-avatar.jpg de ejemplo en la raíz del proyecto.
+# Límites: 5MB máximo, formatos: JPEG, PNG, WebP
+# ============================================================================
+
+### Subir avatar sin archivo (debe fallar 400)
+POST {{baseUrl}}/api/users/me/avatar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Subir avatar sin autenticación (debe fallar 401)
+POST {{baseUrl}}/api/users/me/avatar
+Content-Type: application/json
+
+{}
+
+### Eliminar avatar (requiere token)
+DELETE {{baseUrl}}/api/users/me/avatar
+Authorization: Bearer {{token}}
+
+### Eliminar avatar sin autenticación (debe fallar 401)
+DELETE {{baseUrl}}/api/users/me/avatar
+
+### ============================================================================
 ### 💡 INSTRUCCIONES DE USO
 ### ============================================================================
 #
@@ -333,4 +366,11 @@ Authorization: Bearer {{token}}
 # - {{token}}: Token JWT obtenido del login (admin@example.com / admin123)
 # - {{token_user2}}: Token del segundo usuario (si es necesario)
 #
+# 🖼️ Pruebas de avatar:
+# Para subir un avatar, usa curl desde la terminal:
+#   curl -X POST {{baseUrl}}/api/users/me/avatar \
+#     -H "Authorization: Bearer {{token}}" \
+#     -F "avatar=@./test-avatar.jpg"
+#
+# El directorio de uploads está en /app/uploads/avatars/ dentro del contenedor.
 # ============================================================================

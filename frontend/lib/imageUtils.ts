@@ -16,6 +16,13 @@ function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
 }
 
+export function getAvatarUrl(avatarUrl: string | null | undefined, version?: number): string | null {
+  const url = getImageUrl(avatarUrl);
+  if (!url) return null;
+  if (version) return `${url}?v=${version}`;
+  return url;
+}
+
 export function getImageUrl(imageUrl: string | null | undefined): string | null {
   if (!imageUrl) return null;
 

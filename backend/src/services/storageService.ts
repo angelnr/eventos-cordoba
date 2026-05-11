@@ -5,6 +5,7 @@ import { ALLOWED_MIME_TYPES, ALLOWED_EXTENSIONS, MAX_FILE_SIZE } from '../middle
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads');
 const EVENTS_DIR = path.join(UPLOAD_DIR, 'events');
+const AVATARS_DIR = path.join(UPLOAD_DIR, 'avatars');
 
 interface MagicSignature {
   mime: string;
@@ -49,6 +50,10 @@ async function ensureUploadDir(): Promise<void> {
   await fs.promises.mkdir(EVENTS_DIR, { recursive: true });
 }
 
+async function ensureAvatarsDir(): Promise<void> {
+  await fs.promises.mkdir(AVATARS_DIR, { recursive: true });
+}
+
 export function isLocalImage(imageUrl: string | null | undefined): boolean {
   if (!imageUrl) return false;
   return imageUrl.startsWith('/uploads/');
@@ -83,6 +88,26 @@ export async function validateImageBuffer(buffer: Buffer): Promise<{ mime: strin
   }
 
   return detected;
+}
+
+export async function saveAvatarImage(buffer: Buffer, originalExtension: string): Promise<string> {
+  await ensureAvatarsDir();
+
+  const validated = await validateImageBuffer(buffer);
+
+  const filename = crypto.randomUUID() + '.' + validated.ext;
+  const filePath = path.join(AVATARS_DIR, filename);
+
+  // Path traversal prevention
+  const resolvedPath = path.resolve(filePath);
+  const resolvedDir = path.resolve(AVATARS_DIR);
+  if (!resolvedPath.startsWith(resolvedDir + path.sep) && resolvedPath !== resolvedDir) {
+    throw new Error('PATH_TRAVERSAL_DETECTED');
+  }
+
+  await fs.promises.writeFile(filePath, buffer);
+
+  return '/uploads/avatars/' + filename;
 }
 
 export async function saveImage(buffer: Buffer, originalExtension: string): Promise<string> {
@@ -134,3 +159,4 @@ export async function replaceImage(newBuffer: Buffer, newExtension: string, oldI
 
 export { UPLOAD_DIR };
 export { EVENTS_DIR };
+export { AVATARS_DIR };

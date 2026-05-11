@@ -4,6 +4,30 @@ import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
+import { getImageUrl } from '../../lib/imageUtils';
+
+const AvatarImage: React.FC<{ src: string | undefined; alt: string; className: string }> = ({ src, alt, className }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span className="text-gray-600 dark:text-gray-400 font-medium text-2xl">
+          {alt.charAt(0).toUpperCase()}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 interface UserProfile {
   id: number;
@@ -203,8 +227,8 @@ export default function UserProfile() {
               <div className="text-center mb-6">
                 <div className="relative inline-block">
                   {user.avatar ? (
-                    <img
-                      src={user.avatar}
+                    <AvatarImage
+                      src={getImageUrl(user.avatar) || undefined}
                       alt={user.name}
                       className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
                     />

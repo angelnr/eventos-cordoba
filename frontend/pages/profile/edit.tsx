@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
+import { AvatarUpload } from '../../components/ui/AvatarUpload';
 import { useAuth } from '../../lib/auth';
 import { showSuccess, showError } from '../../lib/notifications';
 
@@ -24,10 +25,12 @@ const INTERESTS_OPTIONS = [
 
 export default function EditProfile() {
   const router = useRouter();
-  const { user: authUser, token: authToken, isInitializing } = useAuth();
+  const { user: authUser, token: authToken, isInitializing, refreshUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
@@ -103,6 +106,64 @@ export default function EditProfile() {
 
     fetchUserProfile();
   }, [authUser, authToken, router, isInitializing]);
+
+  const handleAvatarUpload = async (file: File) => {
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const apiUrl = getApiUrl();
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await fetch(`${apiUrl}/api/users/me/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUser({ ...user!, avatar: data.data.user.avatar });
+        refreshUser();
+        showSuccess('Avatar actualizado');
+      } else {
+        const errorData = await response.json();
+        setAvatarError(errorData.error || 'Error al subir avatar');
+        showError(errorData.error || 'Error al subir avatar');
+      }
+    } catch {
+      setAvatarError('Error de conexi\u00f3n al subir avatar');
+      showError('Error de conexi\u00f3n al subir avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    setUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/users/me/avatar`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+      if (response.ok) {
+        setUser({ ...user!, avatar: undefined });
+        refreshUser();
+        showSuccess('Avatar eliminado');
+      } else {
+        const errorData = await response.json();
+        setAvatarError(errorData.error || 'Error al eliminar avatar');
+      }
+    } catch {
+      setAvatarError('Error de conexi\u00f3n al eliminar avatar');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +248,21 @@ export default function EditProfile() {
         </div>
 
         <div className="max-w-2xl mx-auto">
+          {/* Avatar Upload Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Foto de perfil</h2>
+            <div className="flex justify-center">
+              <AvatarUpload
+                currentAvatarUrl={user.avatar}
+                userName={user.name}
+                onFileSelect={handleAvatarUpload}
+                onRemove={handleAvatarRemove}
+                uploadError={avatarError}
+                isUploading={uploadingAvatar}
+              />
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">

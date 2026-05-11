@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { requireAuth } from '../middleware/auth';
+import { upload } from '../middleware/upload';
+import { saveAvatarImage, deleteImage, isLocalImage } from '../services/storageService';
 import * as myEventsService from '../services/myEventsService';
 
 const router = Router();
@@ -43,6 +46,11 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
         id: true,
         email: true,
         name: true,
+        avatar: true,
+        bio: true,
+        location: true,
+        interests: true,
+        role: true,
         createdAt: true,
         updatedAt: true
       }
@@ -195,6 +203,177 @@ router.get('/my-organized-events', requireAuth, async (req: Request, res: Respon
   }
 });
 
+// ==========================================
+// POST /api/users/me/avatar - Subir/reemplazar avatar
+// ==========================================
+router.post('/me/avatar', requireAuth, (req: Request, res: Response, next: any) => {
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Content-Type debe ser multipart/form-data'
+    });
+  }
+
+  upload.single('avatar')(req, res, (err: any) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          error: 'El archivo excede el tamaño máximo de 5MB.'
+        });
+      }
+      if (err.message === 'INVALID_EXTENSION' || err.message === 'INVALID_MIME_TYPE') {
+        return res.status(400).json({
+          success: false,
+          error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: 'Error al procesar el archivo.'
+      });
+    }
+    next();
+  });
+}, async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se ha proporcionado ningún archivo'
+      });
+    }
+
+    const userId = req.user!.id;
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true }
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    let newAvatarUrl: string;
+    try {
+      const ext = path.extname(req.file.originalname) || '.jpg';
+      newAvatarUrl = await saveAvatarImage(req.file.buffer, ext);
+    } catch (saveError: any) {
+      if (saveError.message === 'FILE_TOO_LARGE') {
+        return res.status(400).json({
+          success: false,
+          error: 'El archivo excede el tamaño máximo de 5MB.'
+        });
+      }
+      if (saveError.message === 'INVALID_FILE_TYPE' || saveError.message === 'INVALID_MIME_TYPE' || saveError.message === 'INVALID_EXTENSION') {
+        return res.status(400).json({
+          success: false,
+          error: 'Tipo de archivo no permitido. Solo se aceptan JPEG, PNG y WebP.'
+        });
+      }
+      throw saveError;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: newAvatarUrl },
+      select: {
+        id: true, email: true, name: true, avatar: true,
+        bio: true, location: true, interests: true, updatedAt: true
+      }
+    });
+
+    if (currentUser.avatar && isLocalImage(currentUser.avatar)) {
+      deleteImage(currentUser.avatar).catch((err) => {
+        console.error('[STORAGE] Error deleting old avatar:', err);
+      });
+    }
+
+    console.log(`[AVATAR] Upload success: userId=${userId}, file=${newAvatarUrl.split('/').pop()}, size=${req.file.size}`);
+    res.json({
+      success: true,
+      message: 'Avatar actualizado exitosamente',
+      data: { user: updatedUser }
+    });
+  } catch (error) {
+    console.error(`[AVATAR] Upload failed: userId=${req.user?.id}, error=${(error as Error).message}`);
+    res.status(500).json({
+      success: false,
+      error: 'Error al subir el avatar'
+    });
+  }
+});
+
+// ==========================================
+// DELETE /api/users/me/avatar - Eliminar avatar
+// ==========================================
+router.delete('/me/avatar', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true }
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    if (!currentUser.avatar) {
+      console.log(`[AVATAR] Delete skipped: userId=${userId}, no avatar to delete`);
+      const userData = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, email: true, name: true, avatar: true,
+          bio: true, location: true, interests: true, updatedAt: true
+        }
+      });
+      return res.json({
+        success: true,
+        message: 'No hay avatar para eliminar',
+        data: { user: userData }
+      });
+    }
+
+    if (isLocalImage(currentUser.avatar)) {
+      await deleteImage(currentUser.avatar).catch((err) => {
+        console.error(`[AVATAR] Delete file error: userId=${userId}, file=${(currentUser.avatar || '').split('/').pop()}, error=${err.message}`);
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: null },
+      select: {
+        id: true, email: true, name: true, avatar: true,
+        bio: true, location: true, interests: true, updatedAt: true
+      }
+    });
+
+    console.log(`[AVATAR] Delete success: userId=${userId}, oldFile=${(currentUser.avatar || '').split('/').pop()}`);
+    res.json({
+      success: true,
+      message: 'Avatar eliminado exitosamente',
+      data: { user: updatedUser }
+    });
+  } catch (error) {
+    console.error(`[AVATAR] Delete failed: userId=${req.user?.id}, error=${(error as Error).message}`);
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar el avatar'
+    });
+  }
+});
+
 // GET /api/users/:id - Obtener usuario por ID
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -300,7 +479,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { email, name, bio, location, interests, avatar } = req.body;
+    const { email, name, bio, location, interests } = req.body;
 
     // Solo el propietario o admin puede actualizar
     if (req.user!.id !== parseInt(id)) {
@@ -313,7 +492,6 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     if (bio !== undefined) updateData.bio = bio;
     if (location !== undefined) updateData.location = location;
     if (interests !== undefined) updateData.interests = interests;
-    if (avatar !== undefined) updateData.avatar = avatar;
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
@@ -369,6 +547,15 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
         success: false,
         error: 'No puedes eliminar tu propia cuenta de admin'
       });
+    }
+
+    // Eliminar avatar del filesystem antes de eliminar el usuario
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true }
+    });
+    if (userToDelete?.avatar && isLocalImage(userToDelete.avatar)) {
+      await deleteImage(userToDelete.avatar).catch(() => {});
     }
 
     await prisma.user.delete({

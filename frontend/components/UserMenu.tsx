@@ -1,7 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../lib/auth';
+import { getImageUrl } from '../lib/imageUtils';
 import { useRouter } from 'next/router';
+
+const AvatarDisplay: React.FC<{ avatar: string; name: string; sizeClass: string; initials: string }> = ({ avatar, name, sizeClass, initials }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className={`${sizeClass} bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 rounded-full flex items-center justify-center text-white font-semibold`}>
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={getImageUrl(avatar) || undefined}
+      alt={name || 'Usuario'}
+      className={`${sizeClass} rounded-full object-cover`}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
@@ -38,26 +60,29 @@ export const UserMenu: React.FC = () => {
       .slice(0, 2);
   };
 
-  const getAvatarContent = () => {
+  const getAvatarContent = (size: 'sm' | 'lg' = 'sm') => {
+    const sizeClass = size === 'lg' ? 'w-24 h-24 text-2xl' : 'w-8 h-8 text-sm';
+
     if (user?.avatar) {
       return (
-        <img 
-          src={user.avatar} 
-          alt={user.name || 'Usuario'}
-          className="w-8 h-8 rounded-full object-cover"
+        <AvatarDisplay
+          avatar={user.avatar}
+          name={user.name || ''}
+          sizeClass={sizeClass}
+          initials={getInitials(user.name || '')}
         />
       );
     }
     if (user?.name) {
       return (
-        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+        <div className={`${sizeClass} bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-500 rounded-full flex items-center justify-center text-white font-semibold`}>
           {getInitials(user.name)}
         </div>
       );
     }
     return (
-      <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+      <div className={`${sizeClass} bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center`}>
+        <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 24 24">
           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
         </svg>
       </div>
