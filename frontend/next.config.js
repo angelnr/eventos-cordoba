@@ -13,7 +13,7 @@ const nextConfig = {
       },
     ],
   },
-  transpilePackages: ['lucide-react', 'leaflet', 'react-leaflet'],
+  transpilePackages: ['lucide-react', 'leaflet', 'react-leaflet', 'framer-motion', 'jsqr', 'swiper'],
 }
 
 module.exports = nextConfig
