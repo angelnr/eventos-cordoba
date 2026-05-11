@@ -1,17 +1,29 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useJsApiLoader, GoogleMap, Marker } from '@react-google-maps/api';
-import { getApiUrl } from '../lib/api';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { getApiUrl } from '@/lib/api';
 
-const DEFAULT_CENTER = { lat: 37.8882, lng: -4.7794 };
+const DEFAULT_CENTER: [number, number] = [37.8882, -4.7794];
 const DEFAULT_ZOOM = 13;
 
-const MAP_CONTAINER_STYLE = {
+const MAP_CONTAINER_STYLE: React.CSSProperties = {
   width: '100%',
   height: '400px',
   borderRadius: '8px',
 };
 
-const MAP_LIBRARIES: ('places')[] = ['places'];
+const defaultIcon = typeof window !== 'undefined'
+  ? L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    })
+  : undefined;
 
 export interface LocationData {
   location: string;
@@ -33,78 +45,38 @@ interface MapLocationPickerProps {
   onError: (error: string) => void;
 }
 
-interface NormalizedPlace {
-  placeId: string;
-  name: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
-  addressComponents: Array<{ longName: string; shortName: string; types: string[] }>;
-  types: string[];
-}
-
-function normalizeNewPlace(place: google.maps.places.Place): NormalizedPlace | null {
-  const location = place.location;
-  if (!location) return null;
-
-  const lat = typeof location.lat === 'function' ? location.lat() : (location as any).lat;
-  const lng = typeof location.lng === 'function' ? location.lng() : (location as any).lng;
-
-  return {
-    placeId: place.id || '',
-    name: place.displayName || '',
-    formattedAddress: place.formattedAddress || '',
-    latitude: lat,
-    longitude: lng,
-    addressComponents: (place.addressComponents || []).map((c: any) => ({
-      longName: c.longText || '',
-      shortName: c.shortText || '',
-      types: c.types || [],
-    })),
-    types: place.types || [],
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    country?: string;
+    postcode?: string;
+    state?: string;
+    road?: string;
+    house_number?: string;
   };
 }
 
-function normalizeOldPlace(place: google.maps.places.PlaceResult): NormalizedPlace | null {
-  if (!place.geometry?.location) return null;
-
-  const location = place.geometry.location;
-  const lat = typeof location.lat === 'function' ? location.lat() : (location as any).lat;
-  const lng = typeof location.lng === 'function' ? location.lng() : (location as any).lng;
-
-  return {
-    placeId: place.place_id || '',
-    name: place.name || '',
-    formattedAddress: place.formatted_address || '',
-    latitude: lat,
-    longitude: lng,
-    addressComponents: (place.address_components || []).map((c) => ({
-      longName: c.long_name,
-      shortName: c.short_name,
-      types: c.types,
-    })),
-    types: place.types || [],
-  };
+function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e: any) {
+      onClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
 }
 
-function normalizedToLocationData(np: NormalizedPlace): LocationData {
-  const getComponent = (type: string) => np.addressComponents.find(c => c.types.includes(type));
-
-  return {
-    location: np.formattedAddress || np.name || '',
-    latitude: np.latitude,
-    longitude: np.longitude,
-    placeId: np.placeId || null,
-    formattedAddress: np.formattedAddress || null,
-    city: getComponent('locality')?.longName || null,
-    country: getComponent('country')?.longName || null,
-    postalCode: getComponent('postal_code')?.longName || null,
-    locationMetadata: JSON.stringify({
-      name: np.name,
-      types: np.types,
-      addressComponents: np.addressComponents,
-    }),
-  };
+function MapCenterUpdater({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
+  return null;
 }
 
 export default function MapLocationPicker({
@@ -114,116 +86,17 @@ export default function MapLocationPicker({
   onLocationSelect,
   onError,
 }: MapLocationPickerProps) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries: MAP_LIBRARIES,
-  });
-
-  const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(
-    initialLatitude && initialLongitude
-      ? { lat: initialLatitude, lng: initialLongitude }
-      : null
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
+    initialLatitude && initialLongitude ? [initialLatitude, initialLongitude] : null
   );
   const [inputValue, setInputValue] = useState(initialLocation || '');
-  const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [center, setCenter] = useState<[number, number]>(
+    initialLatitude && initialLongitude ? [initialLatitude, initialLongitude] : DEFAULT_CENTER
+  );
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Refs para limpiar listeners de autocomplete
-  const autocompleteCleanupRef = useRef<(() => void) | null>(null);
-
-  useEffect(() => {
-    if (loadError) {
-      onError('No se pudo cargar Google Maps. Usando ingreso manual.');
-    }
-  }, [loadError, onError]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!isLoaded) {
-        onError('Google Maps no pudo cargar. Usando ingreso manual.');
-      }
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, [isLoaded, onError]);
-
-  // Inicializar autocomplete imperativo cuando Google Maps se carga
-  useEffect(() => {
-    if (!isLoaded || !inputRef.current || !window.google?.maps?.places) return;
-
-    // Limpiar instancia anterior
-    if (autocompleteCleanupRef.current) {
-      autocompleteCleanupRef.current();
-      autocompleteCleanupRef.current = null;
-    }
-
-    const handlePlaceData = (np: NormalizedPlace) => {
-      const locationData = normalizedToLocationData(np);
-      setMarkerPosition({ lat: np.latitude, lng: np.longitude });
-      setCenter({ lat: np.latitude, lng: np.longitude });
-      setInputValue(np.formattedAddress || '');
-      onLocationSelect(locationData);
-    };
-
-    // Intentar nueva API: PlaceAutocompleteElement
-    const PlaceAutocompleteElementCtor = (google.maps.places as any).PlaceAutocompleteElement;
-    if (typeof PlaceAutocompleteElementCtor === 'function') {
-      try {
-        const autocomplete = new PlaceAutocompleteElementCtor({
-          inputElement: inputRef.current,
-          locationBias: 'country:ES',
-        });
-
-        const handler = () => {
-          const place: google.maps.places.Place | null = (autocomplete as any).value;
-          if (place) {
-            const np = normalizeNewPlace(place);
-            if (np) handlePlaceData(np);
-          }
-        };
-
-        autocomplete.addEventListener('gmpx-placechange', handler);
-        autocompleteCleanupRef.current = () => {
-          autocomplete.removeEventListener('gmpx-placechange', handler);
-        };
-        return;
-      } catch (e) {
-        console.warn('PlaceAutocompleteElement failed, falling back:', e);
-      }
-    }
-
-    // Fallback: vieja API Autocomplete
-    if (typeof google.maps.places.Autocomplete === 'function') {
-      try {
-        const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: 'es' },
-          types: ['geocode', 'establishment'],
-          fields: ['formatted_address', 'geometry', 'name', 'place_id', 'address_component'],
-        });
-
-        const handler = () => {
-          const place = autocomplete.getPlace();
-          if (place && place.geometry?.location) {
-            const np = normalizeOldPlace(place);
-            if (np) handlePlaceData(np);
-          }
-        };
-
-        autocomplete.addListener('place_changed', handler);
-        autocompleteCleanupRef.current = () => {
-          google.maps.event.clearInstanceListeners(autocomplete);
-        };
-        return;
-      } catch (e) {
-        console.warn('Autocomplete fallback failed:', e);
-      }
-    }
-
-    // Si ningún autocomplete está disponible
-    onError('Google Places Autocomplete no está disponible. Ingresa la dirección manualmente.');
-  }, [isLoaded, onLocationSelect, onError]);
 
   const doReverseGeocode = useCallback(async (lat: number, lng: number) => {
     setIsGeocoding(true);
@@ -270,8 +143,7 @@ export default function MapLocationPicker({
         locationMetadata: JSON.stringify(result.addressComponents || {}),
       });
       setInputValue(result.formattedAddress || '');
-    } catch (error) {
-      console.error('Reverse geocoding error:', error);
+    } catch {
       onLocationSelect({
         location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
         latitude: lat,
@@ -288,82 +160,130 @@ export default function MapLocationPicker({
     }
   }, [onLocationSelect]);
 
-  const onMarkerDragEnd = useCallback((e: google.maps.MapMouseEvent) => {
-    if (!e.latLng) return;
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
+  const searchNominatim = useCallback(async (query: string) => {
+    if (!query || query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
 
-    setMarkerPosition({ lat, lng });
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=es&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'es' } }
+      );
+      if (response.ok) {
+        const results: NominatimResult[] = await response.json();
+        setSuggestions(results);
+        setShowSuggestions(true);
+      }
+    } catch {
+      // Silently fail for search suggestions
+    }
+  }, []);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    setShowSuggestions(false);
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     debounceTimerRef.current = setTimeout(() => {
-      doReverseGeocode(lat, lng);
+      searchNominatim(value);
     }, 300);
-  }, [doReverseGeocode]);
+  }, [searchNominatim]);
 
-  const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
-    if (!e.latLng) return;
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
+  const handleSuggestionSelect = useCallback((result: NominatimResult) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const city = result.address?.city || result.address?.town || result.address?.village || null;
+    const country = result.address?.country || null;
+    const postcode = result.address?.postcode || null;
 
-    setMarkerPosition({ lat, lng });
+    setMarkerPosition([lat, lng]);
+    setCenter([lat, lng]);
+    setInputValue(result.display_name);
+    setShowSuggestions(false);
+
+    onLocationSelect({
+      location: result.display_name,
+      latitude: lat,
+      longitude: lng,
+      placeId: String(result.place_id),
+      formattedAddress: result.display_name,
+      city,
+      country,
+      postalCode: postcode,
+      locationMetadata: JSON.stringify(result.address || {}),
+    });
+  }, [onLocationSelect]);
+
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    setMarkerPosition([lat, lng]);
     doReverseGeocode(lat, lng);
   }, [doReverseGeocode]);
 
-  if (loadError) {
-    return null;
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center" style={{ height: '400px' }}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Cargando mapa...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        placeholder="Buscar dirección..."
-        className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
-      />
+      <div className="relative">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          placeholder="Buscar dirección en España..."
+          className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+            {suggestions.map((result) => (
+              <button
+                key={result.place_id}
+                type="button"
+                className="w-full text-left px-3 py-2 hover:bg-blue-50 dark:hover:bg-gray-700 text-sm border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                onMouseDown={() => handleSuggestionSelect(result)}
+              >
+                <span className="text-gray-800 dark:text-gray-200 line-clamp-2">{result.display_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="relative">
-        <GoogleMap
-          mapContainerStyle={MAP_CONTAINER_STYLE}
+        <MapContainer
           center={center}
           zoom={DEFAULT_ZOOM}
-          onClick={onMapClick}
-          onLoad={(map) => { mapRef.current = map; }}
-          options={{
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: true,
-            zoomControl: true,
-          }}
+          scrollWheelZoom={false}
+          style={MAP_CONTAINER_STYLE}
+          className="rounded-lg"
         >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapClickHandler onClick={handleMapClick} />
+          <MapCenterUpdater center={center} />
           {markerPosition && (
             <Marker
               position={markerPosition}
+              icon={defaultIcon!}
               draggable={true}
-              onDragEnd={onMarkerDragEnd}
-              title="Ubicación del evento"
+              eventHandlers={{
+                dragend: (e: any) => {
+                  const { lat, lng } = e.target.getLatLng();
+                  setMarkerPosition([lat, lng]);
+                  doReverseGeocode(lat, lng);
+                },
+              }}
             />
           )}
-        </GoogleMap>
+        </MapContainer>
         {isGeocoding && (
-          <div className="absolute top-2 right-2 bg-white dark:bg-gray-800 rounded-md shadow-md px-3 py-1.5 text-sm">
+          <div className="absolute top-2 right-2 bg-white dark:bg-gray-800 rounded-md shadow-md px-3 py-1.5 text-sm z-10">
             <span className="animate-pulse">Obteniendo dirección...</span>
           </div>
         )}

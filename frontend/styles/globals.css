@@ -1,8 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-@import 'react-toastify/dist/ReactToastify.css';
+@import './toast.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.leaflet-container {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  z-index: 0;
+}
 
 @layer base {
   html {

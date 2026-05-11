@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import MapLocationPicker from './MapLocationPicker';
+import dynamic from 'next/dynamic';
 import type { LocationData } from './MapLocationPicker';
 import ManualLocationInput from './ManualLocationInput';
 import LocationPreview from './LocationPreview';
+
+const MapLocationPicker = dynamic(() => import('./MapLocationPicker'), { ssr: false });
 
 interface LocationPickerProps {
   initialLocation?: string;
@@ -31,7 +33,7 @@ export default function LocationPicker({
 }: LocationPickerProps) {
   const [mode, setMode] = useState<'map' | 'manual'>('map');
   const [mapError, setMapError] = useState<string | null>(null);
-  const [isGoogleMapsAvailable, setIsGoogleMapsAvailable] = useState(true);
+  const [isMapAvailable, setIsMapAvailable] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
 
   const hasInitialCoords = !!(initialLatitude && initialLongitude);
@@ -55,7 +57,7 @@ export default function LocationPicker({
 
   const handleMapError = useCallback((error: string) => {
     setMapError(error);
-    setIsGoogleMapsAvailable(false);
+    setIsMapAvailable(false);
     if (onError) onError(error);
   }, [onError]);
 
@@ -87,7 +89,7 @@ export default function LocationPicker({
         Ubicación *
       </label>
 
-      {isGoogleMapsAvailable && !mapError && (
+      {isMapAvailable && !mapError && (
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -114,7 +116,7 @@ export default function LocationPicker({
         </div>
       )}
 
-      {mode === 'map' && isGoogleMapsAvailable && !mapError ? (
+      {mode === 'map' && isMapAvailable && !mapError ? (
         <MapLocationPicker
           initialLocation={initialLocation}
           initialLatitude={initialLatitude}

@@ -10,19 +10,20 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@react-google-maps/api": "^2.20.8",
     "@tanstack/react-query": "^5.100.9",
     "framer-motion": "^12.38.0",
     "jsqr": "^1.4.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "next": "^16.0.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-toastify": "^11.1.0",
+    "react-leaflet": "^4.2.1",
     "swiper": "^12.1.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
