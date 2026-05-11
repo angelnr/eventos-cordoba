@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import 'react-toastify/dist/ReactToastify.css';
 @tailwind base;
 @tailwind components;
@@ -5,12 +6,29 @@
 
 @layer base {
   html {
+    scroll-behavior: smooth;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   @media (prefers-reduced-motion: reduce) {
     html {
+      scroll-behavior: auto;
       transition: none !important;
     }
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .swiper-button-next,
+  .swiper-button-prev {
+    color: #3b82f6 !important;
+  }
+
+  .swiper-pagination-bullet-active {
+    background: #3b82f6 !important;
   }
 }
