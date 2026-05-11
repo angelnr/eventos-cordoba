@@ -5,6 +5,7 @@ import { requireAuth, requireStaff, requireAdmin } from '../middleware/auth';
 import * as ticketService from '../services/ticketService';
 import * as qrService from '../services/qrService';
 import { logTicketAction } from '../services/auditService';
+import { invalidateDashboardCache } from '../services/dashboardService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -135,7 +136,17 @@ router.post('/validate', requireAuth, requireStaff, validateLimiter, async (req:
     const result = await ticketService.validateTicket(token.trim(), req.user!.id);
 
     if (result.action === 'validated') {
-      return res.json({ success: true, action: 'validated', data: result });
+      res.json({ success: true, action: 'validated', data: result });
+
+      const eventWithOrganizer = await prisma.event.findUnique({
+        where: { id: result.event.id },
+        select: { organizerId: true },
+      });
+      if (eventWithOrganizer) {
+        try { invalidateDashboardCache(eventWithOrganizer.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
+      }
+
+      return;
     }
 
     return res.json({ success: false, action: 'already_used', error: 'Este ticket ya fue validado', data: result });
@@ -233,7 +244,17 @@ router.post('/invalidate/:ticketId', requireAuth, requireAdmin, async (req: Requ
 
     const updatedTicket = await ticketService.invalidateTicket(ticketId, req.user!.id, reason.trim());
 
-    return res.json({ success: true, data: updatedTicket });
+    res.json({ success: true, data: updatedTicket });
+
+    const bookingWithEvent = await prisma.booking.findUnique({
+      where: { id: updatedTicket.bookingId },
+      select: { Event: { select: { organizerId: true } } },
+    });
+    if (bookingWithEvent) {
+      try { invalidateDashboardCache(bookingWithEvent.Event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
+    }
+
+    return;
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({ success: false, error: error.message });

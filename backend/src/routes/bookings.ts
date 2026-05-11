@@ -3,6 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { requireAuth } from '../middleware/auth';
 import { createNotification } from '../services/notificationService';
 import { generateTicketForBooking } from '../services/ticketService';
+import { invalidateDashboardCache } from '../services/dashboardService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -39,7 +40,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
     // Obtener título del evento antes de la transacción
     const eventInfo = await prisma.event.findUnique({
       where: { id: parsedEventId },
-      select: { title: true }
+      select: { title: true, organizerId: true }
     });
 
     const booking = await prisma.$transaction(async (tx) => {
@@ -155,6 +156,9 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       data: booking
     });
 
+    if (eventInfo?.organizerId) {
+      try { invalidateDashboardCache(eventInfo.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
+    }
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({

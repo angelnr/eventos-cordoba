@@ -13,6 +13,7 @@ import {
 } from '../services/eventFilters';
 import { requireAuth, requireOrganizer, optionalAuth } from '../middleware/auth';
 import { transitionEventStatus, getAllowedTransitions, EVENT_STATUS_CONFIG } from '../services/eventStatusService';
+import { invalidateDashboardCache } from '../services/dashboardService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -379,6 +380,8 @@ router.patch('/:id/status', requireAuth, async (req: Request, res: Response) => 
         updatedAt: result.event.updatedAt
       }
     });
+
+    try { invalidateDashboardCache(event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error: any) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({
@@ -607,6 +610,8 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
       message: 'Evento creado exitosamente',
       data: event
     });
+
+    try { invalidateDashboardCache(req.user!.id); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error) {
     console.error('Create event error:', error);
     res.status(500).json({
@@ -802,6 +807,8 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       success: true,
       message: 'Evento eliminado exitosamente'
     });
+
+    try { invalidateDashboardCache(event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error) {
     console.error('Delete event error:', error);
     res.status(500).json({

@@ -211,6 +211,7 @@ model Review {
   @@unique([userId, eventId])
   @@index([eventId])
   @@index([userId])
+  @@index([eventId, rating])
   @@map("reviews")
 }
 
@@ -314,6 +315,7 @@ model Ticket {
   @@index([status])
   @@index([bookingId])
   @@index([status, createdAt])
+  @@index([status, bookingId])
   @@map("tickets")
 }
 

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, optionalAuth } from '../middleware/auth';
+import { invalidateDashboardCache } from '../services/dashboardService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -139,6 +140,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       message: 'Reseña creada exitosamente',
       data: newReview,
     });
+
+    try { invalidateDashboardCache(event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error) {
     console.error('Create review error:', error);
     res.status(500).json({
@@ -220,6 +223,8 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       message: 'Reseña actualizada exitosamente',
       data: result[0],
     });
+
+    try { invalidateDashboardCache(existingReview.event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error) {
     console.error('Update review error:', error);
     res.status(500).json({
@@ -287,6 +292,8 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       success: true,
       message: 'Reseña eliminada exitosamente'
     });
+
+    try { invalidateDashboardCache(review.event.organizerId); } catch (err) { console.error('Error invalidating dashboard cache:', err); }
   } catch (error) {
     console.error('Delete review error:', error);
     res.status(500).json({
