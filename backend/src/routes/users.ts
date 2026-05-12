@@ -596,18 +596,26 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    // Eliminar avatar del filesystem antes de eliminar el usuario
     const userToDelete = await prisma.user.findUnique({
       where: { id: userId },
       select: { avatar: true }
     });
+
+    await prisma.$transaction([
+      prisma.booking.deleteMany({ where: { userId } }),
+      prisma.comment.deleteMany({ where: { userId } }),
+      prisma.conversationParticipant.deleteMany({ where: { userId } }),
+      prisma.favorite.deleteMany({ where: { userId } }),
+      prisma.group.deleteMany({ where: { ownerId: userId } }),
+      prisma.message.deleteMany({ where: { senderId: userId } }),
+      prisma.userGroup.deleteMany({ where: { userId } }),
+      prisma.event.deleteMany({ where: { organizerId: userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
     if (userToDelete?.avatar && isLocalImage(userToDelete.avatar)) {
       await deleteImage(userToDelete.avatar).catch(() => {});
     }
-
-    await prisma.user.delete({
-      where: { id: userId }
-    });
 
     res.json({
       success: true,

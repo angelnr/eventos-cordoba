@@ -9,17 +9,33 @@ const JWT_SECRET = 'test-secret-with-at-least-32-chars!!';
 process.env.JWT_SECRET = JWT_SECRET;
 process.env.JWT_EXPIRES_IN = '30m';
 
-const mockFindUnique = jest.fn();
-const mockCreate = jest.fn();
+const mockUserFindUnique = jest.fn();
+const mockUserCreate = jest.fn();
+const mockVerificationTokenFindUnique = jest.fn();
+const mockVerificationTokenCreate = jest.fn();
+const mockVerificationTokenDelete = jest.fn();
+const mockVerificationTokenDeleteMany = jest.fn();
+const mockTransaction = jest.fn((queries: any[]) => Promise.all(queries));
 
 jest.mock('@prisma/client', () => ({
   PrismaClient: jest.fn(() => ({
     user: {
-      findUnique: mockFindUnique,
-      create: mockCreate,
+      findUnique: mockUserFindUnique,
+      create: mockUserCreate,
     },
+    verificationToken: {
+      findUnique: mockVerificationTokenFindUnique,
+      create: mockVerificationTokenCreate,
+      delete: mockVerificationTokenDelete,
+      deleteMany: mockVerificationTokenDeleteMany,
+    },
+    $transaction: mockTransaction,
     $disconnect: jest.fn(),
   })),
+}));
+
+jest.mock('../../src/services/emailService', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -85,8 +101,12 @@ function makeRequest(
 }
 
 beforeEach(() => {
-  mockFindUnique.mockReset();
-  mockCreate.mockReset();
+  mockUserFindUnique.mockReset();
+  mockUserCreate.mockReset();
+  mockVerificationTokenFindUnique.mockReset();
+  mockVerificationTokenCreate.mockReset();
+  mockVerificationTokenDelete.mockReset();
+  mockVerificationTokenDeleteMany.mockReset();
   (bcrypt.compare as jest.Mock).mockReset();
   (bcrypt.hash as jest.Mock).mockReset();
 });
@@ -117,7 +137,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('debe retornar 401 si el usuario no existe', async () => {
-    mockFindUnique.mockResolvedValue(null);
+    mockUserFindUnique.mockResolvedValue(null);
 
     const { status, body } = await makeRequest('POST', '/api/auth/login', {
       email: 'noexist@test.com',
@@ -129,7 +149,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('debe retornar 401 si la contraseña no coincide', async () => {
-    mockFindUnique.mockResolvedValue({
+    mockUserFindUnique.mockResolvedValue({
       id: 1,
       email: 'test@test.com',
       password: '$2a$12$hash',
@@ -159,7 +179,7 @@ describe('POST /api/auth/login', () => {
       avatar: null,
       themePreference: 'dark',
     };
-    mockFindUnique.mockResolvedValue(mockUser);
+    mockUserFindUnique.mockResolvedValue(mockUser);
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
     const { status, body } = await makeRequest('POST', '/api/auth/login', {
@@ -179,7 +199,7 @@ describe('POST /api/auth/login', () => {
   });
 
   it('debe usar themePreference por defecto "system" si es null', async () => {
-    mockFindUnique.mockResolvedValue({
+    mockUserFindUnique.mockResolvedValue({
       id: 2,
       email: 'user@test.com',
       password: '$2a$12$hash',
@@ -249,7 +269,7 @@ describe('POST /api/auth/register', () => {
   });
 
   it('debe retornar 400 si el usuario ya existe', async () => {
-    mockFindUnique.mockResolvedValue({ id: 1, email: 'existing@test.com' });
+    mockUserFindUnique.mockResolvedValue({ id: 1, email: 'existing@test.com' });
 
     const { status, body } = await makeRequest('POST', '/api/auth/register', {
       email: 'existing@test.com',
@@ -262,9 +282,9 @@ describe('POST /api/auth/register', () => {
   });
 
   it('debe retornar 201 con token si el registro es exitoso', async () => {
-    mockFindUnique.mockResolvedValue(null);
+    mockUserFindUnique.mockResolvedValue(null);
     (bcrypt.hash as jest.Mock).mockResolvedValue('$2a$12$hashedpassword');
-    mockCreate.mockResolvedValue({
+    mockUserCreate.mockResolvedValue({
       id: 3,
       email: 'newuser@test.com',
       name: 'New User',
@@ -290,9 +310,9 @@ describe('POST /api/auth/register', () => {
   });
 
   it('debe aceptar registro sin nombre (name opcional)', async () => {
-    mockFindUnique.mockResolvedValue(null);
+    mockUserFindUnique.mockResolvedValue(null);
     (bcrypt.hash as jest.Mock).mockResolvedValue('$2a$12$hash');
-    mockCreate.mockResolvedValue({
+    mockUserCreate.mockResolvedValue({
       id: 4,
       email: 'noname@test.com',
       name: null,
@@ -338,7 +358,7 @@ describe('POST /api/auth/verify', () => {
   });
 
   it('debe retornar 404 si el usuario del token ya no existe', async () => {
-    mockFindUnique.mockResolvedValue(null);
+    mockUserFindUnique.mockResolvedValue(null);
 
     const token = jwt.sign({ id: 999, email: 'ghost@test.com', role: 'user' }, JWT_SECRET);
 
@@ -349,7 +369,7 @@ describe('POST /api/auth/verify', () => {
   });
 
   it('debe retornar 200 con datos del usuario si el token es válido', async () => {
-    mockFindUnique.mockResolvedValue(validUser);
+    mockUserFindUnique.mockResolvedValue(validUser);
 
     const token = jwt.sign({ id: 1, email: 'test@test.com', role: 'user' }, JWT_SECRET);
 

@@ -2,7 +2,9 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
+import { sendVerificationEmail } from '../services/emailService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -55,7 +57,8 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
         name: true,
         role: true,
         avatar: true,
-        themePreference: true
+        themePreference: true,
+        isVerified: true
       }
     });
 
@@ -69,7 +72,7 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET as string,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
+      { expiresIn: process.env.JWT_EXPIRES_IN || '30m' } as any
     );
 
     res.json({
@@ -83,7 +86,8 @@ router.post('/login', loginLimiter, async (req: Request, res: Response) => {
           name: user.name,
           role: user.role,
           avatar: user.avatar,
-          themePreference: user.themePreference || 'system'
+          themePreference: user.themePreference || 'system',
+          isVerified: user.isVerified
         }
       }
     });
@@ -148,14 +152,35 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
         name: true,
         role: true,
         themePreference: true,
-        createdAt: true
+        createdAt: true,
+        isVerified: true
       }
+    });
+
+    // Generar token de verificación
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+
+    await prisma.verificationToken.create({
+      data: {
+        token: verificationToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    // Enviar email de verificación (no bloquear el registro)
+    const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    sendVerificationEmail(email, verificationUrl).catch(err => {
+      console.error('Error enviando email de verificación:', err);
     });
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET as string,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
+      { expiresIn: process.env.JWT_EXPIRES_IN || '30m' } as any
     );
 
     res.status(201).json({
@@ -203,7 +228,8 @@ router.post('/verify', async (req: Request, res: Response) => {
           name: true,
           role: true,
           avatar: true,
-          createdAt: true
+          createdAt: true,
+          isVerified: true
         }
       });
 
@@ -235,6 +261,87 @@ router.post('/verify', async (req: Request, res: Response) => {
       success: false,
       error: 'Error interno del servidor'
     });
+  }
+});
+
+// GET /api/auth/verify-email?token=xxx
+router.get('/verify-email', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ success: false, error: 'Token requerido' });
+    }
+
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token },
+    });
+
+    if (!verificationToken) {
+      return res.status(400).json({ success: false, error: 'Token inválido o expirado' });
+    }
+
+    if (verificationToken.expiresAt < new Date()) {
+      await prisma.verificationToken.delete({ where: { id: verificationToken.id } });
+      return res.status(400).json({ success: false, error: 'Token expirado. Solicita uno nuevo.' });
+    }
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: verificationToken.userId },
+        data: { isVerified: true },
+      }),
+      prisma.verificationToken.delete({
+        where: { id: verificationToken.id },
+      }),
+    ]);
+
+    res.json({ success: true, message: 'Email verificado correctamente' });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
+  }
+});
+
+// POST /api/auth/resend-verification
+router.post('/resend-verification', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email requerido' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return res.json({ success: true, message: 'Si el email existe, recibirás un correo' });
+    }
+
+    if (user.isVerified) {
+      return res.json({ success: true, message: 'Si el email existe, recibirás un correo' });
+    }
+
+    await prisma.verificationToken.deleteMany({ where: { userId: user.id } });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.verificationToken.create({
+      data: { token: verificationToken, userId: user.id, expiresAt },
+    });
+
+    const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
+    const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    sendVerificationEmail(email, verificationUrl).catch(err => {
+      console.error('Error reenviando email de verificación:', err);
+    });
+
+    res.json({ success: true, message: 'Si el email existe, recibirás un correo' });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
 

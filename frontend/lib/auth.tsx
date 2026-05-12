@@ -7,6 +7,7 @@ interface User {
   name: string;
   role: string;
   avatar?: string;
+  isVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -17,8 +18,9 @@ interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
-  isInitializing: boolean;  // 🆕 Nuevo estado para indicar inicialización
+  isInitializing: boolean;
   error: string | null;
+  resendVerification: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -260,6 +262,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resendVerification = async (email: string) => {
+    const apiUrl = getApiUrl();
+    await fetch(`${apiUrl}/api/auth/resend-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -270,6 +281,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     isInitializing,
     error,
+    resendVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

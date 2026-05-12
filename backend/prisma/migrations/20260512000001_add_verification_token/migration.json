@@ -1,0 +1,21 @@
+{
+  "version": "5.2",
+  "steps": [
+    {
+      "tag": "CreateTable",
+      "table": "verification_tokens"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_verification_tokens_token"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "idx_verification_tokens_token_userId"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "verification_tokens_userId_fkey"
+    }
+  ]
+}

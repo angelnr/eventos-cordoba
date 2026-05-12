@@ -5,6 +5,7 @@ import { AuthProvider } from '../lib/auth'
 import { ThemeProvider } from '../lib/theme'
 import { ToastProvider } from '../components/ui/ToastProvider'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import VerificationBanner from '../components/VerificationBanner'
 
 export default function MyApp({ Component, pageProps }) {
   return (
@@ -13,6 +14,7 @@ export default function MyApp({ Component, pageProps }) {
         <ThemeProvider>
           <ErrorBoundary>
             <ToastProvider>
+              <VerificationBanner />
               <Component {...pageProps} />
             </ToastProvider>
           </ErrorBoundary>
