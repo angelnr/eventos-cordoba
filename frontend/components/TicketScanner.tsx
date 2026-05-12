@@ -13,30 +13,40 @@ export const TicketScanner: React.FC<TicketScannerProps> = ({ onScan, disabled }
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [streamReady, setStreamReady] = useState(false);
   const scanningRef = useRef(false);
+  const cameraStartedRef = useRef(false);
 
   const startCamera = useCallback(async () => {
+    if (cameraStartedRef.current) return;
+    cameraStartedRef.current = true;
     setCameraError(null);
+
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCameraActive(true);
-      scanningRef.current = true;
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError') {
-        setCameraError('Permiso de cámara denegado');
-      } else if (err.name === 'NotFoundError') {
-        setCameraError('No se encontró cámara disponible');
-      } else {
-        setCameraError('Error al acceder a la cámara');
+    } catch {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        });
+      } catch (err: any) {
+        cameraStartedRef.current = false;
+        if (err.name === 'NotAllowedError') {
+          setCameraError('Permiso de cámara denegado');
+        } else if (err.name === 'NotFoundError') {
+          setCameraError('No se encontró cámara disponible');
+        } else {
+          setCameraError('Error al acceder a la cámara');
+        }
+        return;
       }
     }
+
+    streamRef.current = stream;
+    setCameraActive(true);
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -49,7 +59,10 @@ export const TicketScanner: React.FC<TicketScannerProps> = ({ onScan, disabled }
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+    streamRef.current = null;
     setCameraActive(false);
+    setStreamReady(false);
+    cameraStartedRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -59,12 +72,34 @@ export const TicketScanner: React.FC<TicketScannerProps> = ({ onScan, disabled }
   }, [stopCamera]);
 
   useEffect(() => {
-    if (!cameraActive || !videoRef.current || !canvasRef.current) return;
+    if (!cameraActive || !streamRef.current) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.srcObject = streamRef.current;
+
+    const handlePlay = () => {
+      setStreamReady(true);
+    };
+
+    video.addEventListener('play', handlePlay);
+    video.play();
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+    };
+  }, [cameraActive]);
+
+  useEffect(() => {
+    if (!cameraActive || !streamReady || !videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    scanningRef.current = true;
 
     intervalRef.current = setInterval(() => {
       if (!scanningRef.current || !video.videoWidth) return;
@@ -94,7 +129,7 @@ export const TicketScanner: React.FC<TicketScannerProps> = ({ onScan, disabled }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [cameraActive, onScan, stopCamera]);
+  }, [streamReady, onScan, stopCamera]);
 
   return (
     <div className="mb-4">
