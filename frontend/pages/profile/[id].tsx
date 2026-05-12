@@ -5,6 +5,7 @@ import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
 import { getImageUrl } from '../../lib/imageUtils';
+import { getApiUrl } from '../../lib/api';
 
 const AvatarImage: React.FC<{ src: string | undefined; alt: string; className: string }> = ({ src, alt, className }) => {
   const [hasError, setHasError] = useState(false);
@@ -64,30 +65,6 @@ export default function UserProfile() {
   const [authError, setAuthError] = useState(false);
 
   // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
-    }
-
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
-
   useEffect(() => {
     if (!id || isInitializing) return;
 

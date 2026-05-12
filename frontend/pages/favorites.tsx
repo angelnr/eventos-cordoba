@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { AuthGuard } from '../components/AuthGuard';
 import { FavoriteButton } from '../components/FavoriteButton';
 import { useAuth } from '../lib/auth';
+import { getApiUrl } from '../lib/api';
 import { getImageUrl } from '../lib/imageUtils';
 
 interface FavoriteEvent {
@@ -37,29 +38,6 @@ export default function Favorites() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
-
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    }
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
 
   const handleRemoveFavorite = (eventId: number) => {
     setFavorites(prev => prev.filter(f => f.eventId !== eventId));

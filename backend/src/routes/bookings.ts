@@ -134,6 +134,8 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       }
 
       return booking;
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     });
 
     createNotification({
@@ -335,6 +337,8 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
           }
         });
       }
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable
     });
 
     createNotification({

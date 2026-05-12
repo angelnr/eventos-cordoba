@@ -5,8 +5,6 @@ services:
       POSTGRES_DB: mi_app_db
       POSTGRES_USER: mi_usuario
       POSTGRES_PASSWORD: password123
-    ports:
-      - "5432:5432"
     networks:
       - app-network
     restart: unless-stopped

@@ -11,6 +11,8 @@ import * as myEventsService from '../services/myEventsService';
 const router = Router();
 const prisma = new PrismaClient();
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // GET /api/users - Listar todos los usuarios (solo admin)
 router.get('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
@@ -497,66 +499,6 @@ router.patch('/:id/role', requireAuth, requireAdmin, async (req: Request, res: R
   }
 });
 
-// POST /api/users - Crear nuevo usuario
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const { email, password, name } = req.body;
-
-    // Validación básica
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Email y password son requeridos'
-      });
-    }
-
-    // Verificar si el usuario ya existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
-
-    if (existingUser) {
-      return res.status(400).json({ error: 'Usuario ya existe' });
-    }
-
-    // Hash de la contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Crear usuario
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name: name || null
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        createdAt: true
-      }
-    });
-
-    // Generar token JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET || '',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Usuario creado exitosamente',
-      data: {
-        user,
-        token
-      }
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
 // PUT /api/users/:id - Actualizar usuario
 router.put('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -568,12 +510,35 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'No tienes permisos para actualizar este usuario' });
     }
 
+    if (email !== undefined) {
+      if (!EMAIL_REGEX.test(email)) {
+        return res.status(400).json({ error: 'Formato de email inválido' });
+      }
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, NOT: { id: parseInt(id) } }
+      });
+      if (existingEmail) {
+        return res.status(400).json({ error: 'El email ya está en uso por otro usuario' });
+      }
+    }
+
     const updateData: Record<string, any> = {};
-    if (email) updateData.email = email;
-    if (name !== undefined) updateData.name = name;
-    if (bio !== undefined) updateData.bio = bio;
-    if (location !== undefined) updateData.location = location;
-    if (interests !== undefined) updateData.interests = interests;
+    if (email !== undefined) updateData.email = email;
+    if (name !== undefined) {
+      const trimmed = name.trim().substring(0, 100);
+      if (!trimmed) {
+        return res.status(400).json({ error: 'El nombre no puede estar vacío' });
+      }
+      updateData.name = trimmed;
+    }
+    if (bio !== undefined) updateData.bio = bio.trim().substring(0, 500) || null;
+    if (location !== undefined) updateData.location = location.trim().substring(0, 100) || null;
+    if (interests !== undefined) {
+      if (!Array.isArray(interests) || interests.length > 20) {
+        return res.status(400).json({ error: 'Intereses debe ser un array con máximo 20 elementos' });
+      }
+      updateData.interests = interests.map((i: string) => i.trim()).filter(Boolean);
+    }
 
     const user = await prisma.user.update({
       where: { id: parseInt(id) },
@@ -678,7 +643,7 @@ router.post('/generate', requireAuth, requireAdmin, async (req: Request, res: Re
 
     for (let i = 0; i < count; i++) {
       const email = `user${Date.now()}${i}@example.com`;
-      const password = await bcrypt.hash(`password${i}`, 10);
+      const password = await bcrypt.hash(`TestPass${i}!`, 12);
       const name = `Usuario de Prueba ${i + 1}`;
 
       const user = await prisma.user.create({

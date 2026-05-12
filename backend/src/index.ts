@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // Importar rutas
 import authRoutes from './routes/auth';
@@ -23,6 +25,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Configuración CORS más permisiva
+app.use(helmet());
 app.use(cors({
   origin: [
     'http://localhost:3000',
@@ -39,6 +42,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.use(express.json());
+
+// Rate limiting global para todas las rutas /api
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiadas peticiones. Intente de nuevo en 1 minuto.' }
+});
+app.use('/api', globalLimiter);
 
 // Rutas API
 app.use('/api/auth', authRoutes);
@@ -101,6 +114,12 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Algo salió mal!' });
 });
+
+// Validación crítica de JWT_SECRET en startup
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET debe estar definido y tener al menos 32 caracteres');
+  process.exit(1);
+}
 
 app.listen(PORT as number, '0.0.0.0', () => {
   console.log(`🚀 Backend ejecutándose en http://0.0.0.0:${PORT}`);

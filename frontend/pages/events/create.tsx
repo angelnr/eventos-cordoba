@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthGuard } from '../../components/AuthGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { ImageUpload } from '../../components/ui/ImageUpload';
 import { useAuth } from '../../lib/auth';
+import { getApiUrl } from '../../lib/api';
 import { showSuccess } from '../../lib/notifications';
 
 const LocationPicker = dynamic(() => import('../../components/LocationPicker'), {
@@ -28,6 +30,7 @@ interface Category {
 export default function CreateEventPage() {
   const { user, token } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
@@ -56,31 +59,6 @@ export default function CreateEventPage() {
     locationMetadata: string | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
-    }
-
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
 
   // Cargar categorías
   React.useEffect(() => {
@@ -160,7 +138,9 @@ export default function CreateEventPage() {
 
       if (data.success) {
         showSuccess('¡Evento creado exitosamente!');
-        router.push('/events/my-events');
+        queryClient.invalidateQueries({ queryKey: ['events'] });
+        queryClient.invalidateQueries({ queryKey: ['my-events'] });
+        router.push('/my-events');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -183,7 +163,7 @@ export default function CreateEventPage() {
                   Organiza un evento y comparte momentos inolvidables con la comunidad.
                 </p>
               </div>
-              <Link href="/events/my-events">
+              <Link href="/my-events">
                 <Button variant="secondary">
                   ← Mis Eventos
                 </Button>
@@ -327,7 +307,7 @@ export default function CreateEventPage() {
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-3">
-                <Link href="/events/my-events">
+                <Link href="/my-events">
                   <Button variant="secondary" type="button">
                     Cancelar
                   </Button>

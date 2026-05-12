@@ -3,11 +3,14 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 // Link usado en: evento detalle, ver entrada, y navegacion
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
 import { showSuccess, showError } from '../../lib/notifications';
-import { getImageUrl } from '../../lib/imageUtils';
+import { getImageUrl, getContrastColor } from '../../lib/imageUtils';
+import { getApiUrl, apiFetch } from '../../lib/api';
+import type { ApiError } from '../../lib/api';
 import { FavoriteButton } from '../../components/FavoriteButton';
 import { CommentSection } from '../../components/CommentSection';
 import { ReviewSection } from '../../components/ReviewSection';
@@ -86,87 +89,30 @@ export default function EventDetail() {
       : undefined;
 
   const { user, token } = useAuth();
-
-  const [event, setEvent] =
-    useState<Event | null>(null);
-
-  const [loading, setLoading] =
-    useState(true);
+  const queryClient = useQueryClient();
 
   const [bookingLoading, setBookingLoading] =
     useState(false);
   const [bookingSuccess, setBookingSuccess] =
     useState(false);
 
-  // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return (
-        process.env.NEXT_PUBLIC_API_URL ||
-        'http://localhost:3001'
-      );
-    }
+  // Fetch event data
+  const { data: eventData, isLoading: loading, error: eventError } = useQuery({
+    queryKey: ['event', eventId],
+    queryFn: () =>
+      apiFetch<{ success: boolean; data: Event }>(`/api/events/${eventId}`, { token }),
+    enabled: !!eventId,
+    retry: false,
+  });
 
-    const hostname = window.location.hostname;
+  const event = eventData?.data ?? null;
 
-    const isLocalhost =
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
-
+  // Redirect 404
   useEffect(() => {
-    if (!eventId) return;
-
-    const fetchEvent = async () => {
-      setLoading(true);
-
-      try {
-        const apiUrl = getApiUrl();
-        const headers: Record<string, string> = {};
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(
-          `${apiUrl}/api/events/${eventId}`,
-          { headers }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-
-          setEvent(data.data);
-        } else if (response.status === 404) {
-          router.push('/events');
-        }
-      } catch (error) {
-        console.error(
-          'Error fetching event:',
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvent();
-  }, [eventId, router, token]);
+    if (eventError && (eventError as ApiError).status === 404) {
+      router.push('/events');
+    }
+  }, [eventError, router]);
 
   const formatDate = (
     dateString?: string | null
@@ -251,7 +197,7 @@ export default function EventDetail() {
         );
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json();
-          setEvent(refreshData.data);
+          queryClient.invalidateQueries({ queryKey: ['event', eventId] });
         }
         showSuccess('¡Reserva realizada con éxito!');
         setBookingSuccess(true);
@@ -328,7 +274,7 @@ export default function EventDetail() {
           );
           if (refreshResponse.ok) {
             const refreshData = await refreshResponse.json();
-            setEvent(refreshData.data);
+            queryClient.invalidateQueries({ queryKey: ['event', eventId] });
           }
           showSuccess('¡Reserva cancelada con éxito!');
         } else {
@@ -503,10 +449,10 @@ export default function EventDetail() {
               <div className="flex items-center justify-between mb-4">
                 {event.category ? (
                   <span
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
                     style={{
-                      backgroundColor:
-                        event.category.color
+                      backgroundColor: event.category.color,
+                      color: getContrastColor(event.category.color)
                     }}
                   >
                     {event.category.name}
@@ -684,14 +630,16 @@ export default function EventDetail() {
                   size="lg"
                   showLabel
                   onToggle={(eventId, nowFavorited) => {
-                    const currentCount = event.favoriteCount ?? 0;
-                    setEvent({
-                      ...event,
-                      isFavorited: nowFavorited,
-                      favoriteCount: nowFavorited
-                        ? currentCount + 1
-                        : Math.max(0, currentCount - 1)
-                    });
+                    queryClient.setQueryData(['event', eventId], (old: any) => ({
+                      ...old,
+                      data: {
+                        ...old.data,
+                        isFavorited: nowFavorited,
+                        favoriteCount: nowFavorited
+                          ? (old.data.favoriteCount || 0) + 1
+                          : Math.max(0, (old.data.favoriteCount || 0) - 1)
+                      }
+                    }));
                   }}
                 />
                 <span className="text-sm text-gray-500 dark:text-gray-400">

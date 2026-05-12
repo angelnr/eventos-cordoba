@@ -4,16 +4,30 @@ This is a fullstack application built with Next.js for the frontend, Express.js 
 
 ## Tech Stack
 
-- **Frontend**: Next.js 13, React 18, TypeScript, Tailwind CSS
-- **Backend**: Express.js, Prisma ORM, PostgreSQL, JWT Authentication
-- **Infrastructure**: Docker, Nginx, Cloudflare Tunnel
+- **Frontend**: Next.js 16, React 18, TypeScript, Tailwind CSS
+- **Backend**: Express.js, Prisma ORM, PostgreSQL 15, JWT Authentication
+- **Infrastructure**: Docker Compose (5 servicios), Nginx, Cloudflare Tunnel
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- Docker and Docker Compose
+- Docker and Docker Compose (para producción local)
+
+### Environment Variables
+
+Create a `.env` file in the project root with the following variables:
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `DATABASE_URL` | Conexión a PostgreSQL | `postgresql://user:pass@postgres:5432/mi_app_db` |
+| `JWT_SECRET` | Secreto para firmar tokens (mín. 32 chars) | `a20bdca1369bcdcef4cda99ab285f2b77...` |
+| `JWT_EXPIRES_IN` | Tiempo de expiración del token | `15m` |
+| `NEXT_PUBLIC_API_URL` | URL del backend (para frontend) | `http://localhost:3001` |
+| `NEXT_PUBLIC_FRONTEND_URL` | URL del frontend | `http://localhost:3000` |
+| `GOOGLE_MAPS_SERVER_API_KEY` | API key de Google Maps (back-end) | `AIzaSyD...` |
+| `CLOUDFLARED_TOKEN` | Token del túnel Cloudflare | `eyJhIjoi...` |
 
 ### Installation
 
@@ -54,24 +68,23 @@ The application will be available at:
 
 ```
 .
-├── backend/           # Express.js API server
-│   ├── prisma/        # Database schema and migrations
+├── backend/                # Express.js API server (TypeScript)
+│   ├── prisma/             # Schema + migrations + seed
 │   ├── src/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   └── utils/
-│   └── ...
-├── frontend/          # Next.js application
-│   ├── components/
-│   ├── pages/
-│   ├── styles/
-│   ├── lib/
-│   └── ...
-├── nginx/             # Reverse proxy configuration
-├── cloudflared/       # Cloudflare Tunnel configuration
-├── docker-compose.yml
+│   │   ├── middleware/     # auth.ts, upload.ts
+│   │   ├── routes/         # 12 routers (events, users, tickets...)
+│   │   ├── services/       # Lógica de negocio (ticketService, etc.)
+│   │   └── jobs/           # Cron jobs (reminders, cleanup)
+│   └── uploads/            # Imágenes locales
+├── frontend/               # Next.js Pages Router
+│   ├── components/         # UI + features (landing, dashboard, filters...)
+│   ├── pages/              # 19 rutas (SSR/SSG)
+│   ├── lib/                # Auth, API, queries, hooks
+│   └── styles/             # Tailwind globals
+├── nginx/                  # Reverse proxy + security headers
+├── cloudflared/            # Cloudflare Tunnel
+├── docker-compose.yml      # 5 servicios
+├── AGENTS.md               # Convenciones para IA
 └── README.md
 ```
 
@@ -83,95 +96,34 @@ The application will be available at:
 
 ## Deployment
 
-### Local Development
+### Build and run all services (Docker Compose)
 ```bash
-# Start all services
-docker-compose up
+# Build all images
+docker compose build
 
-# Or start in background
-docker-compose up -d
+# Start all services in background
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
-### Production Deployment
-
-#### 1. Configure Environment Variables
-Create a `.env` file in production with:
+### Rebuild a single service
 ```bash
-# Database
-DATABASE_URL="postgresql://username:password@host:5432/database_name"
+docker compose build frontend
+docker compose up -d --no-deps frontend
 
-# JWT
-JWT_SECRET="your-production-jwt-secret-here"
-JWT_EXPIRES_IN="15m"
+docker compose build backend
+docker compose up -d --no-deps backend
 
-# API URL for Frontend (IMPORTANT!)
-NEXT_PUBLIC_API_URL="https://your-backend-domain.com"
-```
+docker compose restart nginx
 
-#### 2. Deploy Backend
-```bash
-# Build and run backend
-cd backend
-docker build -t eventos-backend .
-docker run -d -p 3001:3001 --env-file .env eventos-backend
-```
+## Configuration for eventoscordoba.xyz
 
-#### 3. Deploy Frontend
-```bash
-# Build for production
-cd frontend
-npm run build
-
-# Serve with Next.js production server
-npm start
-
-# Or use Docker
-docker build -t eventos-frontend .
-docker run -d -p 3000:3000 eventos-frontend
-```
-
-#### 4. Nginx Configuration (Optional)
-```nginx
-# /etc/nginx/sites-available/eventos-cordoba
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-### Environment-Specific API URLs
-
-The application automatically detects the environment:
-
-- **Development** (`localhost`): Uses `http://localhost:3001` or `NEXT_PUBLIC_API_URL`
-- **Production** (`eventoscordoba.xyz`): Uses `https://api.eventoscordoba.xyz`
-- **Fallback**: Empty string (same domain API routes)
-
-### Configuration for eventoscordoba.xyz
+If you're using the `eventoscordoba.xyz` domain with Cloudflare Tunnel:
 
 If you're using the `eventoscordoba.xyz` domain with Cloudflare Tunnel:
 

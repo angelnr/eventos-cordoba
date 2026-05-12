@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { FavoriteButton } from './FavoriteButton';
-import { getImageUrl } from '../lib/imageUtils';
+import { getImageUrl, getContrastColor } from '../lib/imageUtils';
 import { StatusBadge } from './StatusBadge';
 import type { EventResponse } from '../lib/queries/useEvents';
 
@@ -61,8 +61,8 @@ export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
           <div className="flex items-center justify-between mb-2">
             {event.category ? (
               <span
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                style={{ backgroundColor: event.category.color }}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                style={{ backgroundColor: event.category.color, color: getContrastColor(event.category.color) }}
               >
                 {event.category.name}
               </span>

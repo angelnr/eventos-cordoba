@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useQueryClient } from '@tanstack/react-query';
 import { AuthGuard } from '../../../components/AuthGuard';
 import { Layout } from '../../../components/Layout';
 import { Button } from '../../../components/ui/Button';
 import { ImageUpload } from '../../../components/ui/ImageUpload';
 import { useAuth } from '../../../lib/auth';
+import { getApiUrl } from '../../../lib/api';
 import { showSuccess, showError } from '../../../lib/notifications';
 
 const LocationPicker = dynamic(() => import('../../../components/LocationPicker'), {
@@ -50,6 +52,7 @@ export default function EditEventPage() {
   const { user, token } = useAuth();
   const router = useRouter();
   const { id } = router.query;
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -84,30 +87,6 @@ export default function EditEventPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
-    }
-
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
-
   // Cargar categorías
   useEffect(() => {
     const fetchCategories = async () => {
@@ -161,7 +140,7 @@ useEffect(() => {
 
         if (eventData.organizerId !== user?.id && user?.role !== 'admin') {
           showError('No tienes permisos para editar este evento');
-          router.push('/events/my-events');
+          router.push('/my-events');
           return;
         }
 
@@ -189,12 +168,12 @@ useEffect(() => {
         });
       } else {
         showError('Error al cargar el evento');
-        router.push('/events/my-events');
+        router.push('/my-events');
       }
     } catch (error) {
       console.error('Error loading event:', error);
       showError('Error al cargar el evento');
-      router.push('/events/my-events');
+      router.push('/my-events');
     } finally {
       setLoading(false);
     }
@@ -280,6 +259,8 @@ useEffect(() => {
 
       if (data.success) {
         showSuccess('¡Evento actualizado exitosamente!');
+        queryClient.invalidateQueries({ queryKey: ['events'] });
+        queryClient.invalidateQueries({ queryKey: ['my-events'] });
         router.push(`/events/${id}`);
       }
     } catch (error) {
@@ -308,7 +289,7 @@ useEffect(() => {
         <Layout>
           <div className="text-center py-12">
             <div className="text-gray-500 dark:text-gray-400 text-lg">Evento no encontrado</div>
-            <Link href="/events/my-events">
+            <Link href="/my-events">
               <Button className="mt-4">Volver a mis eventos</Button>
             </Link>
           </div>
@@ -390,6 +371,7 @@ useEffect(() => {
                   id="date"
                   name="date"
                   required
+                  min={new Date().toISOString().slice(0, 16)}
                   value={formData.date}
                   onChange={handleInputChange}
                   className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

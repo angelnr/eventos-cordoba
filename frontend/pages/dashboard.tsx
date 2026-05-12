@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthGuard } from '../components/AuthGuard';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../lib/auth';
+import { getApiUrl } from '../lib/api';
 import { showSuccess, showError } from '../lib/notifications';
 import { Button } from '../components/ui/Button';
 import { MetricsGrid } from '../components/dashboard/MetricsGrid';
@@ -66,30 +67,6 @@ export default function DashboardPage() {
   };
 
   // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
-    }
-
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
-
   // Fetch users list
   const fetchUsers = async () => {
     if (!token) return;

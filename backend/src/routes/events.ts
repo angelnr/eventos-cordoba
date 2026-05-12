@@ -18,6 +18,19 @@ import { invalidateDashboardCache } from '../services/dashboardService';
 const router = Router();
 const prisma = new PrismaClient();
 
+function sanitizeText(value: string): string {
+  return value.trim()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function isValidUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
 // Middleware condicional: si es multipart/form-data, usar Multer.
 // Si no, pasar al handler (express.json() ya procesó el body).
 const conditionalUpload = (req: Request, res: Response, next: any) => {
@@ -593,6 +606,17 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
       });
     }
 
+    if (externalImageUrl && !isValidUrl(externalImageUrl)) {
+      return res.status(400).json({
+        success: false,
+        error: 'URL de imagen externa inválida. Debe comenzar con http:// o https://'
+      });
+    }
+
+    const safeTitle = sanitizeText(title);
+    const safeDescription = description ? sanitizeText(description) : null;
+    const safeLocation = sanitizeText(location);
+
     // Verificar que la categoría existe
     const category = await prisma.category.findUnique({
       where: { id: parseInt(categoryId) }
@@ -653,10 +677,10 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
 
     const event = await prisma.event.create({
       data: {
-        title,
-        description: description || null,
+        title: safeTitle,
+        description: safeDescription,
         date: new Date(date),
-        location,
+        location: safeLocation,
         latitude: parsedLat !== null ? parsedLat : undefined,
         longitude: parsedLng !== null ? parsedLng : undefined,
         placeId: placeId || undefined,
@@ -777,12 +801,33 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
     const parsedCapacity = capacity !== undefined ? parseInt(capacity) : undefined;
     const parsedCategoryId = categoryId !== undefined ? parseInt(categoryId) : undefined;
 
+    // Validar fecha no sea pasada
+    if (date) {
+      const parsedDate = new Date(date);
+      if (parsedDate < new Date()) {
+        return res.status(400).json({
+          success: false,
+          error: 'La fecha del evento no puede estar en el pasado'
+        });
+      }
+    }
+
+    // Validar externalImageUrl
+    if (externalImageUrl !== undefined && externalImageUrl !== '' && externalImageUrl !== 'null') {
+      if (!isValidUrl(externalImageUrl)) {
+        return res.status(400).json({
+          success: false,
+          error: 'URL de imagen externa inválida. Debe comenzar con http:// o https://'
+        });
+      }
+    }
+
     // Construir objeto de actualización
     const updateData: Record<string, any> = {};
-    if (title) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
+    if (title) updateData.title = sanitizeText(title);
+    if (description !== undefined) updateData.description = description ? sanitizeText(description) : null;
     if (date) updateData.date = new Date(date);
-    if (location) updateData.location = location;
+    if (location) updateData.location = sanitizeText(location);
     if (parsedCapacity !== undefined && !Number.isNaN(parsedCapacity)) updateData.capacity = parsedCapacity;
     if (parsedPrice !== undefined && !Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
     if (parsedCategoryId !== undefined && !Number.isNaN(parsedCategoryId)) updateData.categoryId = parsedCategoryId;
@@ -902,18 +947,21 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       link: null as any
     }).catch(err => console.error('Error creating deletion notifications:', err));
 
-    // Eliminar imagen del filesystem si es local
-    if (isLocalImage(event.imageUrl)) {
-      await deleteImage(event.imageUrl).catch(() => {});
-    }
+    // Eliminar favoritos + evento en transacción atómica
+    await prisma.$transaction(async (tx) => {
+      // Eliminar imagen del filesystem si es local
+      if (isLocalImage(event.imageUrl)) {
+        await deleteImage(event.imageUrl).catch(() => {});
+      }
 
-    // Eliminar favoritos del evento para evitar error de FK RESTRICT
-    await prisma.favorite.deleteMany({
-      where: { eventId: parseInt(id) }
-    });
+      // Eliminar favoritos del evento para evitar error de FK RESTRICT
+      await tx.favorite.deleteMany({
+        where: { eventId: parseInt(id) }
+      });
 
-    await prisma.event.delete({
-      where: { id: parseInt(id) }
+      await tx.event.delete({
+        where: { id: parseInt(id) }
+      });
     });
 
     res.json({

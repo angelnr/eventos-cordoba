@@ -2,12 +2,32 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 const prisma = new PrismaClient();
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiados intentos de login. Intente de nuevo en 15 minutos.' }
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Demasiados intentos de registro. Intente de nuevo en 1 hora.' }
+});
+
 // POST /api/auth/login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', loginLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -16,6 +36,13 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Email y password son requeridos'
+      });
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de email inválido'
       });
     }
 
@@ -41,7 +68,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || '',
+      process.env.JWT_SECRET as string,
       { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
     );
 
@@ -70,7 +97,7 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/register
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', registerLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
@@ -79,6 +106,20 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Email y password son requeridos'
+      });
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Formato de email inválido'
+      });
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      return res.status(400).json({
+        success: false,
+        error: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número'
       });
     }
 
@@ -93,7 +134,7 @@ router.post('/register', async (req: Request, res: Response) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
       data: {
@@ -113,7 +154,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || '',
+      process.env.JWT_SECRET as string,
       { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } as any
     );
 
@@ -146,7 +187,7 @@ router.post('/verify', async (req: Request, res: Response) => {
       });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET || '', async (err: any, decoded: any) => {
+    jwt.verify(token, process.env.JWT_SECRET as string, async (err: any, decoded: any) => {
       if (err) {
         return res.status(401).json({
           success: false,
@@ -190,35 +231,6 @@ router.post('/verify', async (req: Request, res: Response) => {
       success: false,
       error: 'Error interno del servidor'
     });
-  }
-});
-
-// POST /api/auth/db-test - Probar conexión a base de datos
-router.post('/db-test', async (req: Request, res: Response) => {
-  try {
-    // Probar conexión básica a la base de datos
-    await prisma.$connect();
-
-    // Probar una consulta simple
-    const userCount = await prisma.user.count();
-
-    res.json({
-      success: true,
-      message: 'Conexión a base de datos exitosa',
-      data: {
-        userCount,
-        database: 'connected'
-      }
-    });
-  } catch (error: any) {
-    console.error('Database connection error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Error de conexión a base de datos',
-      details: error.message
-    });
-  } finally {
-    await prisma.$disconnect();
   }
 });
 

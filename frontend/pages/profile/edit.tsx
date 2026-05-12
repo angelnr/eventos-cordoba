@@ -5,6 +5,7 @@ import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { AvatarUpload } from '../../components/ui/AvatarUpload';
 import { useAuth } from '../../lib/auth';
+import { getApiUrl } from '../../lib/api';
 import { showSuccess, showError } from '../../lib/notifications';
 
 interface UserProfile {
@@ -39,30 +40,6 @@ export default function EditProfile() {
   });
 
   // Determinar la URL del API según el entorno
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return 'http://localhost:3001';
-    }
-
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    const isProduction = hostname === 'eventoscordoba.xyz';
-
-    if (isLocalhost) {
-      return 'http://localhost:3001';
-    }
-
-    if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
-    }
-
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      return process.env.NEXT_PUBLIC_API_URL;
-    }
-
-    return 'https://api.eventoscordoba.xyz';
-  };
-
   useEffect(() => {
     // Esperar a que termine la inicialización antes de verificar el usuario
     if (isInitializing) {
