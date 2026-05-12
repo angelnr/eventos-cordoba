@@ -1,7 +1,7 @@
 FROM node:20.9-alpine
 
-# Instalar netcat para esperar a PostgreSQL
-RUN apk add --no-cache netcat-openbsd
+# Instalar netcat y su-exec para esperar a PostgreSQL y drop de privilegios
+RUN apk add --no-cache netcat-openbsd su-exec
 
 WORKDIR /app
 
@@ -25,8 +25,6 @@ RUN chmod +x entrypoint.sh
 
 # Crear directorio de uploads con permisos adecuados
 RUN mkdir -p /app/uploads/events && chown -R node:node /app/uploads
-
-USER node
 
 # Exponer puerto
 EXPOSE 3001

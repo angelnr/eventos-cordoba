@@ -133,8 +133,8 @@ router.post('/validate', requireAuth, requireStaff, validateLimiter, async (req:
       return res.status(400).json({ success: false, error: 'Token es requerido' });
     }
 
-    if (!eventId || typeof eventId !== 'number') {
-      return res.status(400).json({ success: false, error: 'El ID del evento es requerido' });
+    if (eventId !== undefined && typeof eventId !== 'number') {
+      return res.status(400).json({ success: false, error: 'eventId debe ser un número' });
     }
 
     const result = await ticketService.validateTicket(token.trim(), req.user!.id, eventId);

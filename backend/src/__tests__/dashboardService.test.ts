@@ -229,3 +229,4 @@ describe('invalidateDashboardCache', () => {
     expect(refreshed.totalEvents).toBe(20);
   });
 });
+export {};

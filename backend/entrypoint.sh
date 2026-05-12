@@ -8,23 +8,24 @@ done
 echo "✅ PostgreSQL está listo!"
 
 echo "📁 Asegurando directorio de uploads..."
-mkdir -p /app/uploads/events
+mkdir -p /app/uploads/events /app/uploads/avatars
+chown -R node:node /app/uploads 2>/dev/null || true
 
 echo "🔄 Ejecutando migraciones de Prisma..."
-npx prisma db push --accept-data-loss
+su-exec node npx prisma db push --accept-data-loss
 echo "✅ Migraciones completadas!"
 
 echo "🔄 Ejecutando seed de datos..."
-node prisma/seed.js
+su-exec node node prisma/seed.js
 echo "✅ Seed completado!"
 
 echo "🚀 Iniciando aplicación..."
 if [ "$NODE_ENV" = "development" ]; then
   echo "📦 Modo desarrollo — usando ts-node-dev"
-  exec npx ts-node-dev --respawn --transpile-only src/index.ts
+  exec su-exec node npx ts-node-dev --respawn --transpile-only src/index.ts
 else
   echo "📦 Modo producción — compilando TypeScript..."
-  npx tsc
+  su-exec node npx tsc
   echo "✅ Compilación TypeScript completada"
-  exec node dist/index.js
+  exec su-exec node node dist/index.js
 fi

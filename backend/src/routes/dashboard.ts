@@ -78,7 +78,7 @@ router.get('/metrics', requireAuth, requireDashboardAccess, async (req: Request,
     const data = await dashboardService.getDashboardMetrics(req.user!.id, filters, refresh);
     res.json({ success: true, data });
   } catch (error: any) {
-    if (error.message && (error.message.includes('inválida') || error.message.includes('debe ser'))) {
+    if (error.message && (error.message.includes('inválida') || error.message.includes('inválidos') || error.message.includes('debe ser'))) {
       return res.status(400).json({ success: false, error: error.message });
     }
     console.error('Dashboard metrics error:', error);
@@ -93,7 +93,7 @@ router.get('/metrics/events-created', requireAuth, requireDashboardAccess, async
     const data = await dashboardService.getEventsCreatedMetrics(req.user!.id, filters, refresh);
     res.json({ success: true, data });
   } catch (error: any) {
-    if (error.message && (error.message.includes('inválida') || error.message.includes('debe ser'))) {
+    if (error.message && (error.message.includes('inválida') || error.message.includes('inválidos') || error.message.includes('debe ser'))) {
       return res.status(400).json({ success: false, error: error.message });
     }
     console.error('Events created metrics error:', error);
@@ -108,7 +108,7 @@ router.get('/metrics/attendees', requireAuth, requireDashboardAccess, async (req
     const data = await dashboardService.getAttendeeMetrics(req.user!.id, filters, refresh);
     res.json({ success: true, data });
   } catch (error: any) {
-    if (error.message && (error.message.includes('inválida') || error.message.includes('debe ser'))) {
+    if (error.message && (error.message.includes('inválida') || error.message.includes('inválidos') || error.message.includes('debe ser'))) {
       return res.status(400).json({ success: false, error: error.message });
     }
     console.error('Attendee metrics error:', error);
@@ -123,7 +123,7 @@ router.get('/metrics/average-rating', requireAuth, requireDashboardAccess, async
     const data = await dashboardService.getRatingMetrics(req.user!.id, filters, refresh);
     res.json({ success: true, data });
   } catch (error: any) {
-    if (error.message && (error.message.includes('inválida') || error.message.includes('debe ser'))) {
+    if (error.message && (error.message.includes('inválida') || error.message.includes('inválidos') || error.message.includes('debe ser'))) {
       return res.status(400).json({ success: false, error: error.message });
     }
     console.error('Rating metrics error:', error);
@@ -138,7 +138,7 @@ router.get('/metrics/events-completed', requireAuth, requireDashboardAccess, asy
     const data = await dashboardService.getCompletedEventsMetrics(req.user!.id, filters, refresh);
     res.json({ success: true, data });
   } catch (error: any) {
-    if (error.message && (error.message.includes('inválida') || error.message.includes('debe ser'))) {
+    if (error.message && (error.message.includes('inválida') || error.message.includes('inválidos') || error.message.includes('debe ser'))) {
       return res.status(400).json({ success: false, error: error.message });
     }
     console.error('Completed events metrics error:', error);

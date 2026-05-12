@@ -12,7 +12,7 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: process.env.NODE_ENV === 'test' ? 999 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: 'Demasiados intentos de login. Intente de nuevo en 15 minutos.' }

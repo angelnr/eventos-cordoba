@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "E2E_API_URL=http://localhost:3001 playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.9",
