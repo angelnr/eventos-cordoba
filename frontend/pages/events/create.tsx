@@ -4,6 +4,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuthGuard } from '../../components/AuthGuard';
+import { RoleGuard } from '../../components/RoleGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { ImageUpload } from '../../components/ui/ImageUpload';
@@ -152,6 +153,7 @@ export default function CreateEventPage() {
 
   return (
     <AuthGuard>
+      <RoleGuard allowedRoles={['admin', 'organizer']}>
       <Layout>
         <div className="max-w-2xl mx-auto px-4 py-8">
           {/* Header */}
@@ -324,6 +326,7 @@ export default function CreateEventPage() {
           </div>
         </div>
       </Layout>
+      </RoleGuard>
     </AuthGuard>
   );
 }

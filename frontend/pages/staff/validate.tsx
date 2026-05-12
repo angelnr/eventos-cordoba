@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AuthGuard } from '../../components/AuthGuard';
+import { RoleGuard } from '../../components/RoleGuard';
 import { Layout } from '../../components/Layout';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../lib/auth';
@@ -22,8 +23,6 @@ export default function StaffValidatePage() {
 
   const { data: eventsData } = useStaffTodayEvents(token);
   const todayEvents = eventsData?.data || [];
-
-  const isStaff = user?.role === 'staff' || user?.role === 'organizer' || user?.role === 'admin';
 
   const handleScan = useCallback((scannedToken: string) => {
     if (!selectedEventId) return;
@@ -98,22 +97,9 @@ export default function StaffValidatePage() {
     }
   };
 
-  if (!isStaff) {
-    return (
-      <AuthGuard>
-        <Layout>
-          <div className="max-w-md mx-auto mt-8 text-center">
-            <p className="text-red-500 dark:text-red-400">
-              No tienes permisos para acceder a esta página.
-            </p>
-          </div>
-        </Layout>
-      </AuthGuard>
-    );
-  }
-
   return (
     <AuthGuard>
+      <RoleGuard allowedRoles={['staff', 'organizer', 'admin']}>
       <Layout>
         <div className="max-w-md mx-auto mt-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
@@ -252,6 +238,7 @@ export default function StaffValidatePage() {
           )}
         </div>
       </Layout>
+      </RoleGuard>
     </AuthGuard>
   );
 }

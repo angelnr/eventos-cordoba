@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuthGuard } from '../components/AuthGuard';
+import { RoleGuard } from '../components/RoleGuard';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../lib/auth';
 import { getApiUrl } from '../lib/api';
@@ -203,44 +204,10 @@ export default function DashboardPage() {
 
   const isAdmin = user?.role === 'admin';
   const isOrganizer = user?.role === 'organizer';
-  const canViewMetrics = isAdmin || isOrganizer;
-
-  if (!user) {
-    return (
-      <AuthGuard>
-        <Layout>
-          <div className="px-4 py-6 sm:px-0">
-            <p className="text-gray-600 dark:text-gray-400">Cargando...</p>
-          </div>
-        </Layout>
-      </AuthGuard>
-    );
-  }
-
-  if (!canViewMetrics) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🚫</div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Acceso Denegado</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Solo organizadores y administradores pueden acceder al dashboard.
-            </p>
-            <a
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Volver al Inicio
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AuthGuard>
+      <RoleGuard allowedRoles={['admin', 'organizer']}>
       <Layout>
         <div className="px-4 py-6 sm:px-0">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -426,6 +393,7 @@ export default function DashboardPage() {
           )}
         </div>
       </Layout>
+      </RoleGuard>
     </AuthGuard>
   );
 }
