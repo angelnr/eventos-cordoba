@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 
 const JWT_SECRET = 'test-secret-with-at-least-32-chars!!';
 process.env.JWT_SECRET = JWT_SECRET;
-process.env.JWT_EXPIRES_IN = '15m';
+process.env.JWT_EXPIRES_IN = '30m';
 
 const mockFindUnique = jest.fn();
 const mockCreate = jest.fn();
@@ -359,6 +359,10 @@ describe('POST /api/auth/verify', () => {
     expect(body.success).toBe(true);
     expect(body.data.user.email).toBe('test@test.com');
     expect(body.data.user.avatar).toBe('/uploads/avatars/test.png');
-    expect(body.data.token.expiresIn).toBe('15m');
+    expect(body.data.token).toBeDefined();
+    expect(typeof body.data.token).toBe('string');
+    const decoded = jwt.verify(body.data.token, JWT_SECRET) as any;
+    expect(decoded.id).toBe(1);
+    expect(decoded.email).toBe('test@test.com');
   });
 });

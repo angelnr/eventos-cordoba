@@ -39,8 +39,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);  // 🆕 Estado de inicialización
+  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
 
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
@@ -84,6 +85,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Rastrear actividad del usuario para renovación de sesión
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!token) return;
+
+    const markActive = () => setLastActivity(Date.now());
+
+    const events = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, markActive, { passive: true }));
+
+    return () => {
+      events.forEach(event => window.removeEventListener(event, markActive));
+    };
+  }, [token]);
+
+  // Renovar token cada 5 minutos si hay actividad
+  useEffect(() => {
+    if (!token) return;
+
+    const INTERVAL_MS = 5 * 60 * 1000;
+
+    const interval = setInterval(() => {
+      const timeSinceActivity = Date.now() - lastActivity;
+      if (timeSinceActivity < INTERVAL_MS) {
+        refreshUser();
+      }
+    }, INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [token, lastActivity]);
+
   const verifyToken = async (tokenToVerify: string) => {
     try {
       const apiUrl = getApiUrl();
@@ -98,8 +130,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (data.success) {
-        setToken(tokenToVerify);
+        const newToken = data.data.token || tokenToVerify;
+        setToken(newToken);
         setUser(data.data.user);
+        localStorage.setItem('auth_token', newToken);
       } else {
         localStorage.removeItem('auth_token');
         setToken(null);
@@ -212,7 +246,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       const data = await response.json();
       if (data.success) {
+        const newToken = data.data.token;
+        if (newToken) {
+          setToken(newToken);
+          localStorage.setItem('auth_token', newToken);
+        }
         setUser(data.data.user);
+      } else {
+        logout();
       }
     } catch (error) {
       console.error('Error refreshing user:', error);

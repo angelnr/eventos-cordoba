@@ -214,14 +214,18 @@ router.post('/verify', async (req: Request, res: Response) => {
         });
       }
 
+      const newToken = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET as string,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '30m' } as any
+      );
+
       res.json({
         success: true,
         message: 'Token válido',
         data: {
           user,
-          token: {
-            expiresIn: process.env.JWT_EXPIRES_IN || '15m'
-          }
+          token: newToken,
         }
       });
     });
