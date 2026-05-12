@@ -3,7 +3,7 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireAdmin } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 import { saveAvatarImage, deleteImage, isLocalImage } from '../services/storageService';
 import * as myEventsService from '../services/myEventsService';
@@ -11,14 +11,27 @@ import * as myEventsService from '../services/myEventsService';
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /api/users - Listar todos los usuarios
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+// GET /api/users - Listar todos los usuarios (solo admin)
+router.get('/', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
+    const { search } = req.query;
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search as string, mode: 'insensitive' as const } },
+            { email: { contains: search as string, mode: 'insensitive' as const } },
+          ],
+        }
+      : undefined;
+
     const users = await prisma.user.findMany({
+      where,
       select: {
         id: true,
         email: true,
         name: true,
+        role: true,
         createdAt: true,
         updatedAt: true
       },
@@ -415,6 +428,75 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/users/:id/role - Cambiar rol de usuario (solo admin)
+router.patch('/:id/role', requireAuth, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    const targetUserId = parseInt(id);
+    const VALID_ROLES = ['user', 'staff', 'organizer'];
+
+    if (!role || !VALID_ROLES.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rol inválido. Valores permitidos: user, staff, organizer'
+      });
+    }
+
+    if (req.user!.id === targetUserId) {
+      return res.status(403).json({
+        success: false,
+        error: 'No puedes cambiar tu propio rol'
+      });
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, email: true, name: true, role: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    if (targetUser.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'No puedes cambiar el rol de otro administrador'
+      });
+    }
+
+    if (targetUser.role === role) {
+      return res.json({
+        success: true,
+        message: 'El usuario ya tiene este rol',
+        data: targetUser
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: targetUserId },
+      data: { role },
+      select: { id: true, email: true, name: true, role: true }
+    });
+
+    res.json({
+      success: true,
+      message: 'Rol actualizado exitosamente',
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error('Error changing user role:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
+    });
+  }
+});
+
 // POST /api/users - Crear nuevo usuario
 router.post('/', async (req: Request, res: Response) => {
   try {
@@ -583,8 +665,8 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/users/generate - Generar usuarios de prueba
-router.post('/generate', async (req: Request, res: Response) => {
+// POST /api/users/generate - Generar usuarios de prueba (solo admin)
+router.post('/generate', requireAuth, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { count = 5 } = req.body;
 

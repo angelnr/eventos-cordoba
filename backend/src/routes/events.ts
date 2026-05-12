@@ -11,7 +11,7 @@ import {
   getAvailabilityIds,
   buildAppliedFiltersSummary
 } from '../services/eventFilters';
-import { requireAuth, requireOrganizer, optionalAuth } from '../middleware/auth';
+import { requireAuth, requireOrganizer, requireStaff, optionalAuth } from '../middleware/auth';
 import { transitionEventStatus, getAllowedTransitions, EVENT_STATUS_CONFIG } from '../services/eventStatusService';
 import { invalidateDashboardCache } from '../services/dashboardService';
 
@@ -232,6 +232,44 @@ router.get('/my-events', requireAuth, requireOrganizer, async (req: Request, res
       success: false,
       error: 'Error al obtener tus eventos'
     });
+  }
+});
+
+// GET /api/events/my-events-today - Eventos activos del mismo día para staff (DEBE IR ANTES DE /:id)
+router.get('/my-events-today', requireAuth, requireStaff, async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const where: any = {
+      date: { gte: today, lt: tomorrow },
+      status: { in: ['SCHEDULED', 'FULL'] },
+    };
+
+    if (req.user!.role !== 'admin') {
+      where.organizerId = req.user!.id;
+    }
+
+    const events = await prisma.event.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        date: true,
+        location: true,
+        price: true,
+        status: true,
+        imageUrl: true,
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    return res.json({ success: true, data: events });
+  } catch (error) {
+    console.error('Get my events today error:', error);
+    return res.status(500).json({ success: false, error: 'Error al obtener eventos' });
   }
 });
 

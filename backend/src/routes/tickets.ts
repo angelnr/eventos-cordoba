@@ -127,13 +127,17 @@ router.get('/qr/:token', requireAuth, async (req: Request, res: Response) => {
 // POST /api/tickets/validate
 router.post('/validate', requireAuth, requireStaff, validateLimiter, async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
+    const { token, eventId } = req.body;
 
     if (!token || typeof token !== 'string' || token.trim().length === 0) {
       return res.status(400).json({ success: false, error: 'Token es requerido' });
     }
 
-    const result = await ticketService.validateTicket(token.trim(), req.user!.id);
+    if (!eventId || typeof eventId !== 'number') {
+      return res.status(400).json({ success: false, error: 'El ID del evento es requerido' });
+    }
+
+    const result = await ticketService.validateTicket(token.trim(), req.user!.id, eventId);
 
     if (result.action === 'validated') {
       res.json({ success: true, action: 'validated', data: result });
@@ -156,6 +160,9 @@ router.post('/validate', requireAuth, requireStaff, validateLimiter, async (req:
     }
     if (error.statusCode === 410) {
       return res.status(410).json({ success: false, action: 'expired', error: error.message });
+    }
+    if (error.statusCode === 403) {
+      return res.status(403).json({ success: false, action: 'wrong_event', error: error.message });
     }
     if (error.statusCode === 404) {
       return res.status(404).json({ success: false, action: 'not_found', error: error.message });

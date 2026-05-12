@@ -8,20 +8,33 @@ import { MetricsGrid } from '../components/dashboard/MetricsGrid';
 import { MetricsFilters } from '../components/dashboard/MetricsFilters';
 import { StatusDistribution } from '../components/dashboard/StatusDistribution';
 import { useDashboardMetrics } from '../lib/queries/useDashboardMetrics';
+import { useDebounce } from '../lib/useDebounce';
 
 interface UserListItem {
   id: number;
   email: string;
   name: string;
+  role: string;
   createdAt: string;
   updatedAt: string;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  user: 'Usuario',
+  staff: 'Staff',
+  organizer: 'Organizador',
+  admin: 'Administrador',
+};
+
+const SELECTABLE_ROLES = ['user', 'staff', 'organizer'];
 
 export default function DashboardPage() {
   const { user, token } = useAuth();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 300);
 
   // Filtros de métricas
   const [startDate, setStartDate] = useState('');
@@ -86,7 +99,10 @@ export default function DashboardPage() {
 
     try {
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/users`, {
+      const url = debouncedSearch
+        ? `${apiUrl}/api/users?search=${encodeURIComponent(debouncedSearch)}`
+        : `${apiUrl}/api/users`;
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -119,6 +135,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ count }),
       });
@@ -172,9 +189,40 @@ export default function DashboardPage() {
     }
   };
 
+  // Change user role
+  const changeUserRole = async (userId: number, newRole: string, userName: string) => {
+    setError(null);
+
+    try {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}/api/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al cambiar rol');
+      }
+
+      if (data.success) {
+        showSuccess(`Rol de "${userName}" actualizado a "${ROLE_LABELS[newRole] || newRole}"`);
+        fetchUsers();
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      showError(errorMessage);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
-  }, [token]);
+  }, [token, debouncedSearch]);
 
   const isAdmin = user?.role === 'admin';
   const isOrganizer = user?.role === 'organizer';
@@ -327,6 +375,17 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* Barra de búsqueda */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  placeholder="Buscar por nombre o email..."
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                />
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-900">
@@ -334,6 +393,7 @@ export default function DashboardPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rol</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha de Registro</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                     </tr>
@@ -344,6 +404,23 @@ export default function DashboardPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{userItem.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{userItem.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{userItem.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {userItem.id === user?.id || userItem.role === 'admin' ? (
+                            <span className="text-gray-900 dark:text-gray-100 font-medium">
+                              {ROLE_LABELS[userItem.role] || userItem.role}
+                            </span>
+                          ) : (
+                            <select
+                              value={userItem.role}
+                              onChange={e => changeUserRole(userItem.id, e.target.value, userItem.name || userItem.email)}
+                              className="px-2 py-1 border rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                            >
+                              {SELECTABLE_ROLES.map(role => (
+                                <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                              ))}
+                            </select>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{new Date(userItem.createdAt).toLocaleDateString('es-ES')}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
@@ -364,7 +441,7 @@ export default function DashboardPage() {
 
                 {users.length === 0 && !isLoadingUsers && (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No hay usuarios registrados aún.
+                    {debouncedSearch ? 'No se encontraron usuarios con ese criterio de búsqueda.' : 'No hay usuarios registrados aún.'}
                   </div>
                 )}
               </div>

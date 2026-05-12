@@ -52,7 +52,7 @@ Content-Type: application/json
 GET {{baseUrl}}/api/users/me
 Authorization: Bearer {{token}}
 
-### Listar todos los usuarios (requiere token)
+### Listar todos los usuarios (solo admin)
 GET {{baseUrl}}/api/users
 Authorization: Bearer {{token}}
 
@@ -88,20 +88,30 @@ Authorization: Bearer {{token}}
 ### 🤖 GENERACIÓN DE USUARIOS DE PRUEBA
 ### ============================================================================
 
-### Generar 3 usuarios de prueba
+### Generar 3 usuarios de prueba (solo admin)
 POST {{baseUrl}}/api/users/generate
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "count": 3
 }
 
-### Generar 10 usuarios de prueba
+### Generar 10 usuarios de prueba (solo admin)
 POST {{baseUrl}}/api/users/generate
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "count": 10
+}
+
+### Generar usuarios sin token (debe fallar 401)
+POST {{baseUrl}}/api/users/generate
+Content-Type: application/json
+
+{
+  "count": 3
 }
 
 ### ============================================================================
@@ -317,6 +327,63 @@ Authorization: Bearer {{token}}
 ### Verificar favoriteCount en listado de eventos
 GET {{baseUrl}}/api/events
 Authorization: Bearer {{token}}
+
+### ============================================================================
+### 🔄 CAMBIO DE ROL (ADMIN)
+### ============================================================================
+
+### Cambiar rol de usuario 3 a organizer
+PATCH {{baseUrl}}/api/users/3/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "organizer"
+}
+
+### Cambiar rol de usuario 3 a staff
+PATCH {{baseUrl}}/api/users/3/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "staff"
+}
+
+### Cambiar rol a valor inválido (debe fallar 400)
+PATCH {{baseUrl}}/api/users/3/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "superadmin"
+}
+
+### Cambiar rol de admin a sí mismo (debe fallar 403)
+PATCH {{baseUrl}}/api/users/1/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "organizer"
+}
+
+### Cambiar rol sin token (debe fallar 401)
+PATCH {{baseUrl}}/api/users/3/role
+Content-Type: application/json
+
+{
+  "role": "organizer"
+}
+
+### Cambiar rol de usuario inexistente (debe fallar 404)
+PATCH {{baseUrl}}/api/users/99999/role
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "organizer"
+}
 
 ### ============================================================================
 ### 🖼️ AVATAR - SUBIDA Y ELIMINACIÓN

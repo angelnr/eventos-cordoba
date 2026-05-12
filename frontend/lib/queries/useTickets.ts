@@ -85,10 +85,10 @@ export function useGenerateTicket(token: string | null) {
 
 export function useValidateTicket(token: string | null) {
   return useMutation({
-    mutationFn: (ticketToken: string) =>
+    mutationFn: ({ ticketToken, eventId }: { ticketToken: string; eventId: number }) =>
       apiFetch<{ success: boolean; action: string; data?: any; error?: string }>(`${API_PREFIX}/validate`, {
         method: 'POST',
-        body: JSON.stringify({ token: ticketToken }),
+        body: JSON.stringify({ token: ticketToken, eventId }),
         token: token || undefined,
       }),
   });

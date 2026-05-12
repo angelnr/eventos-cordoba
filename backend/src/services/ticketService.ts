@@ -79,7 +79,8 @@ export async function generateTicketForBooking(
 
 export async function validateTicket(
   token: string,
-  validatorId: number
+  validatorId: number,
+  eventId?: number
 ): Promise<{ action: string; ticket: any; user: any; event: any }> {
   if (!isValidUUID(token)) {
     throw Object.assign(new Error('Token no encontrado'), { statusCode: 404 });
@@ -151,7 +152,15 @@ export async function validateTicket(
         },
       });
 
-      if (!booking || booking.Event.status === 'CANCELLED' || booking.Event.status === 'FINISHED') {
+      if (!booking) {
+        throw Object.assign(new Error('Reserva no encontrada'), { statusCode: 404 });
+      }
+
+      if (eventId !== undefined && booking.eventId !== eventId) {
+        throw Object.assign(new Error('Este ticket no pertenece al evento seleccionado'), { statusCode: 403 });
+      }
+
+      if (booking.Event.status === 'CANCELLED' || booking.Event.status === 'FINISHED') {
         throw Object.assign(new Error('El evento asociado está cancelado o ha finalizado'), { statusCode: 422 });
       }
 
