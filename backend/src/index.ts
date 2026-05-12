@@ -24,6 +24,9 @@ import { startStatusTransitionJob } from './jobs/statusTransitionJob';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy for rate-limit behind Nginx
+app.set('trust proxy', 1);
+
 // Configuración CORS más permisiva
 app.use(helmet());
 app.use(cors({
