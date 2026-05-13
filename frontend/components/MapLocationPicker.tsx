@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getApiUrl } from '@/lib/api';
 
 const DEFAULT_CENTER: [number, number] = [37.8882, -4.7794];
 const DEFAULT_ZOOM = 13;
@@ -101,18 +100,20 @@ export default function MapLocationPicker({
   const doReverseGeocode = useCallback(async (lat: number, lng: number) => {
     setIsGeocoding(true);
     try {
-      const apiUrl = getApiUrl();
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const response = await fetch(`${apiUrl}/api/geocode/reverse`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ latitude: lat, longitude: lng }),
-      });
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`,
+        {
+          headers: { 'User-Agent': 'EventosCordoba/1.0' }
+        }
+      );
 
       if (!response.ok) {
+        throw new Error('Nominatim request failed');
+      }
+
+      const result = await response.json();
+
+      if (result.error) {
         onLocationSelect({
           location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
           latitude: lat,
@@ -128,21 +129,21 @@ export default function MapLocationPicker({
         return;
       }
 
-      const data = await response.json();
-      const result = data.data;
+      const address = result.address || {};
+      const city = address.city || address.town || address.village || address.hamlet || null;
 
       onLocationSelect({
-        location: result.formattedAddress || `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+        location: result.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
         latitude: lat,
         longitude: lng,
-        placeId: result.placeId,
-        formattedAddress: result.formattedAddress,
-        city: result.city,
-        country: result.country,
-        postalCode: result.postalCode,
-        locationMetadata: JSON.stringify(result.addressComponents || {}),
+        placeId: result.place_id ? String(result.place_id) : null,
+        formattedAddress: result.display_name || null,
+        city,
+        country: address.country || null,
+        postalCode: address.postcode || null,
+        locationMetadata: JSON.stringify(address),
       });
-      setInputValue(result.formattedAddress || '');
+      setInputValue(result.display_name || '');
     } catch {
       onLocationSelect({
         location: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,

@@ -26,7 +26,6 @@ Create a `.env` file in the project root with the following variables:
 | `JWT_EXPIRES_IN` | Tiempo de expiración del token | `15m` |
 | `NEXT_PUBLIC_API_URL` | URL del backend (para frontend) | `http://localhost:3001` |
 | `NEXT_PUBLIC_FRONTEND_URL` | URL del frontend | `http://localhost:3000` |
-| `GOOGLE_MAPS_SERVER_API_KEY` | API key de Google Maps (back-end) | `AIzaSyD...` |
 | `CLOUDFLARED_TOKEN` | Token del túnel Cloudflare | `eyJhIjoi...` |
 
 ### Installation

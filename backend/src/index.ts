@@ -16,7 +16,6 @@ import reviewsRoutes from './routes/reviews';
 import notificationsRoutes from './routes/notifications';
 import ticketsRoutes from './routes/tickets';
 import dashboardRoutes from './routes/dashboard';
-import geocodeRoutes from './routes/geocode';
 import { startReminderJob } from './jobs/reminderJob';
 import { startCleanupJob } from './jobs/cleanupJob';
 import { startStatusTransitionJob } from './jobs/statusTransitionJob';
@@ -68,7 +67,6 @@ app.use('/api/reviews', reviewsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/geocode', geocodeRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
@@ -80,8 +78,7 @@ console.log('  - /api/comments/*');
 console.log('  - /api/reviews/*');
 console.log('  - /api/notifications/*');
 console.log('  - /api/tickets/*');
-console.log('  - /api/dashboard/*');
-console.log('  - /api/geocode/*');
+  console.log('  - /api/dashboard/*');
 
 // Rutas existentes
 app.get('/api/test', (req: Request, res: Response) => {
