@@ -37,6 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      data-testid="button"
       className={buttonClasses}
       disabled={disabled || isLoading}
       {...props}

@@ -68,6 +68,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   return (
     <span
+      data-testid="favorite-button"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role="button"

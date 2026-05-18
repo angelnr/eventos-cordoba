@@ -27,6 +27,7 @@ export const Input: React.FC<InputProps> = ({
         </label>
       )}
       <input
+        data-testid="input"
         className={inputClasses}
         {...props}
       />

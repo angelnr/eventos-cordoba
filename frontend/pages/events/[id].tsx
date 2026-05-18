@@ -485,7 +485,7 @@ export default function EventDetail() {
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-4">
+              <h1 data-testid="event-detail-title" className="text-3xl font-bold text-gray-900 dark:text-gray-100 dark:text-gray-100 mb-4">
                 {event.title}
               </h1>
 
@@ -724,6 +724,7 @@ export default function EventDetail() {
                       </Button>
                     </Link>
                     <Button
+                      data-testid="cancel-booking-button"
                       fullWidth
                       variant="danger"
                       onClick={
@@ -742,6 +743,7 @@ export default function EventDetail() {
                 ) : canBook &&
                   !isPastEvent ? (
                   <Button
+                    data-testid="book-button"
                     fullWidth
                     onClick={
                       handleBooking

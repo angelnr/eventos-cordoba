@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_URL = process.env.E2E_API_URL || 'http://backend:3001';
+const API_URL = process.env.E2E_API_URL || 'http://localhost:3001';
 const ADMIN = { email: 'admin@example.com', password: 'admin123' };
 let adminToken: string;
 

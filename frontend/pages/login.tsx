@@ -70,9 +70,10 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form data-testid="login-form" className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <Input
+              data-testid="login-email"
               label="Email"
               type="email"
               value={email}
@@ -83,6 +84,7 @@ export default function LoginPage() {
             />
 
             <Input
+              data-testid="login-password"
               label="Contraseña"
               type="password"
               value={password}
@@ -101,6 +103,7 @@ export default function LoginPage() {
 
           <div>
             <Button
+              data-testid="login-submit"
               type="submit"
               fullWidth
               size="lg"

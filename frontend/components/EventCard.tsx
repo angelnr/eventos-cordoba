@@ -33,7 +33,7 @@ function formatPrice(price?: number | string | null): string {
 
 export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
   return (
-    <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/25 transition-shadow">
+    <div data-testid="event-card" className="relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/25 transition-shadow">
       <Link href={`/events/${event.id}`}>
         <div className="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
           {event.status !== 'SCHEDULED' && (
@@ -69,12 +69,12 @@ export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
             ) : (
               <span className="text-xs text-gray-400 dark:text-gray-500">Sin categoría</span>
             )}
-            <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span data-testid="event-spots" className="text-sm text-gray-500 dark:text-gray-400">
               {Math.max(0, event.availableSpots || 0)} plazas libres
             </span>
           </div>
 
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
+          <h3 data-testid="event-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
             {event.title}
           </h3>
 
@@ -93,7 +93,7 @@ export default function EventCard({ event, onFavoriteToggle }: EventCardProps) {
             <span className="text-gray-500 dark:text-gray-400">
               Por {event.organizer?.name || 'Organizador desconocido'}
             </span>
-            <span className="font-semibold text-green-600 dark:text-green-400">
+            <span data-testid="event-price" className="font-semibold text-green-600 dark:text-green-400">
               {formatPrice(event.price)}
             </span>
           </div>
