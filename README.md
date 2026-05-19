@@ -1,11 +1,12 @@
 # Fullstack App with Next.js, Prisma, Tailwind, TypeScript, JWT, PostgreSQL, Cloudflare, and Nginx
 
-This is a fullstack application built with Next.js for the frontend, Express.js with Prisma for the backend, using PostgreSQL as the database, JWT for authentication, Tailwind CSS for styling, and containerized with Docker. Nginx acts as a reverse proxy, and Cloudflare Tunnel provides secure tunneling.
+This is a fullstack application for managing cultural events. Built with Next.js for the frontend and Express.js with Prisma for the backend, it uses PostgreSQL, JWT authentication, and Tailwind CSS. Features include event CRUD, bookings with Stripe payments, favorites, email verification, ticket validation for staff, and role-based access (user, organizer, staff, admin). Containerized with Docker, Nginx as reverse proxy, and Cloudflare Tunnel.
 
 ## Tech Stack
 
 - **Frontend**: Next.js 16, React 18, TypeScript, Tailwind CSS
 - **Backend**: Express.js, Prisma ORM, PostgreSQL 15, JWT Authentication
+- **Authentication & Roles**: JWT, roles (`user`, `organizer`, `staff`, `admin`)
 - **Infrastructure**: Docker Compose (5 servicios), Nginx, Cloudflare Tunnel
 
 ## Getting Started
@@ -27,6 +28,10 @@ Create a `.env` file in the project root with the following variables:
 | `NEXT_PUBLIC_API_URL` | URL del backend (para frontend) | `http://localhost:3001` |
 | `NEXT_PUBLIC_FRONTEND_URL` | URL del frontend | `http://localhost:3000` |
 | `CLOUDFLARED_TOKEN` | Token del túnel Cloudflare | `eyJhIjoi...` |
+| `SMTP_HOST` | Servidor SMTP para envío de correos | `smtp.gmail.com` |
+| `SMTP_PORT` | Puerto del servidor SMTP | `587` |
+| `SMTP_USER` | Usuario de autenticación SMTP | `tu@email.com` |
+| `SMTP_PASS` | Contraseña o app password SMTP | `tu_app_password` |
 
 ### Installation
 
@@ -55,7 +60,7 @@ Create a `.env` file in the project root with the following variables:
 
 5. Run with Docker Compose:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 The application will be available at:
