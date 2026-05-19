@@ -30,6 +30,7 @@ const mockStatusLogFindMany = jest.fn();
 const mockStatusLogCount = jest.fn();
 const mockStatusLogCreate = jest.fn();
 
+const mockPlaceUpsert = jest.fn();
 const mockSaveImage = jest.fn();
 const mockDeleteImage = jest.fn();
 const mockIsLocalImage = jest.fn();
@@ -41,6 +42,7 @@ jest.mock('@prisma/client', () => {
   return {
     ...actual,
     PrismaClient: jest.fn(() => ({
+      place: { upsert: mockPlaceUpsert },
       event: {
         findUnique: mockEventFindUnique,
         findMany: mockEventFindMany,
@@ -154,8 +156,7 @@ function tokenFor(role: string = 'user', id: number = 20): string {
 const sampleEvent = {
   id: 1, slug: 'test-event', title: 'Test Event', description: 'Desc',
   date: new Date(Date.now() + 86400000).toISOString(), location: 'Córdoba',
-  latitude: null, longitude: null, placeId: null, formattedAddress: null,
-  city: null, country: null, postalCode: null,
+  locationId: null,
   capacity: 100, status: 'SCHEDULED', imageUrl: null, price: 0,
   organizerId: 20, categoryId: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   averageRating: 0, reviewCount: 0, currentBookings: 0,
@@ -166,11 +167,12 @@ const sampleEvent = {
 beforeEach(() => {
   [mockEventFindUnique, mockEventFindMany, mockEventCount, mockEventAggregate, mockEventGroupBy,
    mockEventCreate, mockEventUpdate, mockEventDelete,
-   mockCategoryFindMany, mockCategoryFindUnique,
-   mockFavoriteFindMany, mockFavoriteFindUnique, mockFavoriteCount, mockFavoriteGroupBy, mockFavoriteDeleteMany,
-   mockCommentCount, mockBookingFindMany, mockQueryRaw,
-   mockStatusLogFindMany, mockStatusLogCount, mockStatusLogCreate,
-   mockSaveImage, mockDeleteImage, mockIsLocalImage, mockCreateEventNotifs, mockInvalidateDash,
+    mockCategoryFindMany, mockCategoryFindUnique,
+    mockFavoriteFindMany, mockFavoriteFindUnique, mockFavoriteCount, mockFavoriteGroupBy, mockFavoriteDeleteMany,
+    mockCommentCount, mockBookingFindMany, mockQueryRaw,
+    mockStatusLogFindMany, mockStatusLogCount, mockStatusLogCreate,
+    mockPlaceUpsert,
+    mockSaveImage, mockDeleteImage, mockIsLocalImage, mockCreateEventNotifs, mockInvalidateDash,
   ].forEach(m => {
     m.mockReset();
     if (m === mockCreateEventNotifs) m.mockResolvedValue({});

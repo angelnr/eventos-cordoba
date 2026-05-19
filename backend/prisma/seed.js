@@ -145,13 +145,25 @@ async function main() {
   const events = [];
 
   for (const e of eventsData) {
+    const place = await prisma.place.upsert({
+      where: { id: e.id },
+      update: {},
+      create: {
+        latitude: e.latitude,
+        longitude: e.longitude,
+        formattedAddress: e.location,
+      },
+    });
+
+    const { latitude, longitude, ...eventRest } = e;
     const event = await prisma.event.upsert({
       where: { id: e.id },
       update: {},
       create: {
-        ...e,
+        ...eventRest,
         slug: slugify(e.title),
         status: 'SCHEDULED',
+        locationId: place.id,
       },
     });
 

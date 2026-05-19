@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
-import { PrismaClient, EventStatus } from '@prisma/client';
+import { PrismaClient, Prisma, EventStatus } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { upload } from '../middleware/upload';
 import { saveImage, deleteImage, isLocalImage } from '../services/storageService';
@@ -116,11 +116,24 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
         where,
         select: {
           id: true, slug: true, title: true, description: true,
-          date: true, location: true, latitude: true, longitude: true,
-          placeId: true, formattedAddress: true, city: true, country: true, postalCode: true,
+          date: true, location: true,
           capacity: true, status: true, imageUrl: true, price: true,
           organizerId: true, categoryId: true, createdAt: true, updatedAt: true,
           averageRating: true, reviewCount: true, currentBookings: true,
+          locationId: true,
+          place: {
+            select: {
+              id: true,
+              externalPlaceId: true,
+              formattedAddress: true,
+              city: true,
+              country: true,
+              postalCode: true,
+              locationMetadata: true,
+              latitude: true,
+              longitude: true,
+            }
+          },
           organizer: { select: { id: true, name: true, email: true } },
           category: { select: { id: true, name: true, color: true } }
         },
@@ -596,7 +609,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response) => {
 // POST /api/events - Crear evento (requiere autenticación y rol organizador)
 router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: Request, res: Response) => {
   try {
-    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, latitude, longitude, placeId, formattedAddress, city, country, postalCode, locationMetadata } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, placeId, formattedAddress, city, country, postalCode, locationMetadata, latitude, longitude } = req.body;
 
     // Validaciones
     if (!title || !date || !location || !categoryId) {
@@ -675,20 +688,33 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
       }
     }
 
+    // Crear o reutilizar Place si se proporciona placeId
+    let locationId: number | undefined = undefined;
+    if (placeId) {
+      const place = await prisma.place.upsert({
+        where: { externalPlaceId: placeId },
+        update: {},
+        create: {
+          externalPlaceId: placeId,
+          formattedAddress: formattedAddress || null,
+          city: city || null,
+          country: country || null,
+          postalCode: postalCode || null,
+          locationMetadata: locationMetadata || null,
+          latitude: parsedLat !== null ? parsedLat : undefined,
+          longitude: parsedLng !== null ? parsedLng : undefined,
+        },
+      });
+      locationId = place.id;
+    }
+
     const event = await prisma.event.create({
       data: {
         title: safeTitle,
         description: safeDescription,
         date: new Date(date),
         location: safeLocation,
-        latitude: parsedLat !== null ? parsedLat : undefined,
-        longitude: parsedLng !== null ? parsedLng : undefined,
-        placeId: placeId || undefined,
-        formattedAddress: formattedAddress || undefined,
-        city: city || undefined,
-        country: country || undefined,
-        postalCode: postalCode || undefined,
-        locationMetadata: locationMetadata || undefined,
+        locationId: locationId || null,
         capacity: capacity ? parseInt(capacity) : 100,
         price: price ? parseFloat(price) : 0,
         categoryId: parseInt(categoryId),
@@ -701,6 +727,19 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
         },
         category: {
           select: { id: true, name: true, color: true }
+        },
+        place: {
+          select: {
+            id: true,
+            externalPlaceId: true,
+            formattedAddress: true,
+            city: true,
+            country: true,
+            postalCode: true,
+            locationMetadata: true,
+            latitude: true,
+            longitude: true,
+          }
         }
       }
     });
@@ -725,7 +764,7 @@ router.post('/', requireAuth, requireOrganizer, conditionalUpload, async (req: R
 router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status, latitude, longitude, placeId, formattedAddress, city, country, postalCode, locationMetadata } = req.body;
+    const { title, description, date, location, capacity, price, categoryId, imageUrl: externalImageUrl, status, placeId, formattedAddress, city, country, postalCode, locationMetadata, latitude, longitude } = req.body;
 
     if (status) {
       return res.status(400).json({
@@ -831,14 +870,29 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
     if (parsedCapacity !== undefined && !Number.isNaN(parsedCapacity)) updateData.capacity = parsedCapacity;
     if (parsedPrice !== undefined && !Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
     if (parsedCategoryId !== undefined && !Number.isNaN(parsedCategoryId)) updateData.categoryId = parsedCategoryId;
-    if (parsedLat !== null) updateData.latitude = parsedLat;
-    if (parsedLng !== null) updateData.longitude = parsedLng;
-    if (placeId !== undefined) updateData.placeId = placeId || null;
-    if (formattedAddress !== undefined) updateData.formattedAddress = formattedAddress || null;
-    if (city !== undefined) updateData.city = city || null;
-    if (country !== undefined) updateData.country = country || null;
-    if (postalCode !== undefined) updateData.postalCode = postalCode || null;
-    if (locationMetadata !== undefined) updateData.locationMetadata = locationMetadata || null;
+
+    // Manejo de Place: upsert si placeId presente, eliminar referencia si placeId es null
+    if (placeId !== undefined) {
+      if (placeId === null || placeId === '') {
+        updateData.locationId = null;
+      } else {
+        const place = await prisma.place.upsert({
+          where: { externalPlaceId: placeId },
+          update: {},
+          create: {
+            externalPlaceId: placeId,
+            formattedAddress: formattedAddress || null,
+            city: city || null,
+            country: country || null,
+            postalCode: postalCode || null,
+            locationMetadata: locationMetadata || null,
+            latitude: parsedLat !== null ? parsedLat : undefined,
+            longitude: parsedLng !== null ? parsedLng : undefined,
+          },
+        });
+        updateData.locationId = place.id;
+      }
+    }
 
     // Manejo de imagen
     if (req.file) {
@@ -882,6 +936,19 @@ router.put('/:id', requireAuth, conditionalUpload, async (req: Request, res: Res
         },
         category: {
           select: { id: true, name: true, color: true }
+        },
+        place: {
+          select: {
+            id: true,
+            externalPlaceId: true,
+            formattedAddress: true,
+            city: true,
+            country: true,
+            postalCode: true,
+            locationMetadata: true,
+            latitude: true,
+            longitude: true,
+          }
         }
       }
     });

@@ -8,10 +8,24 @@ const MAX_LIMIT = 50;
 
 const EVENT_SELECT: any = {
   id: true, slug: true, title: true, description: true,
-  date: true, location: true, latitude: true, longitude: true,
+  date: true, location: true,
   capacity: true, status: true, imageUrl: true, price: true,
   organizerId: true, categoryId: true, createdAt: true, updatedAt: true,
   averageRating: true, reviewCount: true, currentBookings: true,
+  locationId: true,
+  place: {
+    select: {
+      id: true,
+      externalPlaceId: true,
+      formattedAddress: true,
+      city: true,
+      country: true,
+      postalCode: true,
+      locationMetadata: true,
+      latitude: true,
+      longitude: true,
+    }
+  },
   organizer: { select: { id: true, name: true, email: true } },
   category: { select: { id: true, name: true, color: true } },
 };

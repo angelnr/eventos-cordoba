@@ -59,6 +59,25 @@ model Category {
   @@map("categories")
 }
 
+model Place {
+  id               Int      @id @default(autoincrement())
+  externalPlaceId  String?  @unique
+  formattedAddress String?
+  city             String?
+  country          String?
+  postalCode       String?
+  locationMetadata String?
+  latitude         Decimal? @db.Decimal(10, 8)
+  longitude        Decimal? @db.Decimal(11, 8)
+  createdAt        DateTime @default(now())
+
+  events Event[]
+
+  @@index([city])
+  @@index([latitude, longitude])
+  @@map("places")
+}
+
 model Event {
   id              Int              @id @default(autoincrement())
   slug            String?          @unique
@@ -66,20 +85,13 @@ model Event {
   description     String?
   date            DateTime
   location        String
-  latitude        Decimal?       @db.Decimal(10, 8)
-  longitude       Decimal?       @db.Decimal(11, 8)
-  placeId         String?
-  formattedAddress String?
-  city            String?
-  country         String?
-  postalCode      String?
-  locationMetadata String?
   capacity        Int
   status          EventStatus      @default(SCHEDULED)
   imageUrl        String?
   price           Float            @default(0)
   organizerId     Int
   categoryId      Int
+  locationId      Int?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   averageRating   Float            @default(0)
@@ -89,6 +101,7 @@ model Event {
   comments        Comment[]
   category        Category         @relation(fields: [categoryId], references: [id])
   organizer       User             @relation(fields: [organizerId], references: [id])
+  place           Place?           @relation(fields: [locationId], references: [id])
   favorites       Favorite[]
   reviews         Review[]
   ticketTypes     TicketType[]
@@ -104,8 +117,6 @@ model Event {
   @@index([categoryId, status])
   @@index([status, currentBookings, capacity])
   @@index([organizerId, status, date])
-  @@index([latitude, longitude])
-  @@index([city])
   @@map("events")
 }
 

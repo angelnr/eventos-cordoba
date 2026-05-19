@@ -28,10 +28,7 @@ Create a `.env` file in the project root with the following variables:
 | `NEXT_PUBLIC_API_URL` | URL del backend (para frontend) | `http://localhost:3001` |
 | `NEXT_PUBLIC_FRONTEND_URL` | URL del frontend | `http://localhost:3000` |
 | `CLOUDFLARED_TOKEN` | Token del túnel Cloudflare | `eyJhIjoi...` |
-| `SMTP_HOST` | Servidor SMTP para envío de correos | `smtp.gmail.com` |
-| `SMTP_PORT` | Puerto del servidor SMTP | `587` |
-| `SMTP_USER` | Usuario de autenticación SMTP | `tu@email.com` |
-| `SMTP_PASS` | Contraseña o app password SMTP | `tu_app_password` |
+| `RESEND_API_KEY` | API key de Resend para envío de correos (verificación email) | `re_xxxxxxxxxxxxxxxxxxxx` |
 
 ### Installation
 

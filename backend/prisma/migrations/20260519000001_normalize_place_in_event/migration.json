@@ -1,0 +1,29 @@
+{
+  "version": "5.2",
+  "steps": [
+    {
+      "tag": "CreateTable",
+      "table": "places"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "places_externalPlaceId_key"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "places_city_idx"
+    },
+    {
+      "tag": "CreateIndex",
+      "index": "places_latitude_longitude_idx"
+    },
+    {
+      "tag": "AlterTable",
+      "table": "events"
+    },
+    {
+      "tag": "AddForeignKey",
+      "constraint": "events_locationId_fkey"
+    }
+  ]
+}
