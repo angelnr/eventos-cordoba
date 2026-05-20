@@ -126,9 +126,6 @@ docker compose restart nginx
 
 If you're using the `eventoscordoba.xyz` domain with Cloudflare Tunnel:
 
-If you're using the `eventoscordoba.xyz` domain with Cloudflare Tunnel:
-
-```bash
 # Production environment variables
 NEXT_PUBLIC_API_URL=https://api.eventoscordoba.xyz
 NEXT_PUBLIC_FRONTEND_URL=https://eventoscordoba.xyz
