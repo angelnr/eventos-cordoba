@@ -173,9 +173,13 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
     const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
     const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
-    sendVerificationEmail(email, verificationUrl).catch(err => {
+    let emailSent = false;
+    try {
+      await sendVerificationEmail(email, verificationUrl);
+      emailSent = true;
+    } catch (err) {
       console.error('Error enviando email de verificación:', err);
-    });
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -189,7 +193,8 @@ router.post('/register', registerLimiter, async (req: Request, res: Response) =>
       data: {
         user,
         token
-      }
+      },
+      emailSent
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -334,9 +339,11 @@ router.post('/resend-verification', async (req: Request, res: Response) => {
     const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000';
     const verificationUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
-    sendVerificationEmail(email, verificationUrl).catch(err => {
+    try {
+      await sendVerificationEmail(email, verificationUrl);
+    } catch (err) {
       console.error('Error reenviando email de verificación:', err);
-    });
+    }
 
     res.json({ success: true, message: 'Si el email existe, recibirás un correo' });
   } catch (error) {

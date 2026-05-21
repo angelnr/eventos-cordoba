@@ -13,6 +13,9 @@ services:
     build: ./backend
     ports:
       - "3001:3001"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma

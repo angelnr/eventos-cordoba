@@ -159,17 +159,19 @@ function TabContent({
 }
 
 export default function MyEventsPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [activeTab, setActiveTab] = useState(TAB_UPCOMING);
   const { data: summaryResponse, isLoading: summaryLoading } = useMyEventsSummary(token);
 
   const summary = summaryResponse?.data;
 
+  const canOrganize = user?.role === 'organizer' || user?.role === 'admin';
+
   const tabs = [
     { id: TAB_UPCOMING, label: 'Próximos', count: summary?.upcoming?.total },
     { id: TAB_PAST, label: 'Pasados', count: summary?.past?.total },
     { id: TAB_FAVORITES, label: 'Favoritos', count: summary?.favorites?.total },
-    { id: TAB_ORGANIZED, label: 'Organizados', count: summary?.organized?.total },
+    ...(canOrganize ? [{ id: TAB_ORGANIZED, label: 'Organizados', count: summary?.organized?.total }] : []),
   ];
 
   const summaryEvents: Record<string, MyEventItem[]> = {

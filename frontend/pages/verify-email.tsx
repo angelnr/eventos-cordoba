@@ -68,10 +68,10 @@ export default function VerifyEmailPage() {
             </div>
             <p className="text-green-600 dark:text-green-400 mb-6">{message}</p>
             <Link
-              href="/login"
+              href="/"
               className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Ir a iniciar sesión
+              Ir al inicio
             </Link>
           </div>
         )}

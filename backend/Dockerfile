@@ -24,7 +24,7 @@ COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 # Crear directorio de uploads con permisos adecuados
-RUN mkdir -p /app/uploads/events && chown -R node:node /app/uploads
+RUN mkdir -p /app/uploads/events /app/uploads/avatars && chown -R node:node /app/uploads
 
 # Exponer puerto
 EXPOSE 3001

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { showSuccess } from './notifications';
+import { showSuccess, showWarning } from './notifications';
 
 interface User {
   id: number;
@@ -216,7 +216,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(newToken);
         setUser(userData);
         localStorage.setItem('auth_token', newToken);
-        showSuccess('¡Cuenta creada correctamente!');
+        if (data.emailSent === false) {
+          showWarning('Cuenta creada pero no pudimos enviar el email de verificación. Puedes reenviarlo desde tu perfil.');
+        } else {
+          showSuccess('¡Cuenta creada correctamente! Revisa tu email para verificar tu cuenta.');
+        }
       } else {
         throw new Error(data.error || 'Error al registrarse');
       }

@@ -23,22 +23,31 @@ export async function sendVerificationEmail(to: string, verificationUrl: string)
     return;
   }
 
-  await resend.emails.send({
-    from: FROM_EMAIL,
-    to,
-    subject: 'Verifica tu cuenta en Eventos Córdoba',
-    html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>¡Bienvenido a Eventos Córdoba, tu plataforma de confianza!</h2>
-        <p>Confirma tu dirección de email haciendo clic en el siguiente enlace y empieza a disfrutar de nuestros servicios:</p>
-        <a href="${verificationUrl}"
-           style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
-          Verificar mi email
-        </a>
-        <p style="color: #64748b; font-size: 14px;">
-          Este enlace expira en 24 horas. Si no creaste una cuenta, ignora este correo.
-        </p>
-      </div>
-    `,
-  });
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: 'Verifica tu cuenta en Eventos Córdoba',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>¡Bienvenido a Eventos Córdoba, tu plataforma de confianza!</h2>
+          <p>Confirma tu dirección de email haciendo clic en el siguiente enlace y empieza a disfrutar de nuestros servicios:</p>
+          <a href="${verificationUrl}"
+             style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
+            Verificar mi email
+          </a>
+          <p style="color: #64748b; font-size: 14px;">
+            Este enlace expira en 24 horas. Si no creaste una cuenta, ignora este correo.
+          </p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+    console.log('[EMAIL] Verificación enviada a:', to, 'ID:', result.data.id);
+  } catch (error: any) {
+    console.error('[EMAIL] Error enviando verificación a', to, ':', error?.message || error, '(statusCode:', error?.statusCode || 'N/A', ')');
+    throw error;
+  }
 }
