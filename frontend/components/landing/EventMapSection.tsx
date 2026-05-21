@@ -15,7 +15,7 @@ export default function EventMapSection() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Explora eventos en Córdoba
           </h2>
-          <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-3 text-lg text-gray-600 dark:text-gray-100">
             Descubre lo que está pasando cerca de ti
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function EventMapSection() {
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   Eventos cerca de ti
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-100">
                   Todos los eventos ubicados en el mapa de Córdoba
                 </p>
               </div>
