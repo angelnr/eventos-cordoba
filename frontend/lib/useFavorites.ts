@@ -18,14 +18,14 @@ export function useFavorites() {
     }
 
     if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
     }
 
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return 'https://api.eventoscordoba.xyz';
+    return 'https://eventoscordoba.xyz';
   };
 
   const toggleFavorite = useCallback(async (eventId: number, wasFavorited: boolean): Promise<boolean> => {

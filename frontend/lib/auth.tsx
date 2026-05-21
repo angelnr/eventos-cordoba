@@ -47,33 +47,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Determinar la URL del API según el entorno
   const getApiUrl = () => {
-    // Solo ejecutar en el cliente
     if (typeof window === 'undefined') {
-      return 'http://localhost:3001'; // Fallback para SSR
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     }
 
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     const isProduction = hostname === 'eventoscordoba.xyz';
 
-    // En desarrollo (localhost)
     if (isLocalhost) {
-      // Priorizar localhost:3001 para desarrollo
       return 'http://localhost:3001';
     }
 
-    // En producción (eventoscordoba.xyz) - usar subdominio API
     if (isProduction) {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://api.eventoscordoba.xyz';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
     }
 
-    // En producción - usar la URL configurada
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    // Fallback: asumir que el backend está en el subdominio api
-    return 'https://api.eventoscordoba.xyz';
+    return 'https://eventoscordoba.xyz';
   };
 
   // Verificar token al cargar la aplicación

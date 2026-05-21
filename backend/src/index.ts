@@ -31,8 +31,7 @@ app.use(helmet());
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://eventoscordoba.xyz',
-    'https://api.eventoscordoba.xyz'
+    'https://eventoscordoba.xyz'
   ],
   credentials: true
 }));
