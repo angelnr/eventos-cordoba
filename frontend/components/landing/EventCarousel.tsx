@@ -25,7 +25,7 @@ export default function EventCarousel() {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             Para todo tipo de evento
           </h2>
-          <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-3 text-lg text-gray-600 dark:text-gray-100">
             Una plataforma flexible que se adapta a cualquier ocasión
           </p>
         </div>
