@@ -291,7 +291,7 @@ export default function EditProfile() {
                     value={formData.location}
                     onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Ej: Córdoba, Argentina"
+                    placeholder="Ej: Córdoba, España"
                   />
                 </div>
 
