@@ -1,0 +1,54 @@
+@startuml
+!theme plain
+skinparam handwritten false
+skinparam packageStyle folder
+skinparam linetype ortho
+
+title Diagrama de Paquetes — backend/src
+
+package "backend/src" {
+    package "routes" {
+        class "auth.ts"
+        class "events.ts"
+    }
+    package "services" {
+        class "ticketService.ts"
+        class "emailService.ts"
+    }
+    package "middleware" {
+        class "auth.ts"
+    }
+    package "jobs" {
+        class "reminderJob.ts"
+    }
+    package "types" {
+        class "express.d.ts"
+    }
+    package "__tests__" {
+        class "auth.test.ts"
+    }
+}
+
+package "prisma" <<framework>> {
+}
+
+' Dependencias internas
+routes ..> middleware
+routes ..> services
+
+middleware ..> types : <<import>>
+
+jobs ..> services
+jobs ..> prisma
+
+services ..> prisma
+
+' Dependencias de tests
+__tests__ ..> routes
+__tests__ ..> services
+__tests__ ..> middleware
+
+' Dependencia directa de rutas a prisma
+routes ..> prisma
+
+@enduml

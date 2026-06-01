@@ -1,0 +1,137 @@
+@startuml
+!theme plain
+skinparam handwritten false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+title Diagrama de clases general — Vista simplificada
+
+' ============================================================
+' CAPA SUPERIOR — Frontend
+' ============================================================
+package "Frontend" {
+  class App <<page>>
+  class Layout <<component>>
+  class EventsPage <<page>>
+  class EventDetailPage <<page>>
+  class DashboardPage <<page>>
+  class AuthGuard <<component>>
+  class RoleGuard <<component>>
+
+  class useAuth <<hook>>
+  class useEvents <<hook>>
+  class useDashboardMetrics <<hook>>
+
+  class AuthProvider <<provider>>
+  class ThemeProvider <<provider>>
+}
+
+' ============================================================
+' CAPA MEDIA — API REST
+' ============================================================
+interface "API REST" as APIREST <<interface>>
+
+' ============================================================
+' CAPA INFERIOR — Backend
+' ============================================================
+package "Backend" {
+  class EventsRouter <<router>>
+  class AuthRouter <<router>>
+  class BookingsRouter <<router>>
+
+  class AuthMiddleware <<middleware>>
+  class UploadMiddleware <<middleware>>
+
+  class EventStatusService <<service>>
+  class TicketService <<service>>
+  class DashboardService <<service>>
+  class NotificationService <<service>>
+
+  class User <<entity>>
+  class Event <<entity>>
+  class Booking <<entity>>
+  class Ticket <<entity>>
+  class Notification <<entity>>
+  class Category <<entity>>
+  class Review <<entity>>
+  class Comment <<entity>>
+  class Favorite <<entity>>
+  class TicketType <<entity>>
+  class Payment <<entity>>
+}
+
+' ------------------------------------------------------------
+' Dependencias Frontend
+' ------------------------------------------------------------
+App --> AuthProvider
+App --> ThemeProvider
+App --> Layout
+Layout --> EventsPage
+Layout --> EventDetailPage
+Layout --> DashboardPage
+
+EventsPage --> useEvents
+EventDetailPage --> useEvents
+DashboardPage --> useDashboardMetrics
+AuthGuard --> useAuth
+RoleGuard --> useAuth
+
+useEvents --> APIREST
+useDashboardMetrics --> APIREST
+useAuth --> APIREST
+
+' ------------------------------------------------------------
+' Dependencias API REST → Backend
+' ------------------------------------------------------------
+APIREST ..> EventsRouter : <<use>>
+APIREST ..> AuthRouter : <<use>>
+APIREST ..> BookingsRouter : <<use>>
+
+' ------------------------------------------------------------
+' Dependencias Routers
+' ------------------------------------------------------------
+EventsRouter --> AuthMiddleware
+EventsRouter --> UploadMiddleware
+EventsRouter --> EventStatusService
+BookingsRouter --> AuthMiddleware
+BookingsRouter --> TicketService
+BookingsRouter --> NotificationService
+AuthRouter --> NotificationService
+
+' ------------------------------------------------------------
+' Asociaciones Servicios → Entidades
+' ------------------------------------------------------------
+EventStatusService --> Event
+TicketService --> Ticket
+TicketService --> Booking
+DashboardService --> Event
+DashboardService --> Booking
+DashboardService --> Ticket
+NotificationService --> User
+NotificationService --> Notification
+NotificationService --> Event
+
+' ------------------------------------------------------------
+' Relaciones entre Entidades (Prisma)
+' ------------------------------------------------------------
+User "1" --> "0..*" Event : organizedEvents
+User "1" --> "0..*" Booking
+User "1" --> "0..*" Review
+User "1" --> "0..*" Comment
+User "1" --> "0..*" Notification
+
+Event "1" --> "0..*" Booking
+Event "1" --> "0..*" Review
+Event "1" --> "0..*" Comment
+Event "1" --> "0..*" Notification
+Event "1" --> "0..*" TicketType
+Event "*" --> "1" Category
+
+Booking "1" --> "0..1" Ticket
+Booking "0..1" --> "0..1" Payment
+
+User "1" --> "0..*" Favorite
+Event "1" --> "0..*" Favorite
+
+@enduml

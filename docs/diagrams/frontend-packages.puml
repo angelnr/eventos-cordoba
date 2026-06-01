@@ -1,0 +1,59 @@
+@startuml
+!theme plain
+skinparam handwritten false
+skinparam packageStyle folder
+skinparam linetype ortho
+
+title Diagrama de Paquetes — frontend
+
+package "frontend" {
+
+    package "pages" {
+        class "login.tsx"
+        class "events.tsx"
+    }
+
+    package "components" {
+        package "ui" {
+            class "Button.tsx"
+            class "Input.tsx"
+        }
+        package "filters" {
+            class "FilterBar.tsx"
+        }
+        package "dashboard" {
+            class "MetricsGrid.tsx"
+        }
+        package "landing" {
+            class "Hero.tsx"
+        }
+        package "notifications" {
+            class "NotificationBell.tsx"
+        }
+    }
+
+    package "lib" {
+        package "queries" {
+            class "useEvents.ts"
+        }
+        class "api.ts"
+    }
+
+    package "e2e" {
+        class "events-flow.spec.ts"
+    }
+}
+
+' Dependencias internas
+pages ..> components
+pages ..> lib
+
+components ..> lib
+
+' Los hooks de queries consumen el cliente API
+queries ..> api
+
+' Tests E2E navegan por las páginas
+e2e ..> pages
+
+@enduml

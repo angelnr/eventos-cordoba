@@ -1,0 +1,45 @@
+@startuml
+allow_mixing
+!theme plain
+skinparam handwritten false
+skinparam packageStyle folder
+skinparam linetype ortho
+
+title Diagrama de paquetes global — Interconexión frontend / backend
+
+package "frontend" {
+    package "pages" {
+        class "events.tsx"
+    }
+    package "lib" {
+        class "api.ts"
+    }
+    package "components"
+}
+
+package "backend/src" {
+    package "routes" {
+        class "events.ts"
+    }
+    package "middleware" {
+        class "auth.ts"
+    }
+    package "services" {
+        class "ticketService.ts"
+    }
+}
+
+interface "API REST" as APIREST <<interface>>
+
+' Relación de provisión (backend expone la API)
+backend.src.routes -- APIREST : <<provide>>
+
+' Relación de consumo (frontend usa la API)
+frontend.lib ..> APIREST : <<use>>
+
+' Dependencias internas (contexto)
+frontend.pages ..> frontend.lib : <<use>>
+frontend.pages ..> frontend.components : <<use>>
+backend.src.routes ..> backend.src.middleware : <<import>>
+backend.src.routes ..> backend.src.services : <<use>>
+@enduml
