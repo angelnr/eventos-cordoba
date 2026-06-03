@@ -1,0 +1,60 @@
+@startuml Vista_Global
+title Vista Global - Arquitectura de red
+
+actor "Usuario Final" as User
+actor "Administrador" as Admin
+
+cloud "Internet" as Internet
+cloud "Internet" as Internet2
+cloud "Cloudflare Edge\n(DNS + TLS)" as CF
+cloud "ZeroTier Cloud\n(VPN Overlay)" as ZT
+
+node "<<device>> Home-Server" as HS {
+    node "<<execution environment>> Docker Engine" as Docker {
+        node "<<Docker>> Cloudflared Tunnel" as Cfd
+        node "<<Docker>> Nginx Reverse Proxy\n:80" as Nginx
+        node "<<Docker>> Next.js Frontend\n:3000" as Frontend
+        node "<<Docker>> Express Backend\n:3001" as Backend
+        database "<<Docker>> PostgreSQL 15\n:5432" as Postgres
+    }
+}
+
+User -- Internet
+Internet -- CF
+CF -- HS
+
+Admin -- Internet2
+Internet2 -- ZT
+ZT -- HS
+@enduml
+
+@startuml Vista_Interna
+title Vista Interna - Topología Docker
+
+node "<<execution environment>> Docker Engine" as Docker {
+    node "<<Docker>> Cloudflared Tunnel" as Cfd
+
+    node "<<Docker>> Nginx Reverse Proxy\n:80" as Nginx
+
+    node "<<Docker>> Next.js Frontend\n:3000" as Frontend {
+        artifact "<<artifact>> Website"
+    }
+
+    node "<<Docker>> Express Backend\n:3001" as Backend {
+        artifact "<<artifact>> API REST"
+        artifact "<<artifact>> uploads_data"
+    }
+
+    database "<<Docker>> PostgreSQL 15\n:5432" as Postgres
+}
+
+Cfd -- Nginx : HTTP 80\n(host network)
+Nginx -- Frontend : HTTP 3000\n(app-network)
+Nginx -- Backend : HTTP 3001\n(app-network)
+Nginx -- Backend : volumen compartido\nuploads_data
+Backend -- Postgres : TCP 5432\n(app-network)
+
+Nginx ..> Frontend : depende
+Nginx ..> Backend : depende
+Backend ..> Postgres : depende
+@enduml

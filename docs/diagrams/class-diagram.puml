@@ -1,137 +1,167 @@
-@startuml
-!theme plain
-skinparam handwritten false
+@startuml class-diagram
+
+title Diagrama de Entidades - Notación Crow's Foot
+
 skinparam linetype ortho
-skinparam packageStyle rectangle
-skinparam classAttributeIconSize 0
+left to right direction
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+hide circle
+hide empty methods
+hide empty fields
 
-title Diagrama de clases general — Vista simplificada
+' === ENTIDADES PRINCIPALES ===
 
-' ============================================================
-' CAPA SUPERIOR — Frontend
-' ============================================================
-package "Frontend" {
-  class App <<page>>
-  class Layout <<component>>
-  class EventsPage <<page>>
-  class EventDetailPage <<page>>
-  class DashboardPage <<page>>
-  class AuthGuard <<component>>
-  class RoleGuard <<component>>
-
-  class useAuth <<hook>>
-  class useEvents <<hook>>
-  class useDashboardMetrics <<hook>>
-
-  class AuthProvider <<provider>>
-  class ThemeProvider <<provider>>
+entity "User" as user {
+    * id : INTEGER <<PK>>
+    --
+    * email : VARCHAR <<UK>>
 }
 
-' ============================================================
-' CAPA MEDIA — API REST
-' ============================================================
-interface "API REST" as APIREST <<interface>>
-
-' ============================================================
-' CAPA INFERIOR — Backend
-' ============================================================
-package "Backend" {
-  class EventsRouter <<router>>
-  class AuthRouter <<router>>
-  class BookingsRouter <<router>>
-
-  class AuthMiddleware <<middleware>>
-  class UploadMiddleware <<middleware>>
-
-  class EventStatusService <<service>>
-  class TicketService <<service>>
-  class DashboardService <<service>>
-  class NotificationService <<service>>
-
-  class User <<entity>>
-  class Event <<entity>>
-  class Booking <<entity>>
-  class Ticket <<entity>>
-  class Notification <<entity>>
-  class Category <<entity>>
-  class Review <<entity>>
-  class Comment <<entity>>
-  class Favorite <<entity>>
-  class TicketType <<entity>>
-  class Payment <<entity>>
+entity "Category" as category {
+    * id : INTEGER <<PK>>
+    --
+    * name : VARCHAR <<UK>>
 }
 
-' ------------------------------------------------------------
-' Dependencias Frontend
-' ------------------------------------------------------------
-App --> AuthProvider
-App --> ThemeProvider
-App --> Layout
-Layout --> EventsPage
-Layout --> EventDetailPage
-Layout --> DashboardPage
+entity "Place" as place {
+    * id : INTEGER <<PK>>
+    --
+    externalPlaceId : VARCHAR <<UK>>
+}
 
-EventsPage --> useEvents
-EventDetailPage --> useEvents
-DashboardPage --> useDashboardMetrics
-AuthGuard --> useAuth
-RoleGuard --> useAuth
+entity "Event" as event {
+    * id : INTEGER <<PK>>
+    --
+    slug : VARCHAR <<UK>>
+    * organizerId : INTEGER <<FK>>
+    * categoryId : INTEGER <<FK>>
+    locationId : INTEGER <<FK>>
+}
 
-useEvents --> APIREST
-useDashboardMetrics --> APIREST
-useAuth --> APIREST
+entity "TicketType" as ticketType {
+    * id : INTEGER <<PK>>
+    --
+    * eventId : INTEGER <<FK>>
+}
 
-' ------------------------------------------------------------
-' Dependencias API REST → Backend
-' ------------------------------------------------------------
-APIREST ..> EventsRouter : <<use>>
-APIREST ..> AuthRouter : <<use>>
-APIREST ..> BookingsRouter : <<use>>
+entity "Booking" as booking {
+    * id : INTEGER <<PK>>
+    --
+    * userId : INTEGER <<FK>>
+    ticketTypeId : INTEGER <<FK>>
+    * eventId : INTEGER <<FK>>
+}
 
-' ------------------------------------------------------------
-' Dependencias Routers
-' ------------------------------------------------------------
-EventsRouter --> AuthMiddleware
-EventsRouter --> UploadMiddleware
-EventsRouter --> EventStatusService
-BookingsRouter --> AuthMiddleware
-BookingsRouter --> TicketService
-BookingsRouter --> NotificationService
-AuthRouter --> NotificationService
+entity "Ticket" as ticket {
+    * id : INTEGER <<PK>>
+    --
+    * token : UUID <<UK>>
+    * bookingId : INTEGER <<FK>>
+    validatedById : INTEGER <<FK>>
+    invalidatedById : INTEGER <<FK>>
+}
 
-' ------------------------------------------------------------
-' Asociaciones Servicios → Entidades
-' ------------------------------------------------------------
-EventStatusService --> Event
-TicketService --> Ticket
-TicketService --> Booking
-DashboardService --> Event
-DashboardService --> Booking
-DashboardService --> Ticket
-NotificationService --> User
-NotificationService --> Notification
-NotificationService --> Event
+entity "Comment" as comment {
+    * id : INTEGER <<PK>>
+    --
+    * userId : INTEGER <<FK>>
+    * eventId : INTEGER <<FK>>
+    parentId : INTEGER <<FK>>
+}
 
-' ------------------------------------------------------------
-' Relaciones entre Entidades (Prisma)
-' ------------------------------------------------------------
-User "1" --> "0..*" Event : organizedEvents
-User "1" --> "0..*" Booking
-User "1" --> "0..*" Review
-User "1" --> "0..*" Comment
-User "1" --> "0..*" Notification
+entity "Review" as review {
+    * id : INTEGER <<PK>>
+    --
+    * userId : INTEGER <<FK>>
+    * eventId : INTEGER <<FK>>
+}
 
-Event "1" --> "0..*" Booking
-Event "1" --> "0..*" Review
-Event "1" --> "0..*" Comment
-Event "1" --> "0..*" Notification
-Event "1" --> "0..*" TicketType
-Event "*" --> "1" Category
+entity "Notification" as notification {
+    * id : INTEGER <<PK>>
+    --
+    * userId : INTEGER <<FK>>
+    eventId : INTEGER <<FK>>
+}
 
-Booking "1" --> "0..1" Ticket
-Booking "0..1" --> "0..1" Payment
+entity "Favorite" as favorite {
+    --
+    * userId : INTEGER <<FK>>
+    * eventId : INTEGER <<FK>>
+    * createdAt : TIMESTAMP
+}
 
-User "1" --> "0..*" Favorite
-Event "1" --> "0..*" Favorite
+' === ENTIDADES AUXILIARES / AUDITORÍA ===
+
+entity "EventStatusLog" as eventStatusLog {
+    * id : INTEGER <<PK>>
+    --
+    * eventId : INTEGER <<FK>>
+    changedById : INTEGER <<FK>>
+}
+
+entity "TicketAuditLog" as ticketAuditLog {
+    * id : INTEGER <<PK>>
+    --
+    * ticketId : INTEGER <<FK>>
+    userId : INTEGER <<FK>>
+}
+
+entity "VerificationToken" as verificationToken {
+    * id : INTEGER <<PK>>
+    --
+    * token : VARCHAR <<UK>>
+    * userId : INTEGER <<FK>>
+}
+
+' === RELACIONES CROW'S FOOT ===
+
+' -- Autenticación
+user ||--o{ verificationToken : "tiene"
+
+' -- Usuario organiza eventos
+user ||--o{ event : "organiza"
+
+' -- Favoritos (tabla intermedia N:M)
+user ||--o{ favorite : "marca"
+event ||--o{ favorite : "es marcado"
+
+' -- Categoría y lugar
+category ||--o{ event : "clasifica"
+place |o--o{ event : "aloja"
+
+' -- Evento y contenido / reservas
+event ||--o{ ticketType : "define"
+event ||--o{ booking : "contiene"
+event ||--o{ comment : "tiene"
+event ||--o{ review : "recibe"
+event ||--o{ notification : "genera"
+event ||--o{ eventStatusLog : "registra"
+
+' -- TicketType y Booking
+ticketType |o--o{ booking : "reservado"
+
+' -- Booking y Ticket (1 a 0..1)
+booking ||--|o ticket : "genera"
+
+' -- Usuario y reservas / comentarios / reseñas / notificaciones
+user ||--o{ booking : "realiza"
+user ||--o{ comment : "escribe"
+user ||--o{ review : "escribe"
+user ||--o{ notification : "recibe"
+
+' -- Comentarios auto-referenciados (respuestas)
+comment |o--o{ comment : "responde"
+
+' -- Ticket y auditoría
+ticket ||--o{ ticketAuditLog : "auditado"
+user |o--o{ ticketAuditLog : "registra"
+
+' -- Validación e invalidación de tickets
+user |o--o{ ticket : "valida"
+user |o--o{ ticket : "invalida"
+
+' -- EventStatusLog
+user |o--o{ eventStatusLog : "cambia"
 
 @enduml

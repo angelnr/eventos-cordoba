@@ -1,0 +1,148 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+' ============================================================
+' INTERFACES
+' ============================================================
+() "IRestAPI" as IRestAPI
+() "IDatabase" as IDatabase
+() "IEmailAPI" as IEmailAPI
+
+' ============================================================
+' INFRAESTRUCTURA EXTERNA
+' ============================================================
+component "Nginx" as Nginx {
+    port "80" as nginxIn
+    port "proxy" as nginxOut
+    [ProxyEngine]
+    nginxIn - ProxyEngine
+    nginxOut - ProxyEngine
+}
+
+component "PostgreSQL" as PostgreSQL {
+    port "5432" as pgPort
+    [DBEngine]
+    pgPort - DBEngine
+}
+
+component "Resend" as Resend {
+    port "REST" as resendPort
+    [MailAPI]
+    resendPort - MailAPI
+}
+
+' ============================================================
+' FRONTEND (Next.js Pages Router)
+' ============================================================
+component "Frontend (Next.js)" as Frontend {
+    port "api_out" as feApiOut
+
+    [Páginas] as Pages
+    [Components] as Components
+    [Hooks y Queries] as Hooks
+    [Providers] as Providers
+    [API Client] as ApiClient
+
+    feApiOut - ApiClient
+}
+
+note right of Pages
+  Públicas, Autenticadas,
+  Organizador, Staff, Tickets
+end note
+
+note right of Components
+  UI, Dashboard, Filters,
+  Landing, Notifications, Otros
+end note
+
+note right of Hooks
+  useEvents, useTickets,
+  useDashboardMetrics, etc.
+end note
+
+note right of Providers
+  AuthProvider, ThemeProvider,
+  QueryClientProvider, ToastProvider
+end note
+
+' ============================================================
+' BACKEND (Express.js)
+' ============================================================
+component "Backend (Express.js)" as Backend {
+    port "api_in" as beApiIn
+    port "db_out" as beDbOut
+    port "email_out" as beEmailOut
+
+    [Routers] as Routers
+    [Middleware] as Middleware
+    [Services] as Services
+    [Jobs] as Jobs
+    [Prisma Client] as Prisma
+
+    beApiIn - Routers
+    beDbOut - Prisma
+    beEmailOut - Services
+}
+
+note right of Routers
+  auth, users, events,
+  bookings, tickets, etc.
+end note
+
+note right of Middleware
+  Global, Auth, Upload
+end note
+
+note right of Services
+  eventFilters, ticketService,
+  dashboardService, emailService, etc.
+end note
+
+note right of Jobs
+  reminderJob,
+  statusTransitionJob,
+  cleanupJob
+end note
+
+' ============================================================
+' RELACIONES INTERNAS — FRONTEND
+' ============================================================
+Pages ..> Hooks : usa
+Components ..> Hooks : usa
+Hooks ..> ApiClient : invoca
+Pages ..> Providers : consume
+
+' ============================================================
+' FLUJO API REST (FRONTEND → NGINX → BACKEND)
+' ============================================================
+IRestAPI - feApiOut
+IRestAPI - nginxIn
+nginxOut - beApiIn
+
+' ============================================================
+' RELACIONES INTERNAS — BACKEND
+' ============================================================
+Routers ..> Middleware : aplica
+Routers ..> Services : delega
+Middleware ..> Services : protege / valida
+Services ..> Prisma : consulta / transacciona
+
+' ============================================================
+' JOBS
+' ============================================================
+Jobs ..> Services : usa
+Jobs ..> Prisma : consulta
+
+' ============================================================
+' PERSISTENCIA Y EMAIL
+' ============================================================
+IDatabase - beDbOut
+IDatabase - pgPort
+
+IEmailAPI - beEmailOut
+IEmailAPI - resendPort
+
+@enduml
