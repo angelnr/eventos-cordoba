@@ -16,6 +16,7 @@ import reviewsRoutes from './routes/reviews';
 import notificationsRoutes from './routes/notifications';
 import ticketsRoutes from './routes/tickets';
 import dashboardRoutes from './routes/dashboard';
+import organizerRequestsRoutes from './routes/organizer-requests';
 import { startReminderJob } from './jobs/reminderJob';
 import { startCleanupJob } from './jobs/cleanupJob';
 import { startStatusTransitionJob } from './jobs/statusTransitionJob';
@@ -66,6 +67,7 @@ app.use('/api/reviews', reviewsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/organizer-requests', organizerRequestsRoutes);
 
 console.log('🔗 Rutas configuradas:');
 console.log('  - /api/auth/*');
@@ -78,6 +80,7 @@ console.log('  - /api/reviews/*');
 console.log('  - /api/notifications/*');
 console.log('  - /api/tickets/*');
   console.log('  - /api/dashboard/*');
+  console.log('  - /api/organizer-requests/*');
 
 // Rutas existentes
 app.get('/api/test', (req: Request, res: Response) => {

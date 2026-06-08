@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useAuth } from '../lib/auth';
 import { getImageUrl } from '../lib/imageUtils';
 import { useRouter } from 'next/router';
+import { RequestOrganizerButton } from './RequestOrganizerButton';
 
 const AvatarDisplay: React.FC<{ avatar: string; name: string; sizeClass: string; initials: string }> = ({ avatar, name, sizeClass, initials }) => {
   const [hasError, setHasError] = useState(false);
@@ -26,7 +27,7 @@ const AvatarDisplay: React.FC<{ avatar: string; name: string; sizeClass: string;
 };
 
 export const UserMenu: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -218,6 +219,9 @@ export const UserMenu: React.FC = () => {
               </Link>
             )}
 
+            {user.role === 'user' && (
+              <RequestOrganizerButton token={token} />
+            )}
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>

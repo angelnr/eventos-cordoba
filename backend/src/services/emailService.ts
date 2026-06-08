@@ -51,3 +51,35 @@ export async function sendVerificationEmail(to: string, verificationUrl: string)
     throw error;
   }
 }
+
+const ADMIN_EMAIL = 'angel16caravaca@gmail.com';
+
+export async function sendOrganizerRequestEmail(userName: string | null, userEmail: string, userId: number): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    console.warn(`⚠️  Solicitud de organizador no enviada para ${userEmail}: RESEND_API_KEY no configurada`);
+    return;
+  }
+
+  try {
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: 'Nueva solicitud de organizador',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Nueva solicitud de permisos de organizador</h2>
+          <p>El usuario <strong>${userName || 'Sin nombre'}</strong> (email: <strong>${userEmail}</strong>, ID: <strong>${userId}</strong>) ha solicitado ser organizador.</p>
+          <p>Para aprobar la solicitud, actualiza su rol a <code>organizer</code> mediante el endpoint <code>PATCH /api/users/${userId}/role</code>.</p>
+        </div>
+      `,
+    });
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+    console.log('[EMAIL] Solicitud de organizador enviada para usuario ID:', userId);
+  } catch (error: any) {
+    console.error('[EMAIL] Error enviando solicitud de organizador para usuario', userId, ':', error?.message || error);
+    throw error;
+  }
+}

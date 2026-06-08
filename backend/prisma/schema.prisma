@@ -16,6 +16,7 @@ model User {
   bio                       String?
   location                  String?
   role                      String                      @default("user")
+  organizerRequestSent      Boolean                     @default(false)
   isVerified                Boolean                     @default(false)
   themePreference           String?
   createdAt                 DateTime                    @default(now())
