@@ -1,0 +1,107 @@
+@startuml class-diagram
+
+title Diagrama de Entidades - Notación Crow's Foot
+
+skinparam linetype ortho
+left to right direction
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+
+' === ENTIDADES ===
+
+entity "Usuario" as User {
+    * id : INTEGER <<PK>>
+    --
+    * email : VARCHAR <<UK>>
+}
+
+entity "Event" as Event {
+    * id : INTEGER <<PK>>
+    --
+    slug : VARCHAR <<UK>>
+}
+
+
+entity "Categoría" as Category {
+    * id : INTEGER <<PK>>
+    --
+    * name : VARCHAR <<UK>>
+
+}
+
+entity "Lugar" as Place {
+    * id : INTEGER <<PK>>
+    --
+    externalPlaceId : VARCHAR <<UK>>
+}
+
+entity "Reserva" as Booking {
+    * id : INTEGER <<PK>>
+}
+
+entity "Entrada" as Ticket {
+    * id : INTEGER <<PK>>
+    --
+    * token : UUID <<UK>>
+}
+
+entity "Comentario" as Comment {
+    * id : INTEGER <<PK>>
+}
+
+entity "Reseña" as Review {
+    * id : INTEGER <<PK>>
+}
+
+entity "Notificación" as Notification {
+    * id : INTEGER <<PK>>
+}
+
+' === RELACIONES CROW'S FOOT ===
+
+' 1:N - Usuario organiza Eventos
+User ||--o{ Event : "organiza"
+
+' M:N - Favoritos (sin entidad intermedia)
+User }o--o{ Event : "favoritos"
+
+' 1:N - Categoría clasifica Eventos
+Category ||--o{ Event : "clasifica"
+
+' 0..1:N - Evento se ubica en Lugar
+Event }o--o| Place : "se ubica en"
+
+' 1:N - Usuario realiza Reservas
+User ||--o{ Booking : "realiza"
+
+' 1:N - Evento contiene Reservas
+Event ||--o{ Booking : "contiene"
+
+' 1:0..1 - Reserva genera Entrada
+Booking ||--o| Ticket : "genera"
+
+' 1:N - Usuario escribe Comentarios
+User ||--o{ Comment : "escribe"
+
+' 1:N - Evento tiene Comentarios
+Event ||--o{ Comment : "tiene"
+
+' 1:N - Usuario escribe Reseñas
+User ||--o{ Review : "escribe"
+
+' 1:N - Evento recibe Reseñas
+Event ||--o{ Review : "recibe"
+
+' 1:N - Usuario recibe Notificaciones
+User ||--o{ Notification : "recibe"
+
+' 0..1:N - Evento genera Notificaciones
+Event |o--o{ Notification : "genera"
+
+' 0..1:N - Usuario valida Entradas
+User |o--o{ Ticket : "valida"
+
+' 0..1:N - Usuario invalida Entradas
+User |o--o{ Ticket : "invalida"
+
+@enduml
