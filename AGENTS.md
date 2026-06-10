@@ -96,3 +96,8 @@ cd frontend && npx playwright test  # Tests E2E frontend (Playwright)
 Archivos de test en:
 - `backend/src/__tests__/`
 - `frontend/e2e/`
+
+# Resetear BD + seed:
+docker compose exec backend npx prisma migrate reset --force
+docker compose exec backend npx --package=prisma@5.22.0 prisma db push --schema=/app/prisma/schema.prisma
+docker compose exec backend node prisma/seed.js
