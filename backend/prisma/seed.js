@@ -380,6 +380,14 @@ async function main() {
 
   console.log('✅ Favoritos de prueba creados');
 
+  // Sincronizar secuencias de PostgreSQL para evitar conflictos de autoincremento
+  // al hacer upsert con IDs explícitos (Prisma no avanza las secuencias automáticamente)
+  const tablesToSync = ['events', 'users', 'categories', 'places', 'bookings', 'comments', 'payments', 'reviews', 'notifications', 'tickets', 'ticket_audit_logs', 'ticket_types', 'event_status_logs', 'verification_tokens'];
+  for (const table of tablesToSync) {
+    await prisma.$executeRawUnsafe(`SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), COALESCE((SELECT MAX(id) FROM "${table}"), 1))`);
+  }
+  console.log('✅ Secuencias de PostgreSQL sincronizadas');
+
   console.log('✅ Seed completed');
 }
 
