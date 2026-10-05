@@ -2,8 +2,8 @@
 #
 # Solo Nginx expone un puerto HOST (el de esta web: 3000).
 # frontend y backend quedan SOLO dentro de la red interna de Docker:
-#   http://172.29.158.65:3000        → Frontend (Next.js) vía Nginx
-#   http://172.29.158.65:3000/api/*  → Backend  (Express) vía Nginx
+#   http://100.90.74.104:3000        → Frontend (Next.js) vía Nginx
+#   http://100.90.74.104:3000/api/*  → Backend  (Express) vía Nginx
 #
 # Al compartir el mismo origen no hay CORS que configurar.
 # El puerto se controla con WEB_PORT (ver .env): WEB_PORT=3000
