@@ -44,7 +44,7 @@ const getApiUrl = () => {
   if (isLocalhost) return 'http://localhost:3001';
   if (isProduction) return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  return 'https://eventoscordoba.xyz';
+  return '';
 };
 
 export function useComments(eventId: number | undefined, token: string | null): UseCommentsReturn {

@@ -1,3 +1,12 @@
+# docker-compose.yml — despliegue "un puerto por web" vía ZeroTier
+#
+# Solo Nginx expone un puerto HOST (el de esta web: 3000).
+# frontend y backend quedan SOLO dentro de la red interna de Docker:
+#   http://172.29.158.65:3000        → Frontend (Next.js) vía Nginx
+#   http://172.29.158.65:3000/api/*  → Backend  (Express) vía Nginx
+#
+# Al compartir el mismo origen no hay CORS que configurar.
+# El puerto se controla con WEB_PORT (ver .env): WEB_PORT=3000
 services:
   postgres:
     image: postgres:15
@@ -11,8 +20,7 @@ services:
 
   backend:
     build: ./backend
-    ports:
-      - "3001:3001"
+    # Sin puertos host: solo accesible desde la red interna vía Nginx
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -37,8 +45,7 @@ services:
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:3000"
+    # Sin puertos host: solo accesible desde la red interna vía Nginx
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
@@ -47,18 +54,21 @@ services:
       - app-network
     restart: unless-stopped
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
-    network_mode: "host"
-    restart: unless-stopped
+  # Tunel Cloudflare SOLO para acceso por dominio (eventoscordoba.xyz).
+  # Como ahora usas ZeroTier sin dominio, lo dejamos desactivado.
+  # Si algún día quieres exponer la web públicamente, descomenta:
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}
+  #   environment:
+  #     - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}
+  #   network_mode: "host"
+  #   restart: unless-stopped
 
   nginx:
     build: ./nginx
     ports:
-      - "80:80"
+      - "${WEB_PORT:-3000}:80"   # ← PUERTO de acceso a esta web desde ZeroTier
     volumes:
       - uploads_data:/app/uploads:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro

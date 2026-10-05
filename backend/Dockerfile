@@ -9,8 +9,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma/ ./prisma/
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias (sin postinstall: Prisma se genera abajo y así no
+# depende de `sh` del paquete en builds estáticos)
+RUN npm install --ignore-scripts
 
 # Generar cliente Prisma
 RUN npx prisma generate

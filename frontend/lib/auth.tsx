@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return 'https://eventoscordoba.xyz';
+    return '';
   };
 
   // Verificar token al cargar la aplicación

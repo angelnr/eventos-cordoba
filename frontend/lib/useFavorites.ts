@@ -25,7 +25,7 @@ export function useFavorites() {
       return process.env.NEXT_PUBLIC_API_URL;
     }
 
-    return 'https://eventoscordoba.xyz';
+    return '';
   };
 
   const toggleFavorite = useCallback(async (eventId: number, wasFavorited: boolean): Promise<boolean> => {

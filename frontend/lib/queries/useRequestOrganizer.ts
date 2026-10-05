@@ -12,7 +12,7 @@ export function useRequestOrganizer(token: string | null) {
     if (hostname === 'eventoscordoba.xyz') {
       return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
     }
-    return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
+    return process.env.NEXT_PUBLIC_API_URL || '';
   };
 
   return useMutation({

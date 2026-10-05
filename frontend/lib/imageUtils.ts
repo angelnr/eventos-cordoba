@@ -13,7 +13,7 @@ function getApiBaseUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || 'https://eventoscordoba.xyz';
+  return process.env.NEXT_PUBLIC_API_URL || '';
 }
 
 export function getAvatarUrl(avatarUrl: string | null | undefined, version?: number): string | null {
