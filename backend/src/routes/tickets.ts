@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import rateLimit, { defaultKeyGenerator } from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { requireAuth, requireStaff, requireAdmin } from '../middleware/auth';
 import * as ticketService from '../services/ticketService';
 import * as qrService from '../services/qrService';
@@ -14,7 +14,7 @@ const validateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   message: { success: false, error: 'Demasiadas validaciones. Intenta de nuevo en un minuto.' },
-  keyGenerator: (req) => req.user?.id?.toString() || defaultKeyGenerator(req),
+  keyGenerator: (req) => req.user?.id?.toString() || ipKeyGenerator(req.ip ?? '0.0.0.0'),
 });
 
 // POST /api/tickets/generate/:bookingId

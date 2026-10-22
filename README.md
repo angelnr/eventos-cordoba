@@ -48,7 +48,7 @@ Create a `.env` file in the project root with the following variables:
    ```bash
    cd backend
    npx prisma generate
-   npx prisma db push
+   npx prisma migrate dev
    ```
 
 4. Configure environment variables:

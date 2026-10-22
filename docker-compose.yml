@@ -24,6 +24,8 @@ services:
       POSTGRES_DB: mi_app_db
       POSTGRES_USER: mi_usuario
       POSTGRES_PASSWORD: password123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     networks:
       - app-network
     restart: unless-stopped
@@ -35,15 +37,13 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     volumes:
-      - ./backend/src:/app/src
-      - ./backend/prisma:/app/prisma
       - uploads_data:/app/uploads
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - PORT=3001
-      - NODE_ENV=development
+      - NODE_ENV=production
       - UPLOAD_DIR=/app/uploads
       - RESEND_API_KEY=${RESEND_API_KEY}
       - NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
@@ -98,3 +98,6 @@ networks:
 
 volumes:
   uploads_data:
+  # Volumen nombrado: los datos de PostgreSQL sobreviven a `docker compose down`
+  # y a las recreaciones del contenedor.
+  pgdata:

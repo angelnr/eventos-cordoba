@@ -25,6 +25,10 @@ RUN chown -R node:node /app/node_modules/@prisma /app/node_modules/.prisma
 # Copiar código, tsconfig y script de entrypoint
 COPY src/ ./src/
 COPY tsconfig.json ./
+
+# Compilar TypeScript en el build: el runtime no necesita ts-node/tsc
+RUN npm run build
+
 COPY entrypoint.sh ./
 
 # Hacer ejecutable el script
