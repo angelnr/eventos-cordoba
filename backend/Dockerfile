@@ -1,7 +1,8 @@
-FROM node:20.9-alpine
+FROM node:24.22.1-alpine
 
-# Instalar netcat y su-exec para esperar a PostgreSQL y drop de privilegios
-RUN apk add --no-cache netcat-openbsd su-exec
+# Instalar netcat y su-exec para esperar a PostgreSQL y drop de privilegios.
+# openssl: necesario para que Prisma detecte el engine correcto en Alpine.
+RUN apk add --no-cache netcat-openbsd su-exec openssl
 
 WORKDIR /app
 
@@ -15,6 +16,11 @@ RUN npm install --ignore-scripts
 
 # Generar cliente Prisma
 RUN npx prisma generate
+
+# El entrypoint ejecuta `prisma db push` como usuario `node` (su-exec):
+# darle propiedad de los directorios de engines/cliente que Prisma
+# reescribe en runtime.
+RUN chown -R node:node /app/node_modules/@prisma /app/node_modules/.prisma
 
 # Copiar código, tsconfig y script de entrypoint
 COPY src/ ./src/

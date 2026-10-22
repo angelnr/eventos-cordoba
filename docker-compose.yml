@@ -7,6 +7,16 @@
 #
 # Al compartir el mismo origen no hay CORS que configurar.
 # El puerto se controla con WEB_PORT (ver .env): WEB_PORT=3000
+
+# Rotación de logs: sin tope, json-file puede llenar el disco del host.
+# (Aplicado a los servicios sin estado; postgres se deja intacto para no
+# recrear el contenedor de la BBDD.)
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:15
@@ -42,6 +52,7 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    logging: *default-logging
 
   frontend:
     build: ./frontend
@@ -53,6 +64,7 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    logging: *default-logging
 
   # Tunel Cloudflare SOLO para acceso por dominio (eventoscordoba.xyz).
   # Como ahora usas ZeroTier sin dominio, lo dejamos desactivado.
@@ -78,6 +90,7 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    logging: *default-logging
 
 networks:
   app-network:
